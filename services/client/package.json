@@ -1,0 +1,64 @@
+{
+    "name": "client",
+    "version": "0.1.0",
+    "private": true,
+    "dependencies": {
+        "@material-ui/core": "^4.11.4",
+        "@material-ui/icons": "^4.11.2",
+        "@material-ui/lab": "^4.0.0-alpha.58",
+        "@testing-library/jest-dom": "^5.12.0",
+        "@testing-library/react": "^11.2.7",
+        "@testing-library/user-event": "^12.8.3",
+        "@types/jest": "^26.0.23",
+        "@types/node": "^12.20.13",
+        "@types/react": "^17.0.6",
+        "@types/react-dom": "^17.0.5",
+        "@types/react-router-dom": "^5.1.7",
+        "@types/testing-library__jest-dom": "^5.9.5",
+        "axios": "^0.21.1",
+        "clsx": "^1.1.1",
+        "http-proxy-middleware": "^2.0.0",
+        "i18next": "^20.2.4",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2",
+        "react-hook-form": "^7.7.1",
+        "react-i18next": "^11.8.15",
+        "react-router-dom": "^5.2.0",
+        "react-scripts": "4.0.3",
+        "web-vitals": "^1.1.2"
+    },
+    "scripts": {
+        "start": "react-scripts start",
+        "build": "react-scripts build",
+        "test": "react-scripts test",
+        "eject": "react-scripts eject",
+        "lint": "eslint src/**/*.{js,jsx,ts,tsx}",
+        "lint:fix": "eslint --fix src/**/*.{js,jsx,ts,tsx}",
+        "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json} && npm run lint:fix"
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^4.24.0",
+        "@typescript-eslint/parser": "^4.24.0",
+        "eslint": "^7.26.0",
+        "eslint-config-airbnb": "^18.2.1",
+        "eslint-import-resolver-typescript": "^2.4.0",
+        "eslint-plugin-import": "^2.23.2",
+        "eslint-plugin-jsx-a11y": "^6.4.1",
+        "eslint-plugin-react": "^7.23.2",
+        "eslint-plugin-react-hooks": "^4.2.0",
+        "prettier": "^2.3.0",
+        "typescript": "^4.2.4"
+    }
+}

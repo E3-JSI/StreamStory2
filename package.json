@@ -1,0 +1,28 @@
+{
+    "name": "streamstory",
+    "version": "2.0.0",
+    "description": "StreamStory - Making a story of streaming data",
+    "main": "index.js",
+    "scripts": {
+        "dev:build": "docker-compose -f docker-compose.dev.yml -p streamstory build",
+        "dev:start": "docker-compose -f docker-compose.dev.yml -p streamstory up -d",
+        "dev:log": "docker-compose -p streamstory logs -f",
+        "dev:stop": "docker-compose -p streamstory down --remove-orphans -v",
+        "prod:build": "docker-compose -p streamstory build",
+        "prod:start": "docker-compose -p streamstory up -d",
+        "prod:log": "docker-compose -p streamstory logs -f",
+        "prod:stop": "docker-compose -p streamstory down --remove-orphans -v",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/JozefStefanInstitute/StreamStory2.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/JozefStefanInstitute/StreamStory2/issues"
+    },
+    "homepage": "http://streamstory.ijs.si/"
+}
