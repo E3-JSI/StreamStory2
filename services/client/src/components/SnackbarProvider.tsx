@@ -26,8 +26,8 @@ function SnackbarProvider({ children }: SnackbarProviderProps): JSX.Element {
 
     // Pass `show` function to SnackbarContext.Provider
     snackbar.show = (props: SnackbarProps) => {
-        setSnackbar((prevSnackbar) => ({
-            ...prevSnackbar,
+        setSnackbar((prevState) => ({
+            ...prevState,
             ...props,
             open: true
         }));
@@ -35,8 +35,8 @@ function SnackbarProvider({ children }: SnackbarProviderProps): JSX.Element {
 
     // Pass `hide` function to SnackbarContext.Provider
     snackbar.hide = () => {
-        setSnackbar((prevSnackbar) => ({
-            ...prevSnackbar,
+        setSnackbar((prevState) => ({
+            ...prevState,
             open: false
         }));
     };

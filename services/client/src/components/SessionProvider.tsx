@@ -45,9 +45,9 @@ function SessionProvider({ children }: SessionProviderProps): JSX.Element {
 
     // Pass `update` function to SessionContext.Provider
     session.update = (props: SessionProps) => {
-        setSession((prevSession) => {
+        setSession((prevState) => {
             const newSession = {
-                ...prevSession,
+                ...prevState,
                 ...props
             };
 

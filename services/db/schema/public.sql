@@ -8,7 +8,9 @@
 CREATE TABLE IF NOT EXISTS public.users (
     id serial PRIMARY KEY,
     group_id integer DEFAULT 2 NOT NULL,
-    email character varying(320) UNIQUE NOT NULL,
+    first_name character varying(255),
+    last_name character varying(255),
+    email character varying(255) UNIQUE NOT NULL,
     password character varying(255) NOT NULL,
     active boolean DEFAULT false NOT NULL,
     settings json NOT NULL,
@@ -19,32 +21,34 @@ CREATE TABLE IF NOT EXISTS public.users (
 	--         REFERENCES groups(id)
 );
 
--- DO $$
---     BEGIN
---         IF NOT EXISTS
---             (
---                 SELECT *
---                 FROM users
---                 WHERE email = 'streamstory@ijs.si'
---             )
---         THEN
---             INSERT INTO users (
---                 group_id,
---                 email,
---                 password,
---                 active,
---                 settings
---             )
---             VALUES (
---                 1,
---                 'streamstory@ijs.si',
---                 '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
---                 true,
---                 '{}'
---             );
---         END IF;
---     END
--- $$;
+DO $$
+    BEGIN
+        IF NOT EXISTS
+            (
+                SELECT *
+                FROM users
+                WHERE email = 'streamstory@ijs.si'
+            )
+        THEN
+            INSERT INTO users (
+                group_id,
+                first_name,
+                email,
+                password,
+                active,
+                settings
+            )
+            VALUES (
+                1,
+                'Admin',
+                'streamstory@ijs.si',
+                '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
+                true,
+                '{}'
+            );
+        END IF;
+    END
+$$;
 
 --
 -- Table: tokens

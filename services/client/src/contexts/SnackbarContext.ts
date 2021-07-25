@@ -22,7 +22,7 @@ export type Snackbar = SnackbarProps & {
     hide: null | HideSnackbar;
 };
 
-const SnackbarContext = React.createContext<Snackbar>({
+export const defaultProps: SnackbarProps = {
     title: '',
     message: '',
     severity: 'info',
@@ -31,8 +31,12 @@ const SnackbarContext = React.createContext<Snackbar>({
         vertical: 'bottom',
         horizontal: 'center'
     },
-    autoHideDuration: 20000,
-    elevation: 6,
+    autoHideDuration: 10000,
+    elevation: 6
+};
+
+const SnackbarContext = React.createContext<Snackbar>({
+    ...defaultProps,
     open: false,
     show: null,
     hide: null

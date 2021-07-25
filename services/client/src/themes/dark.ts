@@ -4,7 +4,7 @@ export const overrides = {
     MuiCssBaseline: {
         '@global': {
             body: {
-                backgroundColor: '#121212'
+                backgroundColor: '#212121'
             }
         }
     }

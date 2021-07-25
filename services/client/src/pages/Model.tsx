@@ -1,15 +1,11 @@
 import React from 'react';
 
-import Typography from '@material-ui/core/Typography';
+import PageTitle from '../components/PageTitle';
 
 function Model(): JSX.Element {
     const modelName = 'Model';
 
-    return (
-        <Typography component="h1" variant="h4">
-            {modelName}
-        </Typography>
-    );
+    return <PageTitle>{modelName}</PageTitle>;
 }
 
 export default Model;

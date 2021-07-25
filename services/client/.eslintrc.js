@@ -24,7 +24,7 @@ module.exports = {
         // ## Typescript
         // -------------
         // '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/no-unused-vars': ['error'],
+        '@typescript-eslint/no-unused-vars': ['warn'],
         '@typescript-eslint/no-use-before-define': ['error'],
 
         // ## React

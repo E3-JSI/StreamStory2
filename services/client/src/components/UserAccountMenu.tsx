@@ -3,90 +3,101 @@ import React from 'react';
 import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
-import Avatar from '@material-ui/core/Avatar';
 import Divider from '@material-ui/core/Divider';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
-import PersonIcon from '@material-ui/icons/Person';
 
+import { getResponseErrors } from '../utils/errors';
+import { User } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
-import { getResponseErrors } from '../utils/errors';
 
 export interface UserAccountMenuProps extends MenuProps {
     toggleMenu: () => void;
 }
 
-// const useStyles = makeStyles((theme) => createStyles({
-//     menuItemIcon: {
-//         minWidth: 24 + theme.spacing(2)
-//     }
-// }));
+const useStyles = makeStyles((theme: Theme) => createStyles({
+    listItemIcon: {
+        minWidth: 0,
+        marginRight: theme.spacing(2)
+    }
+}));
 
-const UserAccountMenu = React.forwardRef(
-    (
-        { open, toggleMenu, ...rest }: UserAccountMenuProps,
-        ref: React.ForwardedRef<HTMLDivElement>
-    ) => {
-        // const classes = useStyles();
-        const { t } = useTranslation(['common', 'error']);
+function UserAccountMenu(
+    { open, toggleMenu, ...rest }: UserAccountMenuProps,
+    ref: React.ForwardedRef<HTMLDivElement>
+) {
+    const classes = useStyles();
+    const { t } = useTranslation(['common', 'error']);
 
-        const [{ user }, setSession] = useSession();
-        const [showSnackbar] = useSnackbar();
+    const [{ user }, setSession] = useSession();
+    const [showSnackbar] = useSnackbar();
 
-        async function handleLogoutClick() {
-            toggleMenu();
+    function getUserDisplayName({ email, firstName, lastName }: User) {
+        const displayName = [];
 
-            try {
-                const response = await axios.delete('/api/auth/logout');
-
-                if (response.data.success) {
-                    setSession({
-                        user: null
-                    });
-                }
-            } catch (error) {
-                const errors = getResponseErrors(error, t);
-
-                if (Array.isArray(errors)) {
-                    showSnackbar({
-                        message: errors,
-                        severity: 'error'
-                    });
-                }
-            }
+        if (firstName) {
+            displayName.push(firstName);
         }
 
-        return (
-            <Menu ref={ref} open={open} {...rest}>
-                <MenuItem
-                    component={RouterLink}
-                    to="/profile"
-                    alignItems="flex-start"
-                    onClick={toggleMenu}
-                >
-                    <ListItemAvatar>
-                        <Avatar>
-                            <PersonIcon />
-                        </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText secondary={user?.email}>{t('common:profile')}</ListItemText>
-                </MenuItem>
-                <Divider light />
-                <MenuItem component="a" onClick={handleLogoutClick}>
-                    <ListItemIcon>
-                        <ExitToAppIcon />
-                    </ListItemIcon>
-                    <ListItemText>{t('common:log_out')}</ListItemText>
-                </MenuItem>
-            </Menu>
-        );
-    }
-);
+        if (lastName) {
+            displayName.push(lastName);
+        }
 
-export default UserAccountMenu;
+        if (!displayName.length) {
+            displayName.push(email);
+        }
+
+        return displayName.join(' ');
+    }
+
+    async function handleLogoutClick() {
+        toggleMenu();
+
+        try {
+            const response = await axios.post('/api/auth/logout');
+
+            if (response.data.success) {
+                setSession({
+                    user: null
+                });
+            }
+        } catch (error) {
+            const errors = getResponseErrors(error, t);
+
+            if (Array.isArray(errors)) {
+                showSnackbar({
+                    message: errors,
+                    severity: 'error'
+                });
+            }
+        }
+    }
+
+    return (
+        <Menu ref={ref} open={open} {...rest}>
+            <MenuItem component={RouterLink} to="/profile" alignItems="center" onClick={toggleMenu}>
+                <ListItemIcon className={classes.listItemIcon}>
+                    <AccountCircleIcon />
+                </ListItemIcon>
+                <ListItemText secondary={getUserDisplayName(user as User)}>
+                    {t('common:my_profile')}
+                </ListItemText>
+            </MenuItem>
+            <Divider light />
+            <MenuItem component="a" onClick={handleLogoutClick}>
+                <ListItemIcon className={classes.listItemIcon}>
+                    <ExitToAppIcon />
+                </ListItemIcon>
+                <ListItemText>{t('common:log_out')}</ListItemText>
+            </MenuItem>
+        </Menu>
+    );
+}
+
+export default React.forwardRef(UserAccountMenu);

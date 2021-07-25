@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
 import SnackbarContext, {
+    defaultProps,
     SnackbarProps,
     ShowSnackbar,
     HideSnackbar
@@ -11,7 +12,10 @@ function useSnackbar(): [ShowSnackbar, HideSnackbar] {
 
     function showSnackbar(props: SnackbarProps) {
         if (show !== null) {
-            show(props);
+            show({
+                ...defaultProps,
+                ...props
+            });
         }
     }
 

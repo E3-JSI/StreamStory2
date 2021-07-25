@@ -2,14 +2,14 @@ import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Typography } from '@material-ui/core';
+import PageTitle from '../components/PageTitle';
 
 export interface DashboardUrlParams {
     view?: string;
 }
 
 function Dashboard(): JSX.Element {
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation(['common']);
 
     let { view } = useParams<DashboardUrlParams>();
 
@@ -29,11 +29,7 @@ function Dashboard(): JSX.Element {
             break;
     }
 
-    return (
-        <Typography component="h1" variant="h4">
-            {title}
-        </Typography>
-    );
+    return <PageTitle>{title}</PageTitle>;
 }
 
 export default Dashboard;

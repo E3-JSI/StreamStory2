@@ -50,7 +50,7 @@ const useStyles = makeStyles((theme) => createStyles({
     }
 }));
 
-function PageProgress({ open = false }: PageProgressProps): JSX.Element {
+function PageProgress({ open }: PageProgressProps): JSX.Element {
     const classes = useStyles();
 
     return (

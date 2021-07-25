@@ -43,31 +43,29 @@ const useStyles = makeStyles((theme) => createStyles({
     }
 }));
 
-const SideNavItem = React.forwardRef(
-    (
-        {
-            path, title, icon, showTooltip = true, divider = false
-        }: SideNavItemProps,
-        ref: React.ForwardedRef<HTMLAnchorElement>
-    ): JSX.Element => {
-        const classes = useStyles();
+function SideNavItem(
+    {
+        path, title, icon, showTooltip = true, divider = false
+    }: SideNavItemProps,
+    ref: React.ForwardedRef<HTMLAnchorElement>
+): JSX.Element {
+    const classes = useStyles();
 
-        return (
-            <Tooltip title={showTooltip ? title : ''} placement="right">
-                <ListItem
-                    component={NavLink}
-                    to={path}
-                    ref={ref}
-                    className={classes.navItem}
-                    divider={divider}
-                    button
-                >
-                    <ListItemIcon className={classes.navItemIcon}>{icon}</ListItemIcon>
-                    <ListItemText primary={title} className={classes.navItemText} />
-                </ListItem>
-            </Tooltip>
-        );
-    }
-);
+    return (
+        <Tooltip title={showTooltip ? title : ''} placement="right">
+            <ListItem
+                component={NavLink}
+                to={path}
+                ref={ref}
+                className={classes.navItem}
+                divider={divider}
+                button
+            >
+                <ListItemIcon className={classes.navItemIcon}>{icon}</ListItemIcon>
+                <ListItemText primary={title} className={classes.navItemText} />
+            </ListItem>
+        </Tooltip>
+    );
+}
 
-export default SideNavItem;
+export default React.forwardRef(SideNavItem);

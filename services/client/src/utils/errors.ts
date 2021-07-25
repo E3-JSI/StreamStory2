@@ -1,21 +1,15 @@
-import React from 'react';
-
 import { TFunction } from 'react-i18next';
 
 import resources from '../i18n/config';
-import { minPasswordLength } from './validation';
+import { minPasswordLength } from './forms';
 
 export type I18Namespace = keyof typeof resources.en;
 export type AddErrorKeyPrefix<T extends string> = `error:${T}`;
 export type ErrorKey = keyof typeof resources.en.error;
 export type ErrorKeyWithPrefix = AddErrorKeyPrefix<keyof typeof resources.en.error>;
-
+export type Errors = Record<string, string | undefined>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ResponseError = any;
-
-export interface FormFieldErrors {
-    [fieldName: string]: string | undefined;
-}
 
 /**
  * Generate error translation function from general translation function, which
@@ -47,7 +41,7 @@ function getErrorTranslator(t: TFunction<I18Namespace[]>) {
  * @param t Translation function.
  * @returns Errors extracted from error response.
  */
-export function getResponseErrors<T extends FormFieldErrors>(
+export function getResponseErrors<T extends Errors>(
     error: ResponseError,
     t: TFunction<I18Namespace[]>
 ): T | string[] | undefined {
@@ -74,25 +68,4 @@ export function getResponseErrors<T extends FormFieldErrors>(
     }
 
     return [error.message ?? t('error:unknown_error')];
-}
-
-/**
- * Focus first form field with error.
- * @param errors Dictionary of errors, where some keys might match form field names.
- * @param refs Dicrionary of form field references, where keys match form field names.
- */
-export function focusFormFieldError<T extends FormFieldErrors>(
-    errors: T,
-    refs: Record<string, React.MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>>
-): void {
-    const errorKeys = Object.keys(errors);
-
-    for (let i = 0; i < errorKeys.length; i++) {
-        const key = errorKeys[i];
-
-        if (refs[key]) {
-            refs[key].current?.focus();
-            break;
-        }
-    }
 }

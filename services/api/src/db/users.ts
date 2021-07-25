@@ -11,6 +11,8 @@ export interface UserSettings {
 export interface User {
     id: number;
     groupId: number;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
     active: boolean;
@@ -23,6 +25,8 @@ function getUser(row: QueryResultRow): User {
     return {
         id: row.id,
         groupId: row.group_id,
+        firstName: row.first_name,
+        lastName: row.last_name,
         email: row.email,
         password: row.password,
         active: row.active,
@@ -87,6 +91,33 @@ export async function add(
         [groupId, email, hashedPassword, settings]
     );
     return rowCount > 0;
+}
+
+export async function del(id: number): Promise<boolean> {
+    const client = await db.connect();
+
+    try {
+        await client.query(
+            `
+            DELETE FROM tokens
+            WHERE user_id = $1;`,
+            [id]
+        );
+        const { rowCount } = await client.query(
+            `
+            DELETE FROM users
+            WHERE id = $1;`,
+            [id]
+        );
+
+        if (!rowCount) {
+            return false;
+        }
+    } finally {
+        client.release();
+    }
+
+    return true;
 }
 
 export async function activate(token: string): Promise<boolean> {
@@ -196,6 +227,68 @@ export async function resetPassword(token: string, password: string): Promise<bo
                 settings = $2
             WHERE id = $3`,
             [hashedPassword, settings, id]
+        );
+
+        if (!rowCount) {
+            return false;
+        }
+    } finally {
+        client.release();
+    }
+
+    return true;
+}
+
+export async function setPassword(id: number, password: string): Promise<boolean> {
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const { rowCount } = await db.query(
+        `
+        UPDATE users
+        SET password = $1
+        WHERE id = $2`,
+        [hashedPassword, id]
+    );
+    return rowCount > 0;
+}
+
+export async function updateDetails(
+    id: number,
+    firstName: string,
+    lastName: string
+): Promise<boolean> {
+    const { rowCount } = await db.query(
+        `
+        UPDATE users
+        SET first_name = $1,
+            last_name = $2
+        WHERE id = $3`,
+        [firstName, lastName, id]
+    );
+    return rowCount > 0;
+}
+
+export async function updateSettings(id: number, newSettings: UserSettings): Promise<boolean> {
+    const client = await db.connect();
+
+    try {
+        const { rows } = await client.query(
+            `
+            SELECT settings FROM users
+            WHERE id = $1`,
+            [id]
+        );
+
+        if (!rows.length) {
+            return false;
+        }
+
+        const { settings } = rows[0];
+        const { rowCount } = await client.query(
+            `
+            UPDATE users
+            SET settings = $1
+            WHERE id = $2`,
+            [{ ...settings, ...newSettings }, id]
         );
 
         if (!rowCount) {

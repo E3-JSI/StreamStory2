@@ -1,13 +1,9 @@
 import React from 'react';
 
-import Typography from '@material-ui/core/Typography';
+import PageTitle from '../components/PageTitle';
 
 function Home(): JSX.Element {
-    return (
-        <Typography component="h1" variant="h4">
-            StreamStory
-        </Typography>
-    );
+    return <PageTitle>StreamStory</PageTitle>;
 }
 
 export default Home;

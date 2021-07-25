@@ -1,6 +1,21 @@
 import { ThemeOptions } from '@material-ui/core/styles';
 
-export const overrides = {};
+export const overrides = {
+    MuiButton: {
+        root: {
+            '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.08)'
+            }
+        }
+    },
+    MuiIconButton: {
+        root: {
+            '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.08)'
+            }
+        }
+    }
+};
 
 const theme: ThemeOptions = {
     palette: {

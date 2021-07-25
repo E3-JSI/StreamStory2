@@ -9,7 +9,7 @@ const router = Router();
 
 const authPath = '/auth';
 router.post(`${authPath}/login`, auth.logIn);
-router.delete(`${authPath}/logout`, requireAuth, auth.logOut);
+router.post(`${authPath}/logout`, requireAuth, auth.logOut);
 router.get(`${authPath}/status`, auth.getStatus);
 router.post(`${authPath}/registration`, auth.register);
 router.post(`${authPath}/activation`, auth.activate);
@@ -17,10 +17,11 @@ router.post(`${authPath}/password`, auth.initiatePasswordReset);
 router.put(`${authPath}/password`, auth.resetPassword);
 
 const usersPath = '/users';
-router.post(`${usersPath}/`, users.createUser);
-router.get(`${usersPath}/:id`, requireAuth, users.getUser);
-router.put(`${usersPath}/:id`, requireAuth, users.updateUser);
-router.delete(`${usersPath}/:id`, requireAuth, users.deleteUser);
+// router.post(`${usersPath}/`, requireAuth, users.addUser);
+// router.get(`${usersPath}/`, requireAuth, users.getUsers);
+// router.get(`${usersPath}/:id`, requireAuth, users.getUser);
+router.put(`${usersPath}/current`, requireAuth, users.updateCurrentUser);
+router.delete(`${usersPath}/current`, requireAuth, users.deleteCurrentUser);
 
 const modelsPath = '/models';
 router.post(`${modelsPath}/`, requireAuth, models.createModel);

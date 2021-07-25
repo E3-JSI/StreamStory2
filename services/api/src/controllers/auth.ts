@@ -19,7 +19,6 @@ export async function logIn(req: Request, res: Response, next: NextFunction): Pr
     }
 
     try {
-        // TODO: form validation/sanitation (use: express-validation!?).
         const { email, password, remember } = req.body;
         const user = await users.findByEmail(email);
 
@@ -169,7 +168,6 @@ export async function initiatePasswordReset(
     next: NextFunction
 ): Promise<void> {
     try {
-        // TODO: form validation/sanitation (use: express-validation!?).
         const { email } = req.body;
         const user = await users.findByEmail(email);
 
@@ -200,7 +198,7 @@ export async function initiatePasswordReset(
             from: 'StreamStory <streamstory@ijs.si>',
             to: email,
             subject: 'Reset your password',
-            text: `You requested a password reset for your StreamStory account. Follow the link below to reset it:\n${resetLink}\nThis link is only valid for the next 24 hours. After that you have to request a new one.\nIf you did not request a password reset, you can safely ignore this e-mail.`
+            text: `You requested a password reset for your StreamStory account. Follow the link below to reset it:\n${resetLink}\nThis link is valid for the next 24 hours. After that you have to request a new one.\nIf you did not request a password reset, you can safely ignore this e-mail.`
         });
 
         res.status(200).json({
@@ -217,6 +215,7 @@ export async function resetPassword(
     next: NextFunction
 ): Promise<void> {
     try {
+        // TODO: form validation/sanitation (use: express-validation!?).
         const { token, password, password2 } = req.body;
 
         if (password.length < minPasswordLength) {

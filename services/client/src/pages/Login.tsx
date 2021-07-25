@@ -5,7 +5,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { getResponseErrors } from '../utils/errors';
-import { patterns } from '../utils/validation';
+import { patterns } from '../utils/forms';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import useMountEffect from '../hooks/useMountEffect';
@@ -16,9 +16,8 @@ export interface LoginUrlParams {
 }
 
 function Login(): JSX.Element {
-    const { t } = useTranslation(['common', 'error']);
-
     const history = useHistory();
+    const { t } = useTranslation(['common', 'error']);
     const [, /* session */ setSession] = useSession();
     const [showSnackbar] = useSnackbar();
     const { token } = useParams<LoginUrlParams>();
@@ -39,20 +38,20 @@ function Login(): JSX.Element {
 
         async function activate() {
             try {
-                setSession({ isLoading: true });
+                setSession({ pageLoading: true });
                 const response = await axios.post('/api/auth/activation', { token });
-                setSession({ isLoading: false });
+                setSession({ pageLoading: false });
 
                 if (response.data.success) {
                     showSnackbar({
                         title: t('common:successful_account_activation.title'),
                         message: t('common:successful_account_activation.message'),
-                        severity: 'success'
-                        // autoHideDuration: null
+                        severity: 'success',
+                        autoHideDuration: null
                     });
                 }
             } catch (error) {
-                setSession({ isLoading: false });
+                setSession({ pageLoading: false });
 
                 const errors = getResponseErrors(error, t);
 

@@ -27,6 +27,7 @@ const useStyles = makeStyles((theme) => createStyles({
     main: {
         flexGrow: 1,
         padding: theme.spacing(2),
+        overflow: 'auto',
         [theme.breakpoints.up('sm')]: {
             padding: theme.spacing(3)
         }
