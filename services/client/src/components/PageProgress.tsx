@@ -1,7 +1,7 @@
 import React from 'react';
 
 import clsx from 'clsx';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import LinearProgress from '@material-ui/core/LinearProgress';
 
 import Logo from './Logo';
@@ -10,7 +10,7 @@ interface PageProgressProps {
     open: boolean;
 }
 
-const useStyles = makeStyles((theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => createStyles({
     root: {
         position: 'fixed',
         top: 0,

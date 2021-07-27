@@ -22,7 +22,6 @@ export type FormErrors = Record<string, never>;
 
 function UserProfileDeleteAccountForm(): JSX.Element {
     const { t } = useTranslation(['common']);
-
     const [, /* session */ setSession] = useSession();
     const [dialogOpen, setDialogOpen] = React.useState(false);
     const [showSnackbar] = useSnackbar();

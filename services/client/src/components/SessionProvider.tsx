@@ -7,7 +7,7 @@ export interface SessionProviderProps {
 }
 
 const storageSessionKey = 'streamstory.session';
-const storageSessionProps = ['theme', 'sidebarOpen'];
+const storageSessionProps = ['theme', 'isSideNavExpanded'];
 
 function loadFromStorage(sessionState: Session): Session {
     if (localStorage) {

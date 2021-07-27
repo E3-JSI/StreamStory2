@@ -13,13 +13,13 @@ export interface UseFormRegisterReturnInputRef extends Omit<UseFormRegisterRetur
     inputRef: UseFormRegisterReturn['ref'];
 }
 
-export interface Patterns {
+export interface ValidationPatterns {
     [id: string]: RegExp;
 }
 
 export const minPasswordLength = 6;
 
-export const patterns: Patterns = {
+export const validationPatterns: ValidationPatterns = {
     userToken: /^[A-Za-z0-9]{64}$/,
     emailLoose: /^.+@.+$/,
     emailStrict: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/

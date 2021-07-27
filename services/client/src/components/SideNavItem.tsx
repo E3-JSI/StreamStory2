@@ -3,7 +3,7 @@
 import React from 'react';
 
 import { NavLink } from 'react-router-dom';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -17,7 +17,7 @@ export interface SideNavItemProps {
     divider?: boolean;
 }
 
-const useStyles = makeStyles((theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => createStyles({
     navItem: {
         paddingLeft: theme.spacing(2),
         paddingRight: theme.spacing(2),

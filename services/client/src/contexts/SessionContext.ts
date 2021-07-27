@@ -15,8 +15,9 @@ export interface User {
 export interface SessionProps {
     user?: User | null;
     theme?: AppTheme;
-    sidebarOpen?: boolean;
-    pageLoading?: boolean;
+    isSideNavOpen?: boolean;
+    isSideNavExpanded?: boolean;
+    isPageLoading?: boolean;
     currentModel?: string | null;
 }
 
@@ -47,8 +48,9 @@ export function getUserSession(user: User): SessionProps {
 const SessionContext = React.createContext<Session>({
     user: null,
     theme: 'system',
-    sidebarOpen: false,
-    pageLoading: true,
+    isSideNavOpen: false,
+    isSideNavExpanded: false,
+    isPageLoading: true,
     currentModel: 'model-id',
     update: null
 });

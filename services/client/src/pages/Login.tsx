@@ -5,7 +5,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { getResponseErrors } from '../utils/errors';
-import { patterns } from '../utils/forms';
+import { validationPatterns } from '../utils/forms';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import useMountEffect from '../hooks/useMountEffect';
@@ -32,15 +32,15 @@ function Login(): JSX.Element {
             return;
         }
 
-        if (!token.match(patterns.userToken)) {
+        if (!token.match(validationPatterns.userToken)) {
             redirect();
         }
 
         async function activate() {
             try {
-                setSession({ pageLoading: true });
+                setSession({ isPageLoading: true });
                 const response = await axios.post('/api/auth/activation', { token });
-                setSession({ pageLoading: false });
+                setSession({ isPageLoading: false });
 
                 if (response.data.success) {
                     showSnackbar({
@@ -51,7 +51,7 @@ function Login(): JSX.Element {
                     });
                 }
             } catch (error) {
-                setSession({ pageLoading: false });
+                setSession({ isPageLoading: false });
 
                 const errors = getResponseErrors(error, t);
 

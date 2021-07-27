@@ -44,10 +44,10 @@ function App(): JSX.Element {
                 }
 
                 setSyncing(false);
-                setSession({ pageLoading: false });
+                setSession({ isPageLoading: false });
             } catch {
                 setSyncing(false);
-                setSession({ pageLoading: false });
+                setSession({ isPageLoading: false });
             }
         }
 
@@ -57,7 +57,7 @@ function App(): JSX.Element {
     return (
         <ThemeProvider theme={muiTheme}>
             <CssBaseline />
-            <PageProgress open={session.pageLoading} />
+            <PageProgress open={session.isPageLoading} />
             {!syncing && (
                 <SnackbarProvider>
                     <Router>
@@ -66,21 +66,21 @@ function App(): JSX.Element {
                             <PageRoute
                                 path="/profile/:tab?"
                                 type="private"
-                                layout="dashboard"
+                                variant="dashboard"
                                 component={UserProfile}
                                 exact
                             />
                             <PageRoute
                                 path="/dashboard/:view"
                                 type="private"
-                                layout="dashboard"
+                                variant="dashboard"
                                 component={Dashboard}
                                 exact
                             />
                             <PageRoute
                                 path="/model/:id"
                                 type="private"
-                                layout="dashboard"
+                                variant="dashboard"
                                 component={Model}
                                 exact
                             />
@@ -88,26 +88,26 @@ function App(): JSX.Element {
                             <PageRoute
                                 path="/login/:token?"
                                 type="restricted"
-                                layout="simple"
+                                variant="simple"
                                 component={Login}
                                 exact
                             />
                             <PageRoute
                                 path="/registration"
                                 type="restricted"
-                                layout="simple"
+                                variant="simple"
                                 component={Registration}
                                 exact
                             />
                             <PageRoute
                                 path="/password-reset/:token?"
                                 type="restricted"
-                                layout="simple"
+                                variant="simple"
                                 component={PasswordReset}
                                 exact
                             />
                             {/* Public routes */}
-                            <PageRoute path="/" type="public" layout="content" component={Home} />
+                            <PageRoute path="/" type="public" variant="content" component={Home} />
                         </Switch>
                     </Router>
                 </SnackbarProvider>

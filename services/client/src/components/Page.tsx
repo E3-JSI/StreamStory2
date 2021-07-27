@@ -1,7 +1,8 @@
 import React from 'react';
 
 import clsx from 'clsx';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { useMediaQuery } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Container from '@material-ui/core/Container';
 
@@ -9,14 +10,14 @@ import Header from './Header';
 import SideNav from './SideNav';
 import useSession from '../hooks/useSession';
 
-export type PageLayout = 'content' | 'dashboard' | 'simple';
+export type PageVariant = 'content' | 'dashboard' | 'simple';
 
 export interface PageProps {
-    layout?: PageLayout;
+    variant?: PageVariant;
     children?: React.ReactNode;
 }
 
-const useStyles = makeStyles((theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => createStyles({
     root: {
         display: 'flex',
         minHeight: '100vh'
@@ -39,12 +40,13 @@ const useStyles = makeStyles((theme) => createStyles({
     }
 }));
 
-function Page({ layout = 'dashboard', children = null }: PageProps): JSX.Element {
+function Page({ variant = 'dashboard', children = null }: PageProps): JSX.Element {
     const classes = useStyles();
     const [{ user }] = useSession();
-    const loggedIn = user !== null;
+    const isUserLoggedIn = user !== null;
+    const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
-    switch (layout) {
+    switch (variant) {
         case 'simple':
             return (
                 <Box className={classes.root}>
@@ -62,8 +64,8 @@ function Page({ layout = 'dashboard', children = null }: PageProps): JSX.Element
         case 'content':
             return (
                 <Box className={classes.root}>
-                    <Header />
-                    {loggedIn && <SideNav />}
+                    <Header variant="content" />
+                    {isUserLoggedIn && <SideNav variant="temporary" />}
                     <Container component="main" className={classes.main}>
                         <div className={classes.toolbarPlaceholder} />
                         {children}
@@ -73,8 +75,8 @@ function Page({ layout = 'dashboard', children = null }: PageProps): JSX.Element
         default:
             return (
                 <Box className={classes.root}>
-                    <Header />
-                    <SideNav />
+                    <Header variant="dashboard" />
+                    <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'} />
                     <main className={classes.main}>
                         <div className={classes.toolbarPlaceholder} />
                         {children}

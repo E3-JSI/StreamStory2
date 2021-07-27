@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useParams } from 'react-router-dom';
 
-import { patterns } from '../utils/forms';
+import { validationPatterns } from '../utils/forms';
 import UserAccountForm from '../components/UserAccountForm';
 
 export interface PasswordResetUrlParams {
@@ -12,7 +12,7 @@ export interface PasswordResetUrlParams {
 function PasswordReset(): JSX.Element {
     const { token } = useParams<PasswordResetUrlParams>();
 
-    const tokenValid = token && token.match(patterns.userToken);
+    const tokenValid = token && token.match(validationPatterns.userToken);
 
     return <UserAccountForm variant={tokenValid ? 'password-reset' : 'password-reset-init'} />;
 }

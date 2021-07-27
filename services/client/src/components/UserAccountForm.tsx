@@ -4,7 +4,7 @@ import axios, { AxiosResponse, Method } from 'axios';
 import { Link as RouterLink, useHistory, useParams } from 'react-router-dom';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Avatar from '@material-ui/core/Avatar';
 import Box from '@material-ui/core/Box';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -15,7 +15,7 @@ import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 
-import { patterns, minPasswordLength, extendRegRet } from '../utils/forms';
+import { validationPatterns, minPasswordLength, extendRegRet } from '../utils/forms';
 import { Errors, getResponseErrors } from '../utils/errors';
 import { getUserSession, User } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
@@ -65,7 +65,7 @@ export interface AltLink {
     title: string;
 }
 
-const useStyles = makeStyles((theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => createStyles({
     paper: {
         display: 'flex',
         flexDirection: 'column',
@@ -106,10 +106,10 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
     } = useForm();
     const { token } = useParams<UserAccountFormUrlParams>();
 
-    const varLogin = variant === 'login';
-    const varRegistration = variant === 'registration';
-    const varPwdReset = variant === 'password-reset';
-    const varPwdResetInit = variant === 'password-reset-init';
+    const isLoginForm = variant === 'login';
+    const isRegistrationForm = variant === 'registration';
+    const isPasswordResetForm = variant === 'password-reset';
+    const isPasswordResetInitForm = variant === 'password-reset-init';
 
     let title = '';
     let description = '';
@@ -262,8 +262,10 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                     </Typography>
                 )}
                 <form className={classes.form} onSubmit={onSubmit(handleSubmit)} noValidate>
-                    {varPwdReset && <input type="hidden" value={token} {...register('token')} />}
-                    {!varPwdReset && (
+                    {isPasswordResetForm && (
+                        <input type="hidden" value={token} {...register('token')} />
+                    )}
+                    {!isPasswordResetForm && (
                         <TextField
                             id="email"
                             type="email"
@@ -281,14 +283,14 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                                 register('email', {
                                     required: t('error:required_field'),
                                     pattern: {
-                                        value: patterns.emailLoose,
+                                        value: validationPatterns.emailLoose,
                                         message: t('error:invalid_email')
                                     }
                                 })
                             )}
                         />
                     )}
-                    {!varPwdResetInit && (
+                    {!isPasswordResetInitForm && (
                         <PasswordField
                             id="password"
                             label={t('common:password')}
@@ -298,7 +300,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             variant="filled"
                             margin="normal"
                             // autoComplete="password"
-                            autoFocus={varPwdReset}
+                            autoFocus={isPasswordResetForm}
                             fullWidth
                             required
                             {...extendRegRet(
@@ -319,7 +321,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             )}
                         />
                     )}
-                    {(varRegistration || varPwdReset) && (
+                    {(isRegistrationForm || isPasswordResetForm) && (
                         <PasswordField
                             id="password2"
                             label={t('common:password_confirmation')}
@@ -339,7 +341,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             )}
                         />
                     )}
-                    {varLogin && (
+                    {isLoginForm && (
                         <FormControlLabel
                             control={(
                                 <Checkbox

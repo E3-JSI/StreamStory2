@@ -34,7 +34,6 @@ function UserAccountMenu(
 ) {
     const classes = useStyles();
     const { t } = useTranslation(['common', 'error']);
-
     const [{ user }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 

@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 
+import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { useMediaQuery } from '@material-ui/core';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
 import Box from '@material-ui/core/Box';
@@ -18,18 +19,19 @@ import SettingsBrightnessIcon from '@material-ui/icons/SettingsBrightness';
 
 import { User } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
+import { PageVariant } from './Page';
 import ElevationScroll from './ElevationScroll';
 import Logo from './Logo';
 import ThemeMenu from './ThemeMenu';
 import UserAccountMenu from './UserAccountMenu';
 
-export type HeaderVariant = 'full' | 'simple';
+export type HeaderVariant = PageVariant;
 
 export interface HeaderProps {
     variant?: HeaderVariant;
 }
 
-const useStyles = makeStyles((theme) => createStyles({
+const useStyles = makeStyles((theme: Theme) => createStyles({
     root: {
         zIndex: theme.zIndex.drawer + 1,
         color: '#fff',
@@ -51,26 +53,43 @@ const useStyles = makeStyles((theme) => createStyles({
         textTransform: 'none',
         backgroundColor: 'rgba(255, 255, 255, 0.16)'
     },
+    avatarButton: {
+        padding: theme.spacing(1),
+        marginRight: -theme.spacing(1),
+        marginLeft: theme.spacing(0.5),
+        [theme.breakpoints.up('sm')]: {
+            padding: theme.spacing(0.5),
+            marginRight: -theme.spacing(0.5),
+            marginLeft: theme.spacing(1)
+        }
+    },
     avatar: {
-        // width: theme.spacing(4),
-        // height: theme.spacing(4),
-        // textTransform: 'uppercase',
+        width: theme.spacing(4),
+        height: theme.spacing(4),
+        fontSize: theme.typography.body1.fontSize,
         color: theme.palette.getContrastText(theme.palette.primary.light),
-        backgroundColor: theme.palette.primary.light
+        backgroundColor: theme.palette.primary.light,
+        [theme.breakpoints.up('sm')]: {
+            width: theme.spacing(5),
+            height: theme.spacing(5),
+            fontSize: theme.typography.h6.fontSize
+        }
     }
 }));
 
-function Header({ variant = 'full' }: HeaderProps): JSX.Element {
+function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation(['common']);
     const accountButtonRef = useRef(null);
     const themeButtonRef = useRef(null);
-    const [{ sidebarOpen, theme, user }, setSession] = useSession();
-    const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-    const [userAccountMenuOpen, setUserAccountMenuOpen] = useState(false);
+    const [{
+        isSideNavOpen, isSideNavExpanded, theme: appTheme, user
+    }, setSession] = useSession();
+    const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+    const [isUserAccountMenuOpen, setIsUserAccountMenuOpen] = useState(false);
+    const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
-    const loggedIn = user !== null;
-    const simple = variant === 'simple';
+    const isSimpleHeader = variant === 'simple';
     const themes = {
         system: {
             label: t('common:system'),
@@ -105,26 +124,42 @@ function Header({ variant = 'full' }: HeaderProps): JSX.Element {
     }
 
     function toggleThemeMenu() {
-        setThemeMenuOpen((value) => !value);
+        setIsThemeMenuOpen((value) => !value);
     }
 
     function toggleUserAccountMenu() {
-        setUserAccountMenuOpen((value) => !value);
+        setIsUserAccountMenuOpen((value) => !value);
     }
 
     function handleMenuIconClick() {
         // Toggle sidebar.
-        setSession({
-            sidebarOpen: !sidebarOpen
-        });
+        if (variant === 'dashboard' && isScreenWidthGteMd) {
+            setSession({
+                isSideNavExpanded: !isSideNavExpanded
+            });
+        } else {
+            setSession({
+                isSideNavOpen: !isSideNavOpen
+            });
+        }
     }
 
     return (
         <ElevationScroll>
             <AppBar position="fixed" color="transparent" className={classes.root}>
                 <Toolbar>
-                    {loggedIn && (
-                        <Tooltip title={t(sidebarOpen ? 'common:close_menu' : 'common:open_menu')}>
+                    {user !== null && (
+                        <Tooltip
+                            title={
+                                variant === 'dashboard'
+                                    ? t(
+                                        isSideNavExpanded
+                                            ? 'common:collapse_menu'
+                                            : 'common:expand_menu'
+                                    )
+                                    : t(isSideNavOpen ? 'common:close_menu' : 'common:open_menu')
+                            }
+                        >
                             <IconButton
                                 edge="start"
                                 className={classes.menuButton}
@@ -156,18 +191,18 @@ function Header({ variant = 'full' }: HeaderProps): JSX.Element {
                             aria-controls="theme-menu"
                             aria-haspopup="true"
                         >
-                            {themes[theme].icon}
+                            {themes[appTheme].icon}
                         </IconButton>
                     </Tooltip>
                     <ThemeMenu
                         id="theme-menu"
                         anchorEl={themeButtonRef.current}
-                        open={themeMenuOpen}
+                        open={isThemeMenuOpen}
                         toggleMenu={toggleThemeMenu}
                         onClose={toggleThemeMenu}
                         keepMounted
                     />
-                    {!simple && !loggedIn && (
+                    {!isSimpleHeader && user === null && (
                         <Button
                             component={RouterLink}
                             to="/login"
@@ -177,13 +212,14 @@ function Header({ variant = 'full' }: HeaderProps): JSX.Element {
                             {t('common:login')}
                         </Button>
                     )}
-                    {!simple && user !== null && (
+                    {!isSimpleHeader && user !== null && (
                         <div>
                             <Tooltip title={t('common:manage_your_account')}>
                                 <IconButton
                                     ref={accountButtonRef}
+                                    className={classes.avatarButton}
                                     color="inherit"
-                                    edge="end"
+                                    // edge="end"
                                     onClick={toggleUserAccountMenu}
                                     aria-label={t('common:manage_your_account')}
                                     aria-controls="account-menu"
@@ -199,7 +235,7 @@ function Header({ variant = 'full' }: HeaderProps): JSX.Element {
                                 // (MUI 4.x doesn't support component prop on Menu).
                                 // component="div"
                                 anchorEl={accountButtonRef.current}
-                                open={userAccountMenuOpen}
+                                open={isUserAccountMenuOpen}
                                 toggleMenu={toggleUserAccountMenu}
                                 onClose={toggleUserAccountMenu}
                                 keepMounted

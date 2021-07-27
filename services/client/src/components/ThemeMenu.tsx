@@ -26,7 +26,12 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         marginRight: theme.spacing(2)
     },
     listItemIconSelected: {
+        marginRight: 0,
+        marginLeft: theme.spacing(2),
         color: theme.palette.success.main
+    },
+    listItemIconEmpty: {
+        minWidth: theme.spacing(5)
     }
 }));
 
@@ -36,7 +41,6 @@ function ThemeMenu(
 ) {
     const classes = useStyles();
     const { t } = useTranslation(['common']);
-
     const [{ theme, user }, setSession] = useSession();
 
     const themes = {
@@ -91,7 +95,7 @@ function ThemeMenu(
                         onClick={handleThemeItemClick}
                         data-theme={themeKey}
                     >
-                        {selected ? (
+                        {/* {selected ? (
                             <ListItemIcon
                                 className={clsx(classes.listItemIcon, classes.listItemIconSelected)}
                             >
@@ -101,8 +105,23 @@ function ThemeMenu(
                             <ListItemIcon className={classes.listItemIcon}>
                                 {themes[themeKey].icon}
                             </ListItemIcon>
-                        )}
+                        )} */}
+
+                        <ListItemIcon className={classes.listItemIcon}>
+                            {themes[themeKey].icon}
+                        </ListItemIcon>
                         <ListItemText>{themes[themeKey].label}</ListItemText>
+                        {selected ? (
+                            <ListItemIcon
+                                className={clsx(classes.listItemIcon, classes.listItemIconSelected)}
+                            >
+                                <CheckIcon />
+                            </ListItemIcon>
+                        ) : (
+                            <ListItemIcon className={classes.listItemIconEmpty}>
+                                {/* {themes[themeKey].icon} */}
+                            </ListItemIcon>
+                        )}
                     </MenuItem>
                 );
             })}
