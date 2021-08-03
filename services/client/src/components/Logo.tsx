@@ -1,16 +1,8 @@
 import React from 'react';
 
-import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { useTranslation } from 'react-i18next';
 
-const useStyles = makeStyles(() => createStyles({
-    stream: {
-        fontWeight: 500
-    },
-    story: {
-        fontWeight: 300
-    }
-}));
+import useStyles from './Logo.styles';
 
 function Logo(): JSX.Element {
     const classes = useStyles();

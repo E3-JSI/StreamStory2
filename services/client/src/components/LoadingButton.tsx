@@ -1,9 +1,10 @@
 import React from 'react';
 
-import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { ClassNameMap } from '@material-ui/core/styles/withStyles';
 import Button, { ButtonClassKey, ButtonProps } from '@material-ui/core/Button';
 import CircularProgress, { CircularProgressClassKey } from '@material-ui/core/CircularProgress';
+
+import useStyles from './LoadingButton.styles';
 
 export type LoadingButtonClassKey = ButtonClassKey | 'progress';
 
@@ -13,14 +14,6 @@ export interface LoadingButtonProps extends ButtonProps {
     };
     loading?: boolean;
 }
-
-const useStyles = makeStyles(() => createStyles({
-    progress: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%'
-    }
-}));
 
 function LoadingButton(
     {

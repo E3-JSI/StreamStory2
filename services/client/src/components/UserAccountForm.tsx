@@ -4,7 +4,6 @@ import axios, { AxiosResponse, Method } from 'axios';
 import { Link as RouterLink, useHistory, useParams } from 'react-router-dom';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Avatar from '@material-ui/core/Avatar';
 import Box from '@material-ui/core/Box';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -24,6 +23,8 @@ import Copyright from './Copyright';
 import PasswordField from './PasswordField';
 import PageTitle from './PageTitle';
 import LoadingButton from './LoadingButton';
+
+import useStyles from './UserAccountForm.styles';
 
 export type UserAccountFormVariant =
     | 'login'
@@ -64,31 +65,6 @@ export interface AltLink {
     url: string;
     title: string;
 }
-
-const useStyles = makeStyles((theme: Theme) => createStyles({
-    paper: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        marginTop: 'auto',
-        marginBottom: 'auto'
-    },
-    avatar: {
-        margin: theme.spacing(1),
-        backgroundColor: theme.palette.secondary.main
-    },
-    description: {
-        marginTop: theme.spacing(2)
-    },
-    form: {
-        width: '100%', // Fix IE 11 issue.
-        marginTop: theme.spacing(1),
-        marginBottom: theme.spacing(8)
-    },
-    altLink: {
-        marginRight: theme.spacing(2)
-    }
-}));
 
 function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
     const classes = useStyles();

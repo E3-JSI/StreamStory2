@@ -69,11 +69,6 @@ function UserProfileSettingsForm(): JSX.Element {
                             row
                         >
                             <FormControlLabel
-                                value="system"
-                                control={<Radio />}
-                                label={t('common:system')}
-                            />
-                            <FormControlLabel
                                 value="light"
                                 control={<Radio />}
                                 label={t('common:light')}
@@ -82,6 +77,11 @@ function UserProfileSettingsForm(): JSX.Element {
                                 value="dark"
                                 control={<Radio />}
                                 label={t('common:dark')}
+                            />
+                            <FormControlLabel
+                                value="system"
+                                control={<Radio />}
+                                label={t('common:system')}
                             />
                         </RadioGroup>
                     )}

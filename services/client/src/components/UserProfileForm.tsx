@@ -3,7 +3,6 @@ import React from 'react';
 import axios, { AxiosResponse, Method } from 'axios';
 import { SubmitHandler, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import SaveIcon from '@material-ui/icons/Save';
@@ -11,6 +10,8 @@ import SaveIcon from '@material-ui/icons/Save';
 import { getResponseErrors, Errors } from '../utils/errors';
 import useSnackbar from '../hooks/useSnackbar';
 import LoadingButton, { LoadingButtonProps } from './LoadingButton';
+
+import useStyles from './UserProfileForm.styles';
 
 export type FormResponseHandler<FormResponseData, FormRequestData> = (
     response: AxiosResponse<FormResponseData>,
@@ -24,12 +25,6 @@ export interface UserProfileFormProps<FormRequestData, FormResponseData> {
     handleResponse: FormResponseHandler<FormResponseData, FormRequestData>;
     submitButton?: LoadingButtonProps | null;
 }
-
-const useStyles = makeStyles((theme: Theme) => createStyles({
-    buttons: {
-        marginTop: theme.spacing(3)
-    }
-}));
 
 function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends Errors>(
     {

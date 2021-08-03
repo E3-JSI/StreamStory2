@@ -3,7 +3,6 @@ import React from 'react';
 import axios from 'axios';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme } from '@material-ui/core';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -16,24 +15,11 @@ import SettingsBrightnessIcon from '@material-ui/icons/SettingsBrightness';
 import { getUserSession, AppTheme } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 
+import useStyles from './ThemeMenu.styles';
+
 export interface ThemeMenuProps extends MenuProps {
     toggleMenu: () => void;
 }
-
-const useStyles = makeStyles((theme: Theme) => createStyles({
-    listItemIcon: {
-        minWidth: 0,
-        marginRight: theme.spacing(2)
-    },
-    listItemIconSelected: {
-        marginRight: 0,
-        marginLeft: theme.spacing(2),
-        color: theme.palette.success.main
-    },
-    listItemIconEmpty: {
-        minWidth: theme.spacing(5)
-    }
-}));
 
 function ThemeMenu(
     { open, toggleMenu, ...rest }: ThemeMenuProps,
@@ -44,10 +30,6 @@ function ThemeMenu(
     const [{ theme, user }, setSession] = useSession();
 
     const themes = {
-        system: {
-            label: t('common:system'),
-            icon: <SettingsBrightnessIcon />
-        },
         light: {
             label: t('common:light'),
             icon: <BrightnessHighIcon />
@@ -55,6 +37,10 @@ function ThemeMenu(
         dark: {
             label: t('common:dark'),
             icon: <BrightnessLowIcon />
+        },
+        system: {
+            label: t('common:system'),
+            icon: <SettingsBrightnessIcon />
         }
     };
 
@@ -95,18 +81,6 @@ function ThemeMenu(
                         onClick={handleThemeItemClick}
                         data-theme={themeKey}
                     >
-                        {/* {selected ? (
-                            <ListItemIcon
-                                className={clsx(classes.listItemIcon, classes.listItemIconSelected)}
-                            >
-                                <CheckIcon />
-                            </ListItemIcon>
-                        ) : (
-                            <ListItemIcon className={classes.listItemIcon}>
-                                {themes[themeKey].icon}
-                            </ListItemIcon>
-                        )} */}
-
                         <ListItemIcon className={classes.listItemIcon}>
                             {themes[themeKey].icon}
                         </ListItemIcon>
@@ -118,9 +92,7 @@ function ThemeMenu(
                                 <CheckIcon />
                             </ListItemIcon>
                         ) : (
-                            <ListItemIcon className={classes.listItemIconEmpty}>
-                                {/* {themes[themeKey].icon} */}
-                            </ListItemIcon>
+                            <ListItemIcon className={classes.listItemIconEmpty} />
                         )}
                     </MenuItem>
                 );

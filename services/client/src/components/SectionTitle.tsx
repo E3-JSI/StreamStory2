@@ -4,22 +4,26 @@ import clsx from 'clsx';
 import Box, { BoxProps } from '@material-ui/core/Box';
 import Typography, { TypographyProps } from '@material-ui/core/Typography';
 
-import useStyles from './PageTitle.styles';
+import useStyles from './SectionTitle.styles';
 
-export type PageTitleProps = BoxProps & TypographyProps<'h1'>;
+export type SectionTitleProps = BoxProps & TypographyProps<React.ElementType>;
 
-function PageTitle({
-    children, className, variant = 'h5', ...other
-}: PageTitleProps): JSX.Element {
+function SectionTitle({
+    children,
+    className,
+    component = 'h2',
+    variant = 'h2',
+    ...other
+}: SectionTitleProps): JSX.Element {
     const classes = useStyles();
 
     return (
         <Box clone {...other}>
             <Typography
-                component="h1"
+                component={component}
                 variant={variant}
                 className={clsx(className, {
-                    [classes.root]: variant === 'h1'
+                    [classes.root]: variant === 'h2'
                 })}
             >
                 {children}
@@ -28,4 +32,4 @@ function PageTitle({
     );
 }
 
-export default PageTitle;
+export default SectionTitle;

@@ -1,26 +1,13 @@
 import React from 'react';
 
 import clsx from 'clsx';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import MuiTab, { TabProps as MuiTabProps } from '@material-ui/core/Tab';
+
+import useStyles from './Tab.styles';
 
 export interface TabProps extends MuiTabProps<React.ElementType> {
     iconAlignment?: 'vertical' | 'horizontal';
 }
-
-const useStyles = makeStyles((theme: Theme) => createStyles({
-    root: {
-        padding: theme.spacing(1, 2),
-        minHeight: theme.spacing(6),
-        '& > .MuiTab-wrapper': {
-            flexDirection: 'row',
-            '& > *:first-child': {
-                marginBottom: 0,
-                marginRight: theme.spacing(1)
-            }
-        }
-    }
-}));
 
 function Tab(
     { className, iconAlignment = 'horizontal', ...other }: TabProps,

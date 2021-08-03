@@ -2,7 +2,6 @@ import React, { ChangeEvent, useState } from 'react';
 
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import Tabs from '@material-ui/core/Tabs';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
@@ -18,18 +17,14 @@ import UserProfileDeleteAccountForm from '../components/UserProfileDeleteAccount
 import UserProfileDetailsForm from '../components/UserProfileDetailsForm';
 import UserProfileSettingsForm from '../components/UserProfileSettingsForm';
 
+import useStyles from './UserProfile.styles';
+
 export interface UserProfileUrlParams {
     tab?: string;
 }
 
 const basePath = '/profile';
 const tabPaths = ['details', 'settings', 'change-password', 'delete-account'];
-
-const useStyles = makeStyles((/* theme: Theme */) => createStyles({
-    root: {
-        flexGrow: 1
-    }
-}));
 
 function UserProfile(): JSX.Element {
     const classes = useStyles();
@@ -45,7 +40,7 @@ function UserProfile(): JSX.Element {
 
     return (
         <>
-            <PageTitle>{t('common:my_profile')}</PageTitle>
+            <PageTitle gutterBottom>{t('common:my_profile')}</PageTitle>
 
             <Paper className={classes.root} square>
                 <Tabs

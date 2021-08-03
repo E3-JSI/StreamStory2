@@ -3,7 +3,6 @@ import React from 'react';
 import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -17,16 +16,11 @@ import { User } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 
+import useStyles from './UserAccountMenu.styles';
+
 export interface UserAccountMenuProps extends MenuProps {
     toggleMenu: () => void;
 }
-
-const useStyles = makeStyles((theme: Theme) => createStyles({
-    listItemIcon: {
-        minWidth: 0,
-        marginRight: theme.spacing(2)
-    }
-}));
 
 function UserAccountMenu(
     { open, toggleMenu, ...rest }: UserAccountMenuProps,
