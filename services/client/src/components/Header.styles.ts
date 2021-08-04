@@ -1,5 +1,7 @@
 import { createStyles, makeStyles, Theme } from '@material-ui/core';
 
+import { setColorOpacity } from '../utils/misc';
+
 const useStyles = makeStyles((theme: Theme) => createStyles({
     root: {
         zIndex: theme.zIndex.drawer + 1,
@@ -9,21 +11,41 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
                     ? theme.palette.primary.main
                     : theme.palette.background.secondary
     },
+    rootPublic: {
+        color: theme.palette.text.primary,
+        backgroundColor: theme.palette.background.secondary,
+        transition: theme.transitions.create(['transform', 'visibility'], {
+            duration: theme.transitions.duration.standard,
+            easing: theme.transitions.easing.easeInOut
+        })
+    },
+    rootHidden: {
+        visibility: 'hidden',
+        transform: 'translate3d(0, -100%, 0)'
+    },
     menuButton: {
         marginRight: theme.spacing(0.5),
         [theme.breakpoints.up('sm')]: {
             marginRight: theme.spacing(1.5)
         }
     },
-    titleLink: {
+    logoLink: {
         '&:hover': {
             textDecoration: 'none'
+        }
+    },
+    logoLinkPublic: {
+        '& > b': {
+            color: theme.palette.primary.main
         }
     },
     loginButton: {
         marginLeft: theme.spacing(1),
         textTransform: 'none',
-        backgroundColor: 'rgba(255, 255, 255, 0.16)'
+        backgroundColor: setColorOpacity(
+            theme.palette.primary.main,
+            theme.palette.type === 'light' ? 0.08 : 0.12
+        )
     },
     avatarButton: {
         padding: theme.spacing(1),

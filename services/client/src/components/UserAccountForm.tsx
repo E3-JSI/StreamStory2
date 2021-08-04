@@ -231,7 +231,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                 <Avatar className={classes.avatar}>
                     <LockOutlinedIcon />
                 </Avatar>
-                <PageTitle variant="h4">{title}</PageTitle>
+                <PageTitle variant="h5">{title}</PageTitle>
                 {description && (
                     <Typography className={classes.description} variant="body1" align="center">
                         {description}

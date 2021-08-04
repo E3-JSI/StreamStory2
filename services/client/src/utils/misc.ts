@@ -52,7 +52,7 @@ export function isObject(item: unknown): boolean {
 
 /**
  * Recursively merge given source objects into target object, where source objects are processed
- * from left to right and next object's properties always ooverwrite previous object's ones.
+ * from left to right and next object's properties always overwrite previous object's ones.
  * @param target Target object.
  * @param sources Source objects.
  * @returns Merged target object.

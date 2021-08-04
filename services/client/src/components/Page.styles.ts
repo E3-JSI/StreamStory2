@@ -9,8 +9,20 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         flexGrow: 1,
         marginTop: theme.spacing(7),
         overflow: 'auto',
+        '@media (min-width: 0px) and (orientation: landscape)': {
+            marginTop: theme.spacing(6)
+        },
         [theme.breakpoints.up('sm')]: {
             marginTop: theme.spacing(8)
+        }
+    },
+    mainDashboard: {
+        height: `calc(100vh - ${theme.spacing(7)}px)`,
+        '@media (min-width: 0px) and (orientation: landscape)': {
+            height: `calc(100vh - ${theme.spacing(6)}px)`
+        },
+        [theme.breakpoints.up('sm')]: {
+            height: `calc(100vh - ${theme.spacing(8)}px)`
         }
     },
     mainContent: {

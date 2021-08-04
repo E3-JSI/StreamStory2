@@ -105,7 +105,7 @@ function Home(): JSX.Element {
                             </Dialog>
                         </Grid>
                         <Grid xs={12} md={6} item>
-                            <Card variant="outlined" className={classes.screenFrame} elevation={15}>
+                            <Card variant="elevation" className={classes.screenFrame} elevation={16}>
                                 <CardContent>
                                     <img
                                         src="https://via.placeholder.com/1024x768.png"
@@ -274,7 +274,7 @@ function Home(): JSX.Element {
                     </SectionDescription>
                     <Grid spacing={2} className={classes.examples} container>
                         <Grid xs={12} md={4} item>
-                            <Card className={classes.example}>
+                            <Card elevation={4} className={classes.example}>
                                 <CardActionArea component={RouterLink} to="/examples/weather">
                                     <CardMedia
                                         component="img"
@@ -294,7 +294,7 @@ function Home(): JSX.Element {
                             </Card>
                         </Grid>
                         <Grid xs={12} md={4} item>
-                            <Card className={classes.example}>
+                            <Card elevation={4} className={classes.example}>
                                 <CardActionArea component={RouterLink} to="/examples/gps">
                                     <CardMedia
                                         component="img"
@@ -313,7 +313,7 @@ function Home(): JSX.Element {
                             </Card>
                         </Grid>
                         <Grid xs={12} md={4} item>
-                            <Card className={classes.example}>
+                            <Card elevation={4} className={classes.example}>
                                 <CardActionArea component={RouterLink} to="/examples/traffic">
                                     <CardMedia
                                         component="img"

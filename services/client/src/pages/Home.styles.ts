@@ -69,13 +69,8 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         maxWidth: '100%',
         borderWidth: 0,
         borderRadius: theme.spacing(1.5),
-        boxShadow: `0px 6px 24px 0px rgba(0, 0, 0, ${
-            theme.palette.type === 'light' ? 0.2 : 0.3
-        })`,
         '& > div': {
             padding: 0,
-            // margin: theme.spacing(2),
-            // border: `1px solid ${theme.palette.divider}`
             '&:last-child': {
                 paddingBottom: 0
             }
@@ -129,9 +124,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
             width: theme.spacing(4),
             height: theme.spacing(4),
             fill: theme.palette.primary.main
-        },
-        [theme.breakpoints.up('md')]: {
-            // marginRight: theme.spacing(2)
         }
     },
 
@@ -140,7 +132,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         textAlign: 'center'
     },
     examples: {
-        // justifyContent: 'center',
         marginTop: theme.spacing(3),
         '& > div': {
             display: 'flex',
@@ -151,7 +142,6 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
         height: '100%',
         maxWidth: 600,
         textAlign: 'left',
-        boxShadow: '0px 3px 6px 0px rgba(0, 0, 0, 0.1)',
         '& a': {
             height: '100%'
         },

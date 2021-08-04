@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
             marginRight: theme.spacing(1.5)
         }
     },
-    titleLink: {
+    logoLink: {
         '&:hover': {
             textDecoration: 'none'
         },

@@ -121,7 +121,7 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
                         <Link
                             component={RouterLink}
                             to="/"
-                            className={classes.titleLink}
+                            className={clsx(classes.logoLink)}
                             variant="h6"
                             color="inherit"
                             onClick={toggleDrawer(false)}

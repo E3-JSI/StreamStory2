@@ -52,7 +52,9 @@ function Page({ variant = 'dashboard', children = null }: PageProps): JSX.Elemen
                 <Box className={classes.root}>
                     <Header variant="dashboard" />
                     <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'} />
-                    <main className={clsx(classes.main, classes.mainContent)}>{children}</main>
+                    <main className={clsx(classes.main, classes.mainDashboard)}>
+                        <div className={classes.mainContent}>{children}</div>
+                    </main>
                 </Box>
             );
     }
