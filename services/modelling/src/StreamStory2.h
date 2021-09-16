@@ -1,0 +1,415 @@
+#ifndef __STREAMSTORY2_H_DEFINED__
+#define __STREAMSTORY2_H_DEFINED__
+
+enum class TAttrType { Time, Numeric, Categorical, Text };
+enum class TAttrSubtype { String, Int, Flt };
+enum class TAttrSource { Input, Synthetic };
+enum class TTimeType { Time, Int, Flt };
+
+class TTimeStamp
+{
+public:
+	TTimeType type;
+	// If type == Time, the value is stored in (sec, ns), 'sec' represents the value of TSecTm::AbsSecs.
+	// if type == Int, the value is stored in 'sec';
+	// if type == Flt, the value is stored in 'flt'.
+	int64_t sec; 
+	int ns;
+	double flt;
+
+	void SetTime(int64_t sec_, int ns_) { type = TTimeType::Time; sec = sec_; ns = ns_; flt = double(sec) + double(ns) / 1e9; }
+	void SetInt(int64_t value) { type = TTimeType::Int; sec = value; ns = 0; flt = double(sec); }
+	void SetFlt(double value) { type = TTimeType::Flt; flt = value;
+		double f = floor(value); sec = (int64_t) f; ns = (int) ((value - f) * 1e9);
+		if (ns < 0) ns = 0; else if (ns >= 1000000000) { ns -= 1000000000; ++sec; } }
+	void SetTime(double value) { SetFlt(value); type = TTimeType::Time; }
+	double GetFlt() const {
+		if (type == TTimeType::Time) return double(sec) + double(ns) / 1e9;
+		else if (type == TTimeType::Flt) return flt;
+		else if (type == TTimeType::Int) return sec;
+		else { Assert(false); return std::numeric_limits<double>::quiet_NaN(); } }
+
+	TStr ToStr() const;
+};
+
+typedef TVec<TTimeStamp> TTimeStampV;
+
+class TAttrDesc;
+typedef TVec<TAttrDesc> TAttrDescV;
+
+class TAttrDesc
+{
+public:
+	// Allowed combinations of type and subtype: Time/{String, Int, Flt}, Numeric/{Int, Flt}, Categorical/{String, Int}, Text/{String}.
+	TAttrType type;
+	TAttrSubtype subType;
+	TAttrSource source; 
+	TStr name; // internal name; should be unique
+	TStr sourceName; // name of this attribute in the data source; relevant only if type == Input
+	TStr userFriendlyLabel; // name by which this attribute appears in the output
+	TTimeType timeType; // only if type == Time
+	TStr formatStr;
+	double distWeight; // weight of this attribute in the distance function
+
+	bool InitFromJson(const PJsonVal& jsonVal, const TStr& whatForErrMsg, TStrV& errList);
+};
+
+enum class TOpType { LinMap, LinTo01, SetMeanAndStd, Standardize, SubtractMean, RestrictRange };
+enum class TTimeWindowType { Time, Samples };
+enum class TResampleType { SetTimeStep, SetNumSamples };
+enum class TTimeCategoricalUnit { Sec, Min, Hour, DayOfWeek, Month };
+
+class TFltEx
+{
+public:
+	typedef enum { Flt, Min, Max, Avg, Std } Type;
+	Type type;
+	TFlt value;
+};
+
+class TOpDesc;
+typedef TPt<TOpDesc> POpDesc;
+typedef TVec<POpDesc> TOpDescV;
+
+class TOpDesc
+{
+protected:
+	TCRef CRef;
+	friend TPt<TOpDesc>;
+public:
+	virtual ~TOpDesc() { }
+	virtual bool InitFromJson(const PJsonVal& jsonVal, TStrV& errList) { return true; }
+	static POpDesc New(const PJsonVal& jsonVal, TStrV& errList);
+};
+
+bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
+
+class TOpDesc_SingleAttrMap : public TOpDesc
+{
+public:
+	TStr inAttrName, outAttrName;	
+	bool InitFromJson(const PJsonVal& jsonVal, TStrV& errList) override { 
+		if (! TOpDesc::InitFromJson(jsonVal, errList)) return false;
+		if (! Json_GetObjStr(jsonVal, "inAttr", false, {}, inAttrName, "an op description", errList)) return false;
+		if (! Json_GetObjStr(jsonVal, "outAttr", true, inAttrName, outAttrName, "an op description", errList)) return false;
+		return true; }
+};
+
+class TOpDesc_TimeCategorical : public TOpDesc_SingleAttrMap
+{
+public:
+	TTimeCategoricalUnit unit;
+};
+
+class TOpDesc_AttrLinMap : public TOpDesc_SingleAttrMap
+{
+public:
+	TFltEx x1, y1, x2, y2; 
+};
+
+class TOpDesc_AttrStdMap : public TOpDesc_SingleAttrMap
+{
+public:
+	TFltEx newMean, newStd; 
+};
+
+class TOpDesc_AttrRestrictRange : public TOpDesc_SingleAttrMap
+{
+public:
+	TFltEx newMin, newMax; 
+};
+
+class TOpDesc_TimeWindow : public TOpDesc_SingleAttrMap
+{
+public:
+	TTimeWindowType windowType;
+	TTimeStamp windowSize;
+};
+
+class TOpDesc_Trend : public TOpDesc_TimeWindow
+{
+public:
+};
+
+class TOpDesc_Delta : public TOpDesc_TimeWindow
+{
+public:
+};
+
+class TOpDesc_Resample : public TOpDesc
+{
+	TResampleType resampleType;
+	TTimeStamp timeStep;
+	int numSamples; // = -1 to keep the existing number of samples
+};
+
+/*
+class TAttrOpDesc
+{
+public:
+	TAttrOpType type;
+	TStrV inAttrNames; // input attribute name(s)
+	TStrV outAttrName, outAttrLabel; // if a new attribute is being added
+	TFltEx x1, y1, x2, y2; // for linear maps
+	TFltEx newMean, newStd; // for SetMeanAndStd 
+	TFltEx newMin, newMax; // for RestrictRange
+	TFlt timeWindow; // for shift/trend
+};
+*/
+
+class TModelConfig;
+typedef TPt<TModelConfig> PModelConfig;
+
+class TModelConfig
+{
+protected:
+	TCRef CRef; friend TPt<TModelConfig>;
+public:
+	TAttrDescV attrs;
+	TOpDescV ops;
+	int numInitialStates;
+	void Clr() { ClrAll(attrs, ops); }
+	bool InitFromJson(const PJsonVal& val, TStrV& errors);
+protected:
+	bool AddAttrsFromOps(TStrV& errors);
+};
+
+class TDataColumn;
+typedef TVec<TDataColumn> TDataColumnV;
+
+class TDataColumn
+{
+public:
+	int idxInConfig;
+	// The following fields are copied from TAttrDesc, for convenience.
+	TStr name, sourceName, formatStr;
+	TAttrType type;
+	TAttrSubtype subType;
+	TTimeType timeType;
+	double distWeight; // from the config
+	// Possible types:
+	// - numeric/{int, float}
+	// - categorical/{single-value, mixed-value}/{int-keys, string-keys}
+	// - sparse/{int-keys, string-keys}
+	// For categorical attributes, single-value is useful in the input data, but mixed-value is
+	// needed for centroids.  
+	// Thus, in TDataColumn, a categorical attribute is single-value and its index stored in 'intVals',
+	// with intKeyMap/strKeyMap use to map values to indices.
+	//
+	// The following vectors are used (or rather, one of them is used) while reading
+	// the data source and applying the ops.  Later we'll switch to a row-based representation;
+	// or will we?  We don't really have to, since we just need to compute the distances between
+	// all the input instances and all the centroids.
+	TFltV fltVals;             // type = numeric, subtype = flt
+	TIntV intVals;             // type = numeric, subtype = int; or type = categorical (in which case this vector stores the keyIds from intKeyMap/strKeyMap)
+	TIntIntH intKeyMap;        // type = categorical, subtype = int
+	TStrHash<TInt> strKeyMap;  // type = categorical, subtype = str
+	TIntFltKdV sparseVecData;  // type = text;  for each row, the keydats must be sorted by key
+	TIntPrV sparseVecIndex;    // (firstValue, nValues) pairs
+	TTimeStampV timeVals;      // type = time, any subtype and timetype
+	void ClrVals() { ClrAll(fltVals, intVals, intKeyMap, strKeyMap, sparseVecData, sparseVecIndex); }
+	void Gen(int nRows) {  
+		ClrVals();
+		if (type == TAttrType::Numeric && subType == TAttrSubtype::Flt) fltVals.Gen(nRows);
+		if (type == TAttrType::Numeric && subType == TAttrSubtype::Int || type == TAttrType::Categorical) intVals.Gen(nRows);
+		if (type == TAttrType::Text) sparseVecIndex.Gen(nRows);
+		if (type == TAttrType::Time) timeVals.Gen(nRows);
+		// ToDO: more?
+	}
+};
+
+class TCentroidComponent;
+typedef TVec<TCentroidComponent> TCentroidComponentV;
+
+class TDataset;
+
+class TCentroidComponent
+{
+public:
+	double fltVal;   // type = numeric (subtype = flt or int) or time (any subtype)
+	TFltV denseVec;  // type = categorical (subtype = str or int); index: keyId from intKeyMap/strKeyMap of the TDataColumn
+	TIntFltH sparseVec; // type = text
+protected:
+	// 'sparseVec2' gets invalidated when 'Add' modifies 'sparseVec'.  Theoretically Add could
+	// update 'sparseVec2' suitably but it should be cheaper to just recalculate 'sparseVec2' from
+	// scratch once we're doine adding row vectors to the centroid.
+	mutable double sparseVec2; // sum of squares of 'sparseVec'
+	mutable bool sparseVec2Valid;
+public:
+	double GetSparseVec2() const;
+	void Clr(const TDataColumn &col) {
+		fltVal = 0; sparseVec.Clr();
+		sparseVec2 = 0; sparseVec2Valid = true;
+		if (col.type == TAttrType::Categorical) { 
+			if (col.subType == TAttrSubtype::Int) denseVec.Gen(col.intKeyMap.Len());
+			else if (col.subType == TAttrSubtype::String) denseVec.Gen(col.strKeyMap.Len());
+			else IAssert(false); 
+			denseVec.PutAll(0); }
+		else denseVec.Clr(); }
+	void Add(const TDataColumn &col, const int rowNo, double coef); // Works like *this += coef * col[rowNo].
+	void Add(const TDataColumn &col, const TCentroidComponent& other, double coef); // *this += coef * other.
+	void MulBy(double coef);
+	PJsonVal SaveToJson(const TDataset& dataset, int colNo) const;
+};
+
+class TState;
+typedef TPt<TState> PState;
+typedef TVec<PState> TStateV;
+
+class TDataset;
+
+class TState
+{
+protected:
+	TCRef CRef;
+	friend TPt<TState>;
+public:
+	TCentroidComponentV centroid; // index: column number from TDataset.cols
+	TIntV members; // contains row indices into the dataset
+	TIntV initialStates; // indexes of initial states from which this state has been aggregated
+	void InitCentroid0(const TDataset& dataset);
+	void AddToCentroid(const TDataset& dataset, int rowNo, double coef);  // Works like centroid += coef * dataset[rowNo].
+	void AddToCentroid(const TDataset& dataset, const TCentroidComponentV& other, double coef); // centroid += coef * other.
+	void MulCentroidBy(double coef) { for (TCentroidComponent &comp : centroid) comp.MulBy(coef); }
+	PJsonVal SaveToJson(const TDataset& dataset) const;
+};
+
+class TStatePartition;
+typedef TPt<TStatePartition> PStatePartition;
+typedef TVec<PStatePartition> TStatePartitionV;
+
+// Represents a partition of initial states into a smaller number of aggregate states.
+class TStatePartition 
+{
+protected:
+	TCRef CRef;
+	friend TPt<TStatePartition>;
+public:
+	TStateV aggStates;
+	TIntV initToAggState; // initToAggState[i] = j means that aggStates[j].initialStates contains 'i'
+	TFltVV transMx; // transMx(i, j) =  probability that the next agg-state will be j if the previous one was i
+	TFltV statProbs; // statProbs[i] = stationary probability of being in agg-state i
+	TFltV eigenVals; // of the transMx
+	TStatePartition(int nInitialStates) : initToAggState(nInitialStates) { initToAggState.PutAll(-1); }
+	void CalcTransMx(const TFltVV& initStateTransMx, const TFltV& initStateStatProbs);
+	void CalcEigenVals();
+	PJsonVal SaveToJson(const TDataset& dataset) const;
+};
+
+typedef TPt<TDataset> PDataset;
+
+class TDataset
+{
+protected:
+	TCRef CRef;
+	friend TPt<TDataset>;
+public:
+	int nRows;
+	TDataColumnV cols;
+	PModelConfig config;
+	void InitColsFromConfig(const PModelConfig& config_);
+	bool ReadDataFromJsonArray(const PJsonVal &jsonData, TStrV& errors);
+	bool ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& fileName, TStrV& errors);
+	// jsonSpec must be a JSON object corresponding to the 'dataSource' attribute of a JSON request.
+	bool ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& errors);
+	bool ApplyOps(TStrV& errors); // applies ops from 'config'
+	double RowDist2(int row1, int row2) const;
+	double RowCentrDist2(int rowNo, const TCentroidComponentV& centroid) const;
+	double RowCentrDist2(int rowNo, const PState& state) const { return RowCentrDist2(rowNo, state->centroid); }
+	double RowCentrDist2(int rowNo, const TState& state) const { return RowCentrDist2(rowNo, state.centroid); }
+	double CentrDist2(const TCentroidComponentV& centroid1, const TCentroidComponentV& centroid2) const;
+	double CentrDist2(const TState& state1, const TState& state2) const { return CentrDist2(state1.centroid, state2.centroid); }
+	double CentrDist2(const PState& state1, const PState& state2) const { return CentrDist2(state1->centroid, state2->centroid); }
+};
+
+class TModel;
+typedef TPt<TModel> PModel;
+
+class TModel
+{
+protected:
+	TCRef CRef;
+	friend TPt<TModel>;
+public:
+	PDataset dataset;
+	TStateV initialStates;
+	TIntV rowToInitialState;
+	TStatePartitionV statePartitions; // ordered in decreasing number of states; statePartitions[0] contains the original initial states without aggregation
+	TModel(const PDataset& dataset_) : dataset(dataset_) { }
+	void CalcTransMx(TFltV& statProbs, TFltVV& transMx) const;
+	void BuildRowToInitialState();
+	double RowCentrDist2(int rowNo, int initialStateNo) const { return dataset->RowCentrDist2(rowNo, initialStates[initialStateNo]->centroid); }
+	PJsonVal SaveToJson() const;
+};
+
+class TKMeansRunner
+{
+protected:
+	TDataset &dataset;
+	TModel &model;
+	TRnd rnd;
+	PModelConfig config;
+	TStateV &states; int nStates, nCols, nRows;
+	// TFltVV distances; // distances(i, j) = distance of row i from the centroid of state j -- eh, we probably don't really need this
+	TKMeansRunner(TModel& model_) : dataset(*model_.dataset), model(model_), states(model_.initialStates), config(model_.dataset->config), rnd(123) { 
+		nStates = config->numInitialStates; nCols = dataset.cols.Len(); IAssert(nCols == config->attrs.Len()); 
+		nRows = dataset.nRows; }
+	void Go();
+	void SelectInitialCentroids(TIntV& dest);
+public:
+	inline static void BuildInitialStates(TModel& model) { TKMeansRunner r { model }; r.Go(); }
+};
+
+class TStateAggregator
+{
+protected:
+	TFltVV initStateDist; // distances between initial states - useful for calculating average-link distances between clusters
+	TDataset &dataset;
+	TModel &model;
+	int nInitialStates;
+	TStatePartitionV allPartitions;
+	TStateAggregator(TModel& model_) : dataset(*model_.dataset), model(model_) { nInitialStates = model.initialStates.Len(); }
+	PStatePartition BuildInitialPartition();
+	PStatePartition BuildNextPartition(const PStatePartition &part);
+	void CalcInitStateDist();
+	void BuildPartitionsBottomUp();
+public:
+	inline static void BuildPartitionsBottomUp(TModel &model, TStatePartitionV& dest) { TStateAggregator a { model }; a.BuildPartitionsBottomUp(); dest = std::move(a.allPartitions); }
+};
+
+class TStateAggScaleSelector
+{
+protected:
+	TDataset &dataset;
+	TModel &model;
+	int nInitialStates;
+	TRnd rnd;
+	TStatePartitionV allPartitions;
+	TStateAggScaleSelector(TModel& model_, TStatePartitionV allPartitions_) : dataset(*model_.dataset), model(model_), allPartitions(std::move(allPartitions_)), rnd(123) { nInitialStates = model.initialStates.Len(); }
+	void CalcTransMatricesAndEigenVals();
+	void SelectInitialCentroids(int nClusters, TIntV& dest);
+	void SelectScales(int nToSelect, TStatePartitionV& dest);
+	struct TCluster
+	{
+		TFltV centroid;
+		TIntV members;
+		void Clr(int nDim) { centroid.Clr(); centroid.Gen(nDim); centroid.PutAll(0); members.Clr(); }
+		void Add(int memberNo, const TFltV& vec) { members.Add(memberNo); IAssert(centroid.Len() == vec.Len()); for (int i = 0; i < vec.Len(); ++i) centroid[i] += vec[i]; }
+		void Normalize() { for (TFlt& x : centroid) x.Val /= double(TInt::GetMx(1, members.Len())); }
+		static double Dist2(const TFltV& x, const TFltV& y) { IAssert(x.Len() == y.Len()); double d = 0; for (int i = 0; i < x.Len(); ++i) { double dx = x[i] - y[i]; d += dx * dx; } return d; }
+		double Dist2(const TFltV& other) const { return Dist2(centroid, other); }
+		double Dist2(const TCluster& other) const { return Dist2(other.centroid); }
+		double Dist2(const TStatePartition& other) const { return Dist2(other.eigenVals); }
+		double Dist2(const PStatePartition& other) const { return Dist2(other->eigenVals); }
+	};
+public:
+	inline static void SelectScales(TModel& model, TStatePartitionV allPartitions, int nToSelect, TStatePartitionV &dest) { TStateAggScaleSelector s { model, std::move(allPartitions) }; s.SelectScales(nToSelect, dest); }
+};
+
+bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
+bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList);
+bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing, int defaultValue, int& value, const TStr& whereForErrorMsg, TStrV& errList);
+bool Json_GetObjKey(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, PJsonVal& value, const TStr& whereForErrorMsg, TStrV& errList);
+
+#endif // __STREAMSTORY2_H_DEFINED__
+
