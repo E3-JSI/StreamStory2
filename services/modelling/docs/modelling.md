@@ -25,6 +25,7 @@ If `type == "internal"`, the training data must be provided in the reuqest itsel
 The `config` object should contain the following values and attributes:
 
 - `config.numInitialStates` - an integer specifying the number of initial states that the data points are clustered into.
+- `config.numHistogramBuckets` - the number of buckets in each of the histograms that are returned in the response object to show the distribution of attribute values in each state.  The default value is 10.
 - `config.attributes` - an array of objects describing the attributes of the input data.
 - `config.ops` - an array of objects describing the operations that are to be applied to the input data before the clustering into initial states.  Examples of such operations include: applying a linear transformation to an attribute; adding a time-shifted copy of an attribute; adding a categorical attribute representing the day-of-week based on the timestamp of the same instance; etc.
 
@@ -75,4 +76,23 @@ The model object currently contains just one field, `scales`.  Its value is an a
   - `centroid`: a vector of objects representing the centroid of this state (i.e. the centroid of all the input datapoints that have been assigned, during clustering, into those initial states out of which the current state has been aggregated).  Each of these objects contains two fields, `attrName` and `value`.  
   - `stationaryProbability`: the stationary probability of this state, i.e. the proportion of input datapoints that belong to the initial states (clusters) from which this state has been aggregated.
   - `nextStateProbDistr`: an array of floating-point values containing the probabilities of the next state.  Thus, `states[i].nextStateProbDistr[j]` is the probability that the next datapoint belongs to `states[j]` conditional on the fact that the current datapoint belongs to `states[i]`. 
+  - `histograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst the datapoints that belong to the current state.  For more detauls about the structure of the histogram objects, see a subsequent section.
 
+### Structure of a histogram object
+
+A histogram provides information about the distribution of the values of one attribute amongst all the datapoints belonging to one state.  
+
+If the attribute is a numeric one, the range of possible values, from the minimum to the maximum value *on the dataset as a whole* (i.e. not just among the datapoints belonging to the current state) is divided into `numHistogramBuckets` buckets, all equally wide.  (The value of `numHistogramBuckets` can be defined by the user in the `config.numHistogramBuckets` property of the input JSON object.)  For each bucket, the number of datapoints for which the attribute value fell into that bucket is reported.
+
+If the attribute is a categorical one, the histogram consists of one bucket for each possible value of that attribute in the input data.
+
+If the attribute is a timestamp, results are provided for three divisions of the time axis into buckets: one where buckets correspond to days of the week, one where they correspond to months of the year and one where they correspond to hours in the day.
+
+The JSON object representing a histogram contains the following properties:
+
+- `attrName`: the name of the attribute that this histogram refers to.
+- `freqs`: an array of integers, where `freqs[i]` is the number of datapoints that belong to this state and whose value of the attribute `attrName` belongs to the `i`th bucket (we assume the buckets to be numbered from 0 to `numHistogramBuckets - 1 `).  This property is present only if the attribute to which this histogram refers is not a timestamp.
+- `freqSum`: the sum of the values in `freqs`, and thus also the total number of datapoints belonging to this state.  Thus by dividing the values in `freqs` by `freqSum`, the user can convert them into probabilities.
+- `bounds`: an array of numbers, where `bounds[i]` and `bounds[i + 1]` are the lower and upper bounds of the `i`th bucket, respectively (the lower bound is inclusive, the upper is exclusive, except for the last bucket where both are inclusive).  This property is present only if the attribute to which this histogram refers is a numerical one.
+- `keys`: an array of values such that `freqs[i]` is the number of datapoints belonging to the current state and having `keys[i]` are the value of the current attribute.  This property is present only if the attribute to which the histogram refers is a numerical one.  The elements of `keys` may be integers or strings, depending on the attribute's `subType`.
+- `dayOfWeekFreqs`, `monthFreqs`, `hourFreqs`: present only if the attribute to which this histogram refers is a timestamp.  These properties are arrays of 7, 12 and 24 integers, respectively, giving the number of datapoints belonging to the present state whose timestamp belongs to a particular day of week, month of the year, or hour of the day, respectively.  `dayOfWeekFreqs[0]` refers to Sunday, monthFreqs[0]` to January, `hourFreqs[0]` to all moments in time from midnight (inclusive) to 1 AM (exclusive), etc.
