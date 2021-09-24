@@ -169,6 +169,9 @@ public:
 		TStatePartitionV &selectedPartitions = model->statePartitions;
 		int nScales = TInt::GetMn(10, allPartitions.Len() / 2); if (nScales < 2 || nScales >= allPartitions.Len()) selectedPartitions = allPartitions;
 		else TStateAggScaleSelector::SelectScales(*model, allPartitions, nScales, selectedPartitions);
+		// Calculate various statistics about the model.
+		model->CalcHistograms();
+		// ToDo: state labels, decision trees etc. should also be calculated here.
 		// Export the model to json.
 		req.outJson->AddToObj("model",  model->SaveToJson());
 		//

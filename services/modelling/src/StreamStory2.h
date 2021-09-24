@@ -168,7 +168,8 @@ public:
 	TAttrDescV attrs;
 	TOpDescV ops;
 	int numInitialStates;
-	void Clr() { ClrAll(attrs, ops); }
+	int numHistogramBuckets;
+	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; }
 	bool InitFromJson(const PJsonVal& val, TStrV& errors);
 protected:
 	bool AddAttrsFromOps(TStrV& errors);
@@ -252,6 +253,29 @@ public:
 	PJsonVal SaveToJson(const TDataset& dataset, int colNo) const;
 };
 
+class THistogram;
+typedef TPt<THistogram> PHistogram;
+typedef TVec<PHistogram> THistogramV;
+
+class THistogram
+{
+protected:
+	TCRef CRef;
+	friend TPt<THistogram>;
+public:
+	int nBuckets; // only if the attribute is a numeric one
+	// If the attribute is a numeric one, 'freqs' is indexed by a bucket number of 0 to nBuckets - 1.
+	// If the attribute is a categorical one, 'freqs' is indexed by the keyIDs from TDataColumn.intKeyMap/strKeyMap.
+	TIntV freqs;
+	int freqSum; // sum of all the frequencies in 'freqs'
+	TFltV bounds; // numeric attributes only; freqs[i] counts instances where the attribute value is in [bounds[i], bounds[i + 1])
+	TIntV dowFreqs, monthFreqs, hourFreqs; // Time attributes only.   dowFreqs[0] = Sunday; monthFreqs[0] = January.   [Same as 'struct tm' from the standard library.]
+
+	void Clr() { nBuckets = 0; freqSum = 0; ClrAll(freqs, bounds, dowFreqs, monthFreqs, hourFreqs); }
+	void Init(const TDataColumn &col, int nBuckets_, const TIntV& rowNos);
+	PJsonVal SaveToJson(const TDataColumn &col) const;
+};
+
 class TState;
 typedef TPt<TState> PState;
 typedef TVec<PState> TStateV;
@@ -267,10 +291,12 @@ public:
 	TCentroidComponentV centroid; // index: column number from TDataset.cols
 	TIntV members; // contains row indices into the dataset
 	TIntV initialStates; // indexes of initial states from which this state has been aggregated
+	THistogramV histograms; // index: column number, same as TDataset::cols
 	void InitCentroid0(const TDataset& dataset);
 	void AddToCentroid(const TDataset& dataset, int rowNo, double coef);  // Works like centroid += coef * dataset[rowNo].
 	void AddToCentroid(const TDataset& dataset, const TCentroidComponentV& other, double coef); // centroid += coef * other.
 	void MulCentroidBy(double coef) { for (TCentroidComponent &comp : centroid) comp.MulBy(coef); }
+	void CalcHistograms(const TDataset& dataset);
 	PJsonVal SaveToJson(const TDataset& dataset) const;
 };
 
@@ -293,6 +319,7 @@ public:
 	TStatePartition(int nInitialStates) : initToAggState(nInitialStates) { initToAggState.PutAll(-1); }
 	void CalcTransMx(const TFltVV& initStateTransMx, const TFltV& initStateStatProbs);
 	void CalcEigenVals();
+	void CalcHistograms(const TDataset& dataset) { for (const PState& state : aggStates) state->CalcHistograms(dataset); }
 	PJsonVal SaveToJson(const TDataset& dataset) const;
 };
 
@@ -339,6 +366,9 @@ public:
 	void CalcTransMx(TFltV& statProbs, TFltVV& transMx) const;
 	void BuildRowToInitialState();
 	double RowCentrDist2(int rowNo, int initialStateNo) const { return dataset->RowCentrDist2(rowNo, initialStates[initialStateNo]->centroid); }
+	void CalcHistograms() { 
+		for (const PState& state : initialStates) state->CalcHistograms(*dataset); 
+		for (const PStatePartition& scale : statePartitions) scale->CalcHistograms(*dataset); }
 	PJsonVal SaveToJson() const;
 };
 

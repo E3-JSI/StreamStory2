@@ -149,7 +149,8 @@ bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
 	if (! val->IsObj()) { errList.Add("The json value is not an object."); return false; }
 	numInitialStates = -1; 
 	if (! Json_GetObjInt(val, "numInitialStates", true, -1, numInitialStates, "model config", errList)) return false;
-	// ToDo: the alternative is to specify the radius and use DP-means.
+	// ToDo: the alternative to numInitialStates is to specify the radius and use DP-means.
+	if (! Json_GetObjInt(val, "numHistogramBuckets", true, 10, numHistogramBuckets, "model config", errList)) return false;
 	// Parse the attribute decriptions.
 	{
 		PJsonVal jsonAttrs; if (! Json_GetObjKey(val, "attributes", false, false, jsonAttrs, "model config", errList)) return false; 
@@ -899,6 +900,104 @@ PJsonVal TCentroidComponent::SaveToJson(const TDataset& dataset, int colNo) cons
 
 //-----------------------------------------------------------------------------
 //
+// THistogram
+//
+//-----------------------------------------------------------------------------
+
+void THistogram::Init(const TDataColumn& col, int nBuckets_, const TIntV& rowNos) 
+{
+	Clr();
+	if (col.type == TAttrType::Numeric) 
+	{
+		nBuckets = nBuckets_; bounds.Gen(nBuckets + 1);
+		freqs.Gen(nBuckets); freqs.PutAll(0);
+		if (col.subType == TAttrSubtype::Int) 
+		{
+			int minVal = 0, maxVal = 0;
+			bool first = true; for (const TInt& val : col.intVals) {
+				if (first || val < minVal) minVal = val;
+				if (first || val > maxVal) maxVal = val;
+				first = false; } 
+			for (int bucketNo = 0; bucketNo <= nBuckets; ++bucketNo) bounds[bucketNo] = minVal + (maxVal - minVal) * double(bucketNo) / double(nBuckets <= 1 ? 1 : nBuckets);
+			for (const int rowNo : rowNos) {
+				const int val = col.intVals[rowNo];
+				int bucketNo;
+				if (val <= minVal) bucketNo = 0;
+				else if (val >= maxVal) bucketNo = nBuckets - 1;
+				else bucketNo = (int) ((((long long) (val - minVal)) * nBuckets) / (maxVal - minVal));
+				freqs[bucketNo].Val += 1; ++freqSum; }
+		}
+		else if (col.subType == TAttrSubtype::Flt)
+		{
+			double minVal = 0, maxVal = 0;
+			bool first = true; for (const TFlt& val : col.fltVals) {
+				if (first || val < minVal) minVal = val;
+				if (first || val > maxVal) maxVal = val;
+				first = false; } 
+			for (int bucketNo = 0; bucketNo <= nBuckets; ++bucketNo) bounds[bucketNo] = minVal + (maxVal - minVal) * double(bucketNo) / double(nBuckets <= 1 ? 1 : nBuckets);
+			for (const int rowNo : rowNos) {
+				const TFlt val = col.fltVals[rowNo];
+				int bucketNo;
+				if (val <= minVal) bucketNo = 0;
+				else if (val >= maxVal) bucketNo = nBuckets - 1;
+				else bucketNo = (int) floor((val - minVal) * nBuckets / (maxVal - minVal));
+				if (bucketNo < 0) bucketNo = 0; else if (bucketNo >= nBuckets) bucketNo = nBuckets - 1;
+				freqs[bucketNo].Val += 1; ++freqSum; }
+		}
+		else IAssert(false);
+	}
+	else if (col.type == TAttrType::Categorical) 
+	{
+		if (col.subType == TAttrSubtype::Int) nBuckets = col.intKeyMap.Len(); 
+		else if (col.subType == TAttrSubtype::String) nBuckets = col.strKeyMap.Len();
+		else IAssert(false);
+		freqs.Gen(nBuckets); freqs.PutAll(0);
+		for (const int rowNo : rowNos) freqs[col.intVals[rowNo].Val].Val += 1; 
+	}
+	else if (col.type == TAttrType::Text) 
+		IAssert(false); // ToDo: not implemented yet.  Do we even want histograms for text attributes?
+	else if (col.type == TAttrType::Time) {
+		if (col.timeType == TTimeType::Time) 
+		{
+			dowFreqs.Gen(7); monthFreqs.Gen(12); hourFreqs.Gen(24);
+			dowFreqs.PutAll(0); monthFreqs.PutAll(0); hourFreqs.PutAll(0); 
+			for (const int rowNo : rowNos)
+			{
+				const TTimeStamp &ts = col.timeVals[rowNo];
+				TSecTm secTm(ts.type == TTimeType::Flt ? uint(floor(ts.flt)) : ts.sec);
+				dowFreqs[secTm.GetDayOfWeekN() - 1].Val += 1;
+				monthFreqs[secTm.GetMonthN() - 1].Val += 1;
+				hourFreqs[secTm.GetHourN()].Val += 1; ++freqSum;
+			}
+		}
+	}
+	else
+		IAssert(false); // invalid type
+}
+
+PJsonVal THistogram::SaveToJson(const TDataColumn &col) const
+{
+	PJsonVal vResult = TJsonVal::NewObj();
+	vResult->AddToObj("attrName", col.name);
+	vResult->AddToObj("freqSum", freqSum);
+	if (freqs.Len() > 0) vResult->AddToObj("freqs", TJsonVal::NewArr(freqs));
+	if (bounds.Len() > 0) vResult->AddToObj("bounds", TJsonVal::NewArr(bounds));
+	if (dowFreqs.Len() > 0) vResult->AddToObj("dayOfWeekFreqs", TJsonVal::NewArr(dowFreqs));
+	if (monthFreqs.Len() > 0) vResult->AddToObj("monthFreqs", TJsonVal::NewArr(monthFreqs));
+	if (hourFreqs.Len() > 0) vResult->AddToObj("hourFreqs", TJsonVal::NewArr(hourFreqs));
+	if (col.type == TAttrType::Categorical)
+	{
+		PJsonVal vKeys = TJsonVal::NewArr();
+		for (int keyId = 0; keyId < nBuckets; ++keyId)
+			if (col.subType == TAttrSubtype::Int) vKeys->AddToArr(TJsonVal::NewNum(col.intKeyMap.GetKey(keyId)));
+			else if (col.subType == TAttrSubtype::String) vKeys->AddToArr(TJsonVal::NewStr(col.strKeyMap.GetKey(keyId)));
+			else IAssert(false);
+	}
+	return vResult;
+}
+
+//-----------------------------------------------------------------------------
+//
 // TState
 //
 //-----------------------------------------------------------------------------
@@ -926,9 +1025,21 @@ PJsonVal TState::SaveToJson(const TDataset& dataset) const
 	PJsonVal vState = TJsonVal::NewObj();
 	vState->AddToObj("initialStates", TJsonVal::NewArr(initialStates));
 	PJsonVal vCentroid = TJsonVal::NewArr(); vState->AddToObj("centroid", vCentroid);
+	PJsonVal vHistograms = TJsonVal::NewArr(); vState->AddToObj("histograms", vHistograms);
 	for (int colNo = 0; colNo < centroid.Len(); ++colNo)
+	{
 		vCentroid->AddToArr(centroid[colNo].SaveToJson(dataset, colNo));
+		vHistograms->AddToArr(histograms[colNo]->SaveToJson(dataset.cols[colNo]));
+	}
 	return vState;
+}
+
+void TState::CalcHistograms(const TDataset& dataset)
+{
+	const int nCols = dataset.cols.Len(); histograms.Clr(); histograms.Gen(nCols);
+	for (int colNo = 0; colNo < nCols; ++colNo) {
+		PHistogram hist = new THistogram(); histograms[colNo] = hist;
+		hist->Init(dataset.cols[colNo], dataset.config->numHistogramBuckets, members); }
 }
 
 //-----------------------------------------------------------------------------

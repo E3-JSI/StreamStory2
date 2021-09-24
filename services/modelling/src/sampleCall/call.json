@@ -10,6 +10,7 @@
 	},
 	"config": {
 		"numInitialStates": 10,
+		"numHistogramBuckets": 5,
 		"attributes": [
 			{
 				"name": "timeStamp",
