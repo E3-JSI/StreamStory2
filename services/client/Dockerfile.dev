@@ -1,7 +1,5 @@
 FROM node:14.17.0-alpine3.11
 
-EXPOSE 3000
-
 ENV NODE_ENV=development
 
 # RUN addgroup app && adduser -S -G app app
@@ -9,8 +7,13 @@ ENV NODE_ENV=development
 
 WORKDIR /app
 
+# Install dependencies
 COPY ["package*.json", "./"]
 RUN npm install
+
+# Copy project files from host
 COPY . .
 
+# Run service
+EXPOSE 3000
 CMD ["npm", "start"]
