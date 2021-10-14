@@ -21,6 +21,8 @@ services:
             dockerfile: Dockerfile
         depends_on:
             - db
+        volumes:
+            - data:/app/data
         links:
             - db
         # ports:
@@ -33,6 +35,19 @@ services:
             EMAIL_PORT: ${EMAIL_PORT}
             EMAIL_USER: ${EMAIL_USER}
             EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+    modelling:
+        # container_name: streamstory_modelling
+        build:
+            context: ./services/modelling
+            dockerfile: Dockerfile
+            args:
+                MODELLING_PORT: ${MODELLING_PORT}
+        volumes:
+            - data:/app/data
+        # ports:
+        #     - 8096:8096
+        restart: unless-stopped
 
     db:
         # container_name: streamstory_db
@@ -52,3 +67,6 @@ services:
             POSTGRES_USER: ${POSTGRES_USER:-root}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
         restart: unless-stopped
+
+volumes:
+    data:
