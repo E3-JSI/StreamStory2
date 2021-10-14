@@ -1,0 +1,31 @@
+FROM ubuntu:focal
+
+ARG MODELLING_PORT=8096
+ENV BUILD debug
+
+WORKDIR /app
+
+# Install dependencies
+RUN apt-get update
+RUN apt-get install -y build-essential
+RUN apt-get install -y git
+RUN apt-get install -y python2
+RUN apt-get install -y uuid-dev
+
+# Build glib
+RUN git clone https://github.com/qminer/qminer.git
+RUN cd qminer/src/glib && \
+    make ${BUILD} && \
+    mv glib.a glib-${BUILD}.a
+
+# Copy project files from host
+COPY . .
+
+# Build service
+RUN make ${BUILD}
+RUN mkdir -p bin
+RUN mv ss2 bin
+
+# Run service
+EXPOSE ${MODELLING_PORT}
+CMD ["./bin/ss2", "-port:${MODELLING_PORT}", "-fnUnicodeDef:src/UnicodeDef.bin", "-logfile:modelling.log"]

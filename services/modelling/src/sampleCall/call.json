@@ -1,0 +1,103 @@
+{
+	"dataSource": {
+		"xxx-format": "json",
+		"xxx-fileName": "d:\\users\\janez\\data\\StreamStory\\B1586024706369-small.json",
+		"xxx2-fileName": "d:\\users\\janez\\data\\StreamStory\\B1586024706369.json",
+		"type": "file",
+		"format": "csv",
+		"fileName": "d:\\users\\janez\\data\\StreamStory\\B100_hour_SS_input.csv",
+		"fieldSep": ","
+	},
+	"config": {
+		"numInitialStates": 10,
+		"numHistogramBuckets": 5,
+		"attributes": [
+			{
+				"name": "timeStamp",
+				"sourceName": "timestamp",
+				"type": "time",
+				"subType": "integer",
+				"timeType": "time"
+			},
+			{
+				"name": "50",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "53",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "62",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "63",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "64",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "65",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "97",
+				"type": "numeric",
+				"subType": "float"
+			},
+			{
+				"name": "98",
+				"type": "numeric",
+				"subType": "float"
+			}
+		],
+		"ops": [
+			{
+				"op": "linTo01",
+				"inAttr": "tot2"
+			},
+			{
+				"op": "linMap",
+				"inAttr": "tot1",
+				"outAttr": "tot1_transformed",
+				"from1": "min",
+				"to1": -1,
+				"from2": "max",
+				"to2": 1
+			},
+			{
+				"op": "timeShift",
+				"inAttr": "analog2",
+				"outAttr": "analog2 (previous value)",
+				"windowUnit": "samples",
+				"windowSize": 1
+			},
+			{
+				"op": "trend",
+				"inAttr": "analog2",
+				"outAttr": "analog2 (trend over the last hour)",
+				"windowUnit": "sec",
+				"windowSize": 3600
+			},
+			{
+				"op": "resample",
+				"resampleType": "setNumSamples",
+				"numSamples": 1000
+			},
+			{
+				"op": "timeCategorical",
+				"outAttr": "Day of week",
+				"unit": "dayOfWeek"
+			}
+		]
+	}
+}
