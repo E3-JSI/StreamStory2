@@ -8,43 +8,47 @@
 CREATE TABLE IF NOT EXISTS public.users (
     id serial PRIMARY KEY,
     group_id integer DEFAULT 2 NOT NULL,
-    email character varying(320) UNIQUE NOT NULL,
-    password character varying(255) NOT NULL,
+    first_name varchar(255) NOT NULL DEFAULT '',
+    last_name varchar(255) NOT NULL DEFAULT '',
+    email varchar(255) UNIQUE NOT NULL,
+    password varchar(255) NOT NULL,
     active boolean DEFAULT false NOT NULL,
     settings json NOT NULL,
     created_at timestamp DEFAULT now() NOT NULL,
-    last_login timestamp
+    last_login_at timestamp
     -- CONSTRAINT group_fkey
     --     FOREIGN KEY(group_id)
 	--         REFERENCES groups(id)
 );
 
--- DO $$
---     BEGIN
---         IF NOT EXISTS
---             (
---                 SELECT *
---                 FROM users
---                 WHERE email = 'streamstory@ijs.si'
---             )
---         THEN
---             INSERT INTO users (
---                 group_id,
---                 email,
---                 password,
---                 active,
---                 settings
---             )
---             VALUES (
---                 1,
---                 'streamstory@ijs.si',
---                 '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
---                 true,
---                 '{}'
---             );
---         END IF;
---     END
--- $$;
+DO $$
+    BEGIN
+        IF NOT EXISTS
+            (
+                SELECT *
+                FROM users
+                WHERE email = 'streamstory@ijs.si'
+            )
+        THEN
+            INSERT INTO users (
+                group_id,
+                first_name,
+                email,
+                password,
+                active,
+                settings
+            )
+            VALUES (
+                1,
+                'Admin',
+                'streamstory@ijs.si',
+                '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
+                true,
+                '{}'
+            );
+        END IF;
+    END
+$$;
 
 --
 -- Table: tokens
@@ -56,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public.tokens (
     user_id integer NOT NULL,
     value character(64) NOT NULL,
     created_at timestamp DEFAULT now() NOT NULL,
-    CONSTRAINT token_fkey
+    CONSTRAINT user_fkey
         FOREIGN KEY(user_id)
 	        REFERENCES users(id)
 );
@@ -101,3 +105,24 @@ CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions (expire);
 --         END IF;
 --     END
 -- $$;
+
+--
+-- Table: models
+--
+
+-- DROP TABLE IF EXISTS models;
+CREATE TABLE IF NOT EXISTS public.models (
+    id serial PRIMARY KEY,
+    user_id integer NOT NULL,
+    name varchar(255) NOT NULL,
+    description text NOT NULL DEFAULT '',
+    dataset varchar(255) NOT NULL,
+    online boolean NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    public boolean DEFAULT false NOT NULL,
+    created_at timestamp DEFAULT now() NOT NULL,
+    model json NOT NULL,
+    CONSTRAINT user_fkey
+        FOREIGN KEY(user_id)
+	        REFERENCES users(id)
+);

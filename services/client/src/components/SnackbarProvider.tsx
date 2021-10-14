@@ -26,28 +26,28 @@ function SnackbarProvider({ children }: SnackbarProviderProps): JSX.Element {
 
     // Pass `show` function to SnackbarContext.Provider
     snackbar.show = (props: SnackbarProps) => {
-        setSnackbar((prevSnackbar) => ({
-            ...prevSnackbar,
+        setSnackbar((prevState) => ({
+            ...prevState,
             ...props,
-            open: true
+            open: true,
         }));
     };
 
     // Pass `hide` function to SnackbarContext.Provider
     snackbar.hide = () => {
-        setSnackbar((prevSnackbar) => ({
-            ...prevSnackbar,
-            open: false
+        setSnackbar((prevState) => ({
+            ...prevState,
+            open: false,
         }));
     };
 
     const key = Array.isArray(snackbar.message) ? snackbar.message.join(' ') : snackbar.message;
     const message = Array.isArray(snackbar.message)
         ? snackbar.message.map((m, i) => (
-            <Typography key={`msg${i + 1}:${m}`} variant="body2">
-                {m}
-            </Typography>
-        ))
+              <Typography key={`msg${i + 1}:${m}`} variant="body2">
+                  {m}
+              </Typography>
+          ))
         : snackbar.message;
 
     return (

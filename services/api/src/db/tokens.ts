@@ -1,6 +1,6 @@
 import db from '../config/db';
-import { rememberMeCookie, userTokenSize } from '../config/globals';
-import getRandomString from '../utils/getRandomString';
+import { rememberMeCookie, userTokenSize } from '../config/const';
+import { getRandomString } from '../utils/misc';
 
 // export interface Token {
 //     id: number;

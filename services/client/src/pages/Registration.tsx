@@ -2,8 +2,8 @@ import React from 'react';
 
 import UserAccountForm from '../components/UserAccountForm';
 
-function Login(): JSX.Element {
+function Registration(): JSX.Element {
     return <UserAccountForm variant="registration" />;
 }
 
-export default Login;
+export default Registration;

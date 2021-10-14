@@ -7,7 +7,7 @@ function requireAuth(req: Request, res: Response, next: NextFunction): void {
     }
 
     res.status(401).json({
-        error: ['unauthorized']
+        error: ['unauthorized'],
     });
 }
 

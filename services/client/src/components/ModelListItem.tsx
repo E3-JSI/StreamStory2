@@ -1,0 +1,443 @@
+import React, { useRef, useState } from 'react';
+
+import axios from 'axios';
+import clsx from 'clsx';
+import { Link as RouterLink } from 'react-router-dom';
+import { SubmitHandler, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
+import Collapse from '@material-ui/core/Collapse';
+import Grid from '@material-ui/core/Grid';
+import IconButton from '@material-ui/core/IconButton';
+import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
+import TextField from '@material-ui/core/TextField';
+import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
+import AccessTimeIcon from '@material-ui/icons/AccessTime';
+import CancelIcon from '@material-ui/icons/Cancel';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import CollectionsBookmarkIcon from '@material-ui/icons/CollectionsBookmark';
+import DescriptionIcon from '@material-ui/icons/Description';
+import EditIcon from '@material-ui/icons/Edit';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+import PersonIcon from '@material-ui/icons/Person';
+import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
+import PublicIcon from '@material-ui/icons/Public';
+import SaveIcon from '@material-ui/icons/Save';
+import TimelineIcon from '@material-ui/icons/Timeline';
+import VisibilityIcon from '@material-ui/icons/Visibility';
+
+import { Model } from '../types/api';
+import { extendRegRet } from '../utils/forms';
+import { Errors, getResponseErrors } from '../utils/errors';
+import useSession from '../hooks/useSession';
+import useSnackbar from '../hooks/useSnackbar';
+import ActionMenu from './ActionMenu';
+import LoadingButton from './LoadingButton';
+import Mark from './Mark';
+
+import useStyles from './ModelListItem.styles';
+
+export interface ModelListItemProps {
+    model: Model;
+    selected: boolean;
+    searchTerm?: string;
+    showUserColumn?: boolean;
+    showDateColumn?: boolean;
+    updateModel: (model: Model, remove?: boolean) => void;
+    onItemClick: (event: React.MouseEvent, modelId: number) => void;
+}
+
+export interface FormRequestData {
+    description: string;
+}
+
+export interface FormResponseData {
+    model?: Model;
+    error?: FormErrors;
+}
+
+export interface FormErrors extends Errors {
+    description?: string;
+}
+
+export type ErrorKey = keyof FormRequestData;
+
+function ModelListItem({
+    model,
+    selected,
+    searchTerm = '',
+    showUserColumn,
+    showDateColumn,
+    updateModel,
+    onItemClick,
+}: ModelListItemProps): JSX.Element {
+    const classes = useStyles();
+    const muiTheme = useTheme();
+    const { t, i18n } = useTranslation();
+    const [editMode, setEditMode] = useState(false);
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+    const [session] = useSession();
+    const [showSnackbar] = useSnackbar();
+
+    const moreButtonRef = useRef(null);
+    const defaultValues = {
+        description: model.description,
+    };
+    const {
+        formState: { errors, isSubmitting, isDirty },
+        handleSubmit: onSubmit,
+        register,
+        reset,
+        setError,
+    } = useForm<FormRequestData>({
+        defaultValues,
+    });
+    const dateFormatter = new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: 'short',
+    });
+    const dateTimeFormatter = new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: 'short',
+        timeStyle: 'medium',
+    });
+    const isOwnModel = model.username === session.user?.email;
+    const detailsButtonTooltip = selected ? t('hide_details') : t('show_details');
+    const markedModelValues = {
+        name: <Mark term={searchTerm}>{model.name}</Mark>,
+        dataset: <Mark term={searchTerm}>{model.dataset}</Mark>,
+        description: <Mark term={searchTerm}>{model.description}</Mark>,
+        username: <Mark term={searchTerm}>{model.username}</Mark>,
+    };
+
+    function toggleMoreMenu() {
+        setIsMoreMenuOpen((value) => !value);
+    }
+
+    const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
+        // if (isSubmitting) {
+        //     return;
+        // }
+
+        try {
+            const response = await axios.put<FormResponseData>(`/api/models/${model.id}`, data);
+
+            if (response.data.model) {
+                updateModel(response.data.model);
+                showSnackbar({
+                    message: t('description_successfully_saved'),
+                    severity: 'success',
+                    // autoHideDuration: null
+                });
+                reset({
+                    description: response.data.model.description,
+                });
+                setEditMode(false);
+            }
+        } catch (error) {
+            // Handle form errors.
+            const responseErrors = getResponseErrors<FormErrors>(error, t);
+
+            if (Array.isArray(responseErrors)) {
+                const message = responseErrors;
+
+                if (message.length) {
+                    showSnackbar({
+                        message: responseErrors,
+                        severity: 'error',
+                    });
+                }
+            } else if (responseErrors !== undefined) {
+                Object.keys(responseErrors).forEach((name, i) => {
+                    setError(
+                        name as keyof FormRequestData,
+                        {
+                            type: 'manual',
+                            message: responseErrors[name],
+                        },
+                        { shouldFocus: i < 1 },
+                    );
+                });
+            }
+        }
+    };
+
+    function handleEditButtonClick() {
+        setEditMode(true);
+    }
+
+    function handleCancelButtonClick() {
+        reset(defaultValues);
+        setEditMode(false);
+    }
+
+    function hendleMoreActionsClick(event: React.MouseEvent) {
+        event.stopPropagation();
+    }
+
+    function handleCollapse() {
+        if (editMode) {
+            handleCancelButtonClick();
+        }
+    }
+
+    return (
+        <React.Fragment key={model.id}>
+            <TableRow
+                className={clsx(classes.row, classes.rowMain)}
+                selected={selected}
+                tabIndex={-1}
+                onClick={(event) => onItemClick(event, model.id)}
+                hover
+            >
+                <TableCell component="th" scope="row">
+                    <Typography variant="body2">
+                        <Tooltip
+                            title={detailsButtonTooltip}
+                            enterDelay={muiTheme.timing.tooltipEnterDelay}
+                        >
+                            <IconButton
+                                className={clsx(classes.toggleRowButton, {
+                                    open: selected,
+                                })}
+                                size="small"
+                                aria-label={detailsButtonTooltip}
+                                onClick={(event) => onItemClick(event, model.id)}
+                            >
+                                <ChevronRightIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Typography
+                            className={classes.rowMainContent}
+                            component="span"
+                            variant="body2"
+                            noWrap
+                        >
+                            {markedModelValues.name}
+                        </Typography>
+                    </Typography>
+                </TableCell>
+                {showUserColumn && (
+                    <TableCell align="left">
+                        <Typography
+                            className={classes.rowMainContent}
+                            component="span"
+                            variant="body2"
+                            noWrap
+                        >
+                            {markedModelValues.username}
+                        </Typography>
+                    </TableCell>
+                )}
+                {showDateColumn && (
+                    <TableCell align="right">
+                        <Typography
+                            className={classes.rowMainContent}
+                            component="span"
+                            variant="body2"
+                            noWrap
+                        >
+                            {dateFormatter.format(model.createdAt)}
+                        </Typography>
+                    </TableCell>
+                )}
+                <TableCell align="right">
+                    <Tooltip
+                        title={t('view_model')}
+                        enterDelay={muiTheme.timing.tooltipEnterDelay}
+                    >
+                        <IconButton
+                            component={RouterLink}
+                            to={`/model/${model.id}`}
+                            size="small"
+                            aria-label={t('view_model')}
+                        >
+                            <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                    {isOwnModel ? (
+                        <Box display="inline-block" onClick={hendleMoreActionsClick}>
+                            <Tooltip
+                                title={t('more')}
+                                enterDelay={muiTheme.timing.tooltipEnterDelay}
+                            >
+                                <IconButton
+                                    ref={moreButtonRef}
+                                    size="small"
+                                    edge="end"
+                                    aria-label={t('more')}
+                                    onClick={toggleMoreMenu}
+                                    aria-controls="action-menu"
+                                    aria-haspopup="true"
+                                >
+                                    <MoreVertIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                            <ActionMenu
+                                id="action-menu"
+                                anchorEl={moreButtonRef.current}
+                                open={isMoreMenuOpen}
+                                model={model}
+                                modelIsPublic={model.public}
+                                updateModel={updateModel}
+                                toggleMenu={toggleMoreMenu}
+                                onClose={toggleMoreMenu}
+                                // keepMounted
+                            />
+                        </Box>
+                    ) : (
+                        <IconButton size="small" disabled>
+                            <MoreVertIcon />
+                        </IconButton>
+                    )}
+                </TableCell>
+            </TableRow>
+            <TableRow className={clsx(classes.row, classes.rowDetails)} selected={selected}>
+                <TableCell colSpan={2 + Number(!!showUserColumn) + Number(!!showDateColumn)}>
+                    <Collapse in={selected} timeout="auto" onExited={handleCollapse} unmountOnExit>
+                        <Box className={classes.detailsContainer}>
+                            <dl className={classes.details}>
+                                <div>
+                                    <dt>
+                                        <TimelineIcon />
+                                        {t('dataset')}
+                                    </dt>
+                                    <dd>{markedModelValues.dataset}</dd>
+                                </div>
+                                <div>
+                                    <dt>
+                                        <PersonIcon />
+                                        {t('user')}
+                                    </dt>
+                                    <dd>{markedModelValues.username}</dd>
+                                </div>
+                                <div>
+                                    <dt>
+                                        <AccessTimeIcon />
+                                        {t('creation_time')}
+                                    </dt>
+                                    <dd>{dateTimeFormatter.format(new Date(model.createdAt))}</dd>
+                                </div>
+                                <div>
+                                    <dt>
+                                        {model.online ? (
+                                            <PlayCircleFilledIcon />
+                                        ) : (
+                                            <CollectionsBookmarkIcon />
+                                        )}
+                                        {t('type')}
+                                    </dt>
+                                    <dd>
+                                        {model.online ? t('online') : t('offline')}
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>
+                                        <PublicIcon />
+                                        {t('public')}
+                                    </dt>
+                                    <dd>{model.public ? t('yes') : t('no')}</dd>
+                                </div>
+                                {(!!model.description || isOwnModel) && (
+                                    <div>
+                                        <dt>
+                                            <DescriptionIcon />
+                                            {t('description')}
+                                        </dt>
+                                        <dd>
+                                            {!editMode && !!model.description && (
+                                                <Typography
+                                                    className={classes.description}
+                                                    component="span"
+                                                    variant="body2"
+                                                >
+                                                    {markedModelValues.description}
+                                                </Typography>
+                                            )}
+                                            {isOwnModel && !editMode && (
+                                                <Tooltip
+                                                    title={t('edit_description')}
+                                                    enterDelay={muiTheme.timing.tooltipEnterDelay}
+                                                >
+                                                    <IconButton
+                                                        className={classes.editButton}
+                                                        size="small"
+                                                        aria-label={t('edit_description')}
+                                                        onClick={handleEditButtonClick}
+                                                    >
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                            {editMode && (
+                                                <form
+                                                    className={classes.form}
+                                                    onSubmit={onSubmit(handleSubmit)}
+                                                    noValidate
+                                                >
+                                                    <TextField
+                                                        classes={{ root: classes.textInput }}
+                                                        id="description"
+                                                        placeholder={t('enter_description')}
+                                                        InputProps={{
+                                                            classes: {
+                                                                root: classes.textInput,
+                                                            },
+                                                        }}
+                                                        error={!!errors.description}
+                                                        helperText={errors.description?.message}
+                                                        variant="standard"
+                                                        size="small"
+                                                        disabled={!isOwnModel}
+                                                        autoFocus
+                                                        fullWidth
+                                                        multiline
+                                                        {...extendRegRet(register('description'))}
+                                                    />
+                                                    <Grid
+                                                        className={classes.formButtons}
+                                                        spacing={1}
+                                                        container
+                                                    >
+                                                        <Grid item>
+                                                            <Button
+                                                                variant="contained"
+                                                                size="small"
+                                                                color="secondary"
+                                                                startIcon={<CancelIcon />}
+                                                                onClick={handleCancelButtonClick}
+                                                            >
+                                                                {t('cancel')}
+                                                            </Button>
+                                                        </Grid>
+                                                        <Grid item>
+                                                            <LoadingButton
+                                                                type="submit"
+                                                                variant="contained"
+                                                                size="small"
+                                                                color="primary"
+                                                                loading={isSubmitting}
+                                                                disabled={!isDirty}
+                                                                startIcon={<SaveIcon />}
+                                                            >
+                                                                {t('save')}
+                                                            </LoadingButton>
+                                                        </Grid>
+                                                    </Grid>
+                                                </form>
+                                            )}
+                                        </dd>
+                                    </div>
+                                )}
+                            </dl>
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </React.Fragment>
+    );
+}
+
+export default ModelListItem;

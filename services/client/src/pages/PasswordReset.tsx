@@ -2,19 +2,19 @@ import React from 'react';
 
 import { useParams } from 'react-router-dom';
 
-import { patterns } from '../utils/validation';
+import { validationPatterns } from '../utils/forms';
 import UserAccountForm from '../components/UserAccountForm';
 
 export interface PasswordResetUrlParams {
     token?: string;
 }
 
-function Login(): JSX.Element {
+function PasswordReset(): JSX.Element {
     const { token } = useParams<PasswordResetUrlParams>();
 
-    const isValidToken = token && token.match(patterns.userToken);
+    const tokenValid = token && token.match(validationPatterns.userToken);
 
-    return <UserAccountForm variant={isValidToken ? 'password-reset' : 'password-reset-init'} />;
+    return <UserAccountForm variant={tokenValid ? 'password-reset' : 'password-reset-init'} />;
 }
 
-export default Login;
+export default PasswordReset;

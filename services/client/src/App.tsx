@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import axios from 'axios';
 import { BrowserRouter as Router, Switch } from 'react-router-dom';
-import { CssBaseline } from '@material-ui/core';
+import { CssBaseline, useMediaQuery } from '@material-ui/core';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 
 import Dashboard from './pages/Dashboard';
@@ -13,6 +13,7 @@ import PasswordReset from './pages/PasswordReset';
 import Registration from './pages/Registration';
 import UserProfile from './pages/UserProfile';
 
+import { getUserSession } from './contexts/SessionContext';
 import useMountEffect from './hooks/useMountEffect';
 import useSession from './hooks/useSession';
 import PageRoute from './components/PageRoute';
@@ -23,11 +24,13 @@ import './i18n/config';
 
 function App(): JSX.Element {
     const [session, setSession] = useSession();
-
+    const [syncing, setSyncing] = useState(true);
+    const preferredTheme = useMediaQuery('(prefers-color-scheme: dark)') ? 'dark' : 'light';
+    const selectedTheme = session.theme === 'system' ? preferredTheme : session.theme;
     const muiTheme = useMemo(
-        () => createMuiTheme(themes[session.theme]),
+        () => createMuiTheme(themes[selectedTheme]),
         // Recreate theme only when switched.
-        [session.theme]
+        [selectedTheme],
     );
 
     // Sync user/login status.
@@ -37,12 +40,14 @@ function App(): JSX.Element {
                 const response = await axios.get('/api/auth/status');
 
                 if (response.data.user) {
-                    setSession({ user: response.data.user });
+                    setSession(getUserSession(response.data.user));
                 }
 
-                setSession({ isLoading: false });
+                setSyncing(false);
+                setSession({ isPageLoading: false });
             } catch {
-                setSession({ isLoading: false });
+                setSyncing(false);
+                setSession({ isPageLoading: false });
             }
         }
 
@@ -52,30 +57,30 @@ function App(): JSX.Element {
     return (
         <ThemeProvider theme={muiTheme}>
             <CssBaseline />
-            <PageProgress open={session.isLoading} />
-            {!session.isLoading && (
-                <Router>
-                    <SnackbarProvider>
+            <PageProgress open={session.isPageLoading} />
+            {!syncing && (
+                <SnackbarProvider>
+                    <Router>
                         <Switch>
                             {/* Private routes */}
                             <PageRoute
-                                path="/profile"
+                                path="/profile/:tab?"
                                 type="private"
-                                layout="dashboard"
+                                variant="application"
                                 component={UserProfile}
                                 exact
                             />
                             <PageRoute
                                 path="/dashboard/:view"
                                 type="private"
-                                layout="dashboard"
+                                variant="application"
                                 component={Dashboard}
                                 exact
                             />
                             <PageRoute
                                 path="/model/:id"
                                 type="private"
-                                layout="dashboard"
+                                variant="application"
                                 component={Model}
                                 exact
                             />
@@ -83,29 +88,29 @@ function App(): JSX.Element {
                             <PageRoute
                                 path="/login/:token?"
                                 type="restricted"
-                                layout="simple"
+                                variant="simple"
                                 component={Login}
                                 exact
                             />
                             <PageRoute
                                 path="/registration"
                                 type="restricted"
-                                layout="simple"
+                                variant="simple"
                                 component={Registration}
                                 exact
                             />
                             <PageRoute
                                 path="/password-reset/:token?"
                                 type="restricted"
-                                layout="simple"
+                                variant="simple"
                                 component={PasswordReset}
                                 exact
                             />
                             {/* Public routes */}
-                            <PageRoute path="/" type="public" layout="content" component={Home} />
+                            <PageRoute path="/" type="public" variant="content" component={Home} />
                         </Switch>
-                    </SnackbarProvider>
-                </Router>
+                    </Router>
+                </SnackbarProvider>
             )}
         </ThemeProvider>
     );

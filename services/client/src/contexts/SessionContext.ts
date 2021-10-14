@@ -2,37 +2,50 @@ import React from 'react';
 
 import { PaletteType } from '@material-ui/core';
 
-export interface User {
-    email: string;
-}
+import { Model, User } from '../types/api';
 
-export interface SessionProps {
-    theme?: PaletteType;
-    sidebarOpen?: boolean;
-    isLoading?: boolean;
-    user?: User | null;
-    currentModel?: string | null;
-}
-
-export type RequiredSessionProps = {
-    [K in keyof SessionProps]-?: SessionProps[K];
-};
+export type AppTheme = PaletteType | 'system';
 
 export type UpdateSession = (props: SessionProps) => void;
 
-export type Session = RequiredSessionProps & {
+export interface Session {
+    user: User | null;
+    theme: AppTheme;
+    isSideNavOpen: boolean;
+    isSideNavExpanded: boolean;
+    isPageLoading: boolean;
+    modelsPerPage: Record<string, number>;
+    currentModel: Model | null;
     update: null | UpdateSession;
+}
+
+export type SessionProps = Partial<Omit<Session, 'update'>>;
+
+export function getUserSession(user: User): SessionProps {
+    const session: SessionProps = {
+        user,
+    };
+
+    if (user.settings.theme) {
+        session.theme = user.settings.theme as AppTheme;
+    }
+
+    return session;
+}
+
+export const defaultProps: Required<SessionProps> = {
+    user: null,
+    theme: 'system',
+    isSideNavOpen: false,
+    isSideNavExpanded: false,
+    isPageLoading: true,
+    modelsPerPage: {},
+    currentModel: null,
 };
 
-export type SessionKey = keyof Session;
-
 const SessionContext = React.createContext<Session>({
-    theme: 'light',
-    sidebarOpen: false,
-    isLoading: true,
-    user: null,
-    currentModel: 'model-id',
-    update: null
+    ...defaultProps,
+    update: null,
 });
 
 export default SessionContext;

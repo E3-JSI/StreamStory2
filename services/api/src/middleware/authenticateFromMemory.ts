@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import * as users from '../db/users';
 import * as tokens from '../db/tokens';
-import { rememberMeCookie } from '../config/globals';
+import { rememberMeCookie } from '../config/const';
 
 export async function authenticateFromMemory(
     req: Request,
@@ -26,8 +26,8 @@ export async function authenticateFromMemory(
                 next();
                 return;
             }
-        } catch (err) {
-            next(err);
+        } catch (error) {
+            next(error);
             return;
         }
     }
@@ -60,8 +60,8 @@ export async function authenticateFromMemory(
             // Issue new token.
             const newToken = await tokens.issue(userId);
             res.cookie(rememberMeCookie.name, newToken, rememberMeCookie.options);
-        } catch (err) {
-            next(err);
+        } catch (error) {
+            next(error);
             return;
         }
     }

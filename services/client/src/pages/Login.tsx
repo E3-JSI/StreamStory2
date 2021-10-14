@@ -5,7 +5,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { getResponseErrors } from '../utils/errors';
-import { patterns } from '../utils/validation';
+import { validationPatterns } from '../utils/forms';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import useMountEffect from '../hooks/useMountEffect';
@@ -16,9 +16,8 @@ export interface LoginUrlParams {
 }
 
 function Login(): JSX.Element {
-    const { t } = useTranslation(['common', 'error']);
-
     const history = useHistory();
+    const { t } = useTranslation();
     const [, /* session */ setSession] = useSession();
     const [showSnackbar] = useSnackbar();
     const { token } = useParams<LoginUrlParams>();
@@ -33,33 +32,33 @@ function Login(): JSX.Element {
             return;
         }
 
-        if (!token.match(patterns.userToken)) {
+        if (!token.match(validationPatterns.userToken)) {
             redirect();
         }
 
         async function activate() {
             try {
-                setSession({ isLoading: true });
+                setSession({ isPageLoading: true });
                 const response = await axios.post('/api/auth/activation', { token });
-                setSession({ isLoading: false });
+                setSession({ isPageLoading: false });
 
                 if (response.data.success) {
                     showSnackbar({
-                        title: t('common:successful_account_activation.title'),
-                        message: t('common:successful_account_activation.message'),
-                        severity: 'success'
-                        // autoHideDuration: null
+                        title: t('successful_account_activation.title'),
+                        message: t('successful_account_activation.message'),
+                        severity: 'success',
+                        autoHideDuration: null,
                     });
                 }
             } catch (error) {
-                setSession({ isLoading: false });
+                setSession({ isPageLoading: false });
 
                 const errors = getResponseErrors(error, t);
 
                 if (Array.isArray(errors)) {
                     showSnackbar({
                         message: errors,
-                        severity: 'error'
+                        severity: 'error',
                     });
                 }
             }
