@@ -29,7 +29,7 @@ function SnackbarProvider({ children }: SnackbarProviderProps): JSX.Element {
         setSnackbar((prevState) => ({
             ...prevState,
             ...props,
-            open: true
+            open: true,
         }));
     };
 
@@ -37,17 +37,17 @@ function SnackbarProvider({ children }: SnackbarProviderProps): JSX.Element {
     snackbar.hide = () => {
         setSnackbar((prevState) => ({
             ...prevState,
-            open: false
+            open: false,
         }));
     };
 
     const key = Array.isArray(snackbar.message) ? snackbar.message.join(' ') : snackbar.message;
     const message = Array.isArray(snackbar.message)
         ? snackbar.message.map((m, i) => (
-            <Typography key={`msg${i + 1}:${m}`} variant="body2">
-                {m}
-            </Typography>
-        ))
+              <Typography key={`msg${i + 1}:${m}`} variant="body2">
+                  {m}
+              </Typography>
+          ))
         : snackbar.message;
 
     return (

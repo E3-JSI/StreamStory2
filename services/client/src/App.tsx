@@ -30,7 +30,7 @@ function App(): JSX.Element {
     const muiTheme = useMemo(
         () => createMuiTheme(themes[selectedTheme]),
         // Recreate theme only when switched.
-        [selectedTheme]
+        [selectedTheme],
     );
 
     // Sync user/login status.
@@ -66,21 +66,21 @@ function App(): JSX.Element {
                             <PageRoute
                                 path="/profile/:tab?"
                                 type="private"
-                                variant="dashboard"
+                                variant="application"
                                 component={UserProfile}
                                 exact
                             />
                             <PageRoute
                                 path="/dashboard/:view"
                                 type="private"
-                                variant="dashboard"
+                                variant="application"
                                 component={Dashboard}
                                 exact
                             />
                             <PageRoute
                                 path="/model/:id"
                                 type="private"
-                                variant="dashboard"
+                                variant="application"
                                 component={Model}
                                 exact
                             />

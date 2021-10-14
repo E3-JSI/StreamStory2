@@ -1,12 +1,8 @@
 {
     "compilerOptions": {
+        /* Visit https://aka.ms/tsconfig.json to read more about this file */
         "target": "es5",
-        "lib": [
-            "es6",
-            "dom",
-            "dom.iterable",
-            "esnext"
-        ],
+        "lib": ["es6", "dom", "dom.iterable", "esnext"],
         "allowJs": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
@@ -21,8 +17,6 @@
         "noEmit": true,
         "jsx": "react-jsx"
     },
-    "include": [
-        "src"
-    ],
-    "exclude": []
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    "exclude": ["node_modules"]
 }

@@ -8,9 +8,7 @@ import useStyles from './PageTitle.styles';
 
 export type PageTitleProps = BoxProps & TypographyProps<'h1'>;
 
-function PageTitle({
-    children, className, variant = 'h5', ...other
-}: PageTitleProps): JSX.Element {
+function PageTitle({ children, className, variant = 'h5', ...other }: PageTitleProps): JSX.Element {
     const classes = useStyles();
 
     return (
@@ -19,7 +17,7 @@ function PageTitle({
                 component="h1"
                 variant={variant}
                 className={clsx(className, {
-                    [classes.root]: variant === 'h1'
+                    [classes.root]: variant === 'h1',
                 })}
             >
                 {children}

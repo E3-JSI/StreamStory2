@@ -1,20 +1,18 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import common from './en/common.json';
-import error from './en/error.json';
+import translation from './en/translation.json';
 
 const resources = {
     en: {
-        common,
-        error
-    }
+        translation
+    },
 } as const;
 
 i18n.use(initReactI18next).init({
-    lng: 'en',
-    ns: ['common', 'error'],
-    resources
+    lng: 'en-GB',
+    simplifyPluralSuffix: false,
+    resources,
 });
 
 export default resources;

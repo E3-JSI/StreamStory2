@@ -24,7 +24,7 @@ function LoadingButton(
         size,
         ...other
     }: LoadingButtonProps,
-    ref: React.ForwardedRef<HTMLButtonElement>
+    ref: React.ForwardedRef<HTMLButtonElement>,
 ): JSX.Element {
     const classes = useStyles();
     const { progress = {}, ...otherClasses } = styleClasses || {};
@@ -58,7 +58,7 @@ function LoadingButton(
                     classes={progress}
                     style={{
                         marginTop: -progressSize / 2,
-                        marginLeft: -progressSize / 2
+                        marginLeft: -progressSize / 2,
                     }}
                 />
             )}

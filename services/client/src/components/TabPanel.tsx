@@ -12,7 +12,7 @@ export interface TabPanelProps {
 export function getTabA11yProps(index: unknown, prefix = 'mui'): Record<string, string> {
     return {
         id: `${prefix}-tab-${index}`,
-        'aria-controls': `${prefix}-tabpanel-${index}`
+        'aria-controls': `${prefix}-tabpanel-${index}`,
     };
 }
 

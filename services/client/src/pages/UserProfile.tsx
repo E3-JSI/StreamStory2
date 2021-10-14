@@ -28,7 +28,7 @@ const tabPaths = ['details', 'settings', 'change-password', 'delete-account'];
 
 function UserProfile(): JSX.Element {
     const classes = useStyles();
-    const { t } = useTranslation(['common']);
+    const { t } = useTranslation();
     const params = useParams<UserProfileUrlParams>();
     const [tabValue, setTabValue] = useState(params.tab || tabPaths[0]);
 
@@ -40,7 +40,7 @@ function UserProfile(): JSX.Element {
 
     return (
         <>
-            <PageTitle gutterBottom>{t('common:my_profile')}</PageTitle>
+            <PageTitle gutterBottom>{t('my_profile')}</PageTitle>
 
             <Paper className={classes.root} square>
                 <Tabs
@@ -50,39 +50,39 @@ function UserProfile(): JSX.Element {
                     indicatorColor="primary"
                     textColor="primary"
                     onChange={handleChange}
-                    aria-label={t('common:my_profile')}
+                    aria-label={t('my_profile')}
                     // centered
                 >
                     <Tab
                         component={RouterLink}
                         to={`${basePath}/${tabPaths[0]}`}
                         value={tabPaths[0]}
-                        label={t('common:details')}
-                        icon={<InfoIcon />}
+                        label={t('details')}
+                        icon={<InfoIcon fontSize="small" />}
                         {...getTabA11yProps(tabPaths[0], profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
                         to={`${basePath}/${tabPaths[1]}`}
                         value={tabPaths[1]}
-                        label={t('common:settings')}
-                        icon={<SettingsIcon />}
+                        label={t('settings')}
+                        icon={<SettingsIcon fontSize="small" />}
                         {...getTabA11yProps(tabPaths[1], profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
                         to={`${basePath}/${tabPaths[2]}`}
                         value={tabPaths[2]}
-                        label={t('common:change_password')}
-                        icon={<LockIcon />}
+                        label={t('change_password')}
+                        icon={<LockIcon fontSize="small" />}
                         {...getTabA11yProps(tabPaths[2], profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
                         to={`${basePath}/${tabPaths[3]}`}
                         value={tabPaths[3]}
-                        label={t('common:delete_account')}
-                        icon={<DeleteForeverIcon />}
+                        label={t('delete_account')}
+                        icon={<DeleteForeverIcon fontSize="small" />}
                         {...getTabA11yProps(tabPaths[3], profileTabPrefix)}
                     />
                 </Tabs>

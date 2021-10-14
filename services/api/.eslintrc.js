@@ -2,19 +2,21 @@ module.exports = {
     env: {
         browser: true,
         es2021: true,
-        jest: true
+        jest: true,
     },
-    extends: ['plugin:@typescript-eslint/recommended', 'airbnb-base'],
+    extends: ['plugin:@typescript-eslint/recommended', 'airbnb-base', 'prettier'],
     parser: '@typescript-eslint/parser',
     parserOptions: {
         ecmaVersion: 6,
-        sourceType: 'module'
+        sourceType: 'module',
     },
     plugins: ['@typescript-eslint'],
     rules: {
         // ## Typescript
         // -------------
+        '@typescript-eslint/no-shadow': 'error',
         '@typescript-eslint/no-unused-vars': ['warn'],
+        '@typescript-eslint/no-use-before-define': ['error', { functions: false }],
 
         // ## Import
         // ---------
@@ -22,35 +24,23 @@ module.exports = {
             'error',
             'ignorePackages',
             {
-                ts: 'never'
-            }
+                ts: 'never',
+            },
         ],
         'import/no-extraneous-dependencies': ['error', { devDependencies: true }],
 
         // ## Common
         // ---------
-        'comma-dangle': ['error', 'never'],
-        indent: ['error', 4, { SwitchCase: 1 }],
         'no-console': 'off',
         'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
+        'no-shadow': 'off',
         'no-unused-vars': 'off',
-        'max-len': [
-            'warn',
-            100,
-            4,
-            {
-                ignoreUrls: true,
-                ignoreComments: false,
-                ignoreRegExpLiterals: true,
-                ignoreStrings: true,
-                ignoreTemplateLiterals: true
-            }
-        ]
+        'no-use-before-define': 'off',
     },
     settings: {
         'import/resolver': {
-            typescript: {}
-        }
+            typescript: {},
+        },
     },
-    ignorePatterns: ['build/', 'node_nodules/']
+    ignorePatterns: ['build/', 'node_nodules/'],
 };

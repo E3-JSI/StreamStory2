@@ -11,7 +11,7 @@ export interface TabProps extends MuiTabProps<React.ElementType> {
 
 function Tab(
     { className, iconAlignment = 'horizontal', ...other }: TabProps,
-    ref: React.ForwardedRef<HTMLDivElement>
+    ref: React.ForwardedRef<HTMLDivElement>,
 ): JSX.Element {
     const classes = useStyles();
 
@@ -19,7 +19,7 @@ function Tab(
         <MuiTab
             ref={ref}
             className={clsx(className, {
-                [classes.root]: iconAlignment === 'horizontal'
+                [classes.root]: iconAlignment === 'horizontal',
             })}
             {...other}
         />

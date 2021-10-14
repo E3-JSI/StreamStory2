@@ -36,7 +36,7 @@ import { ReactComponent as PyramidIcon } from '../assets/images/icons/pyramid.sv
 
 function Home(): JSX.Element {
     const classes = useStyles();
-    const { t } = useTranslation(['common']);
+    const { t } = useTranslation();
     const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
 
     function handleWatchVideoButtonClick(event: React.MouseEvent) {
@@ -74,7 +74,7 @@ function Home(): JSX.Element {
                                         size="large"
                                         color="primary"
                                     >
-                                        {t('common:go_to_dashboard')}
+                                        {t('go_to_dashboard')}
                                     </Button>
                                 </Grid>
                                 <Grid xs={12} sm="auto" item>
@@ -84,7 +84,7 @@ function Home(): JSX.Element {
                                         color="primary"
                                         onClick={handleWatchVideoButtonClick}
                                     >
-                                        {t('common:watch_video_presentation')}
+                                        {t('watch_video_presentation')}
                                     </Button>
                                 </Grid>
                             </Grid>
@@ -105,7 +105,11 @@ function Home(): JSX.Element {
                             </Dialog>
                         </Grid>
                         <Grid xs={12} md={6} item>
-                            <Card variant="elevation" className={classes.screenFrame} elevation={16}>
+                            <Card
+                                variant="elevation"
+                                className={classes.screenFrame}
+                                elevation={16}
+                            >
                                 <CardContent>
                                     <img
                                         src="https://via.placeholder.com/1024x768.png"
@@ -239,19 +243,15 @@ function Home(): JSX.Element {
                                 <Typography variant="body1">
                                     <Link component={RouterLink} to="/login">
                                         Log in
-                                    </Link>
-                                    {' '}
-                                    and get started. Check out our
-                                    {' '}
+                                    </Link>{' '}
+                                    and get started. Check out our{' '}
                                     <Link
                                         href="http://streamstory.ijs.si/material/streamstory.mp4"
                                         onClick={handleWatchVideoButtonClick}
                                     >
                                         video presentation
-                                    </Link>
-                                    {' '}
-                                    to see how its done and experiment with our
-                                    {' '}
+                                    </Link>{' '}
+                                    to see how its done and experiment with our{' '}
                                     <Link href="http://streamstory.ijs.si/material/weather.csv">
                                         example dataset
                                     </Link>
@@ -342,7 +342,7 @@ function Home(): JSX.Element {
                                 size="large"
                                 color="primary"
                             >
-                                {t('common:find_more_examples')}
+                                {t('find_more_examples')}
                             </Button>
                         </Grid>
                     </Grid>
@@ -366,7 +366,7 @@ function Home(): JSX.Element {
                                 size="large"
                                 color="primary"
                             >
-                                {t('common:send_email')}
+                                {t('send_email')}
                             </Button>
                         </Grid>
                     </Grid>

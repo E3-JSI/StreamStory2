@@ -3,11 +3,11 @@ import { TFunction } from 'react-i18next';
 import resources from '../i18n/config';
 import { minPasswordLength } from './forms';
 
-export type I18Namespace = keyof typeof resources.en;
-export type AddErrorKeyPrefix<T extends string> = `error:${T}`;
-export type ErrorKey = keyof typeof resources.en.error;
-export type ErrorKeyWithPrefix = AddErrorKeyPrefix<keyof typeof resources.en.error>;
+export type AddErrorKeyPrefix<T extends string> = `error.${T}`;
+export type ErrorKey = keyof typeof resources.en.translation.error;
+export type ErrorKeyWithPrefix = AddErrorKeyPrefix<keyof typeof resources.en.translation.error>;
 export type Errors = Record<string, string | undefined>;
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ResponseError = any;
 
@@ -17,7 +17,7 @@ export type ResponseError = any;
  * @param t Translation function.
  * @returns Translation function adapted for translating errors.
  */
-function getErrorTranslator(t: TFunction<I18Namespace[]>) {
+function getErrorTranslator(t: TFunction) {
     const options: Record<string, unknown> = {};
 
     return (key: ErrorKey) => {
@@ -31,7 +31,7 @@ function getErrorTranslator(t: TFunction<I18Namespace[]>) {
                 break;
         }
 
-        return t(`error:${key}` as ErrorKeyWithPrefix, options);
+        return t(`error.${key}` as ErrorKeyWithPrefix, options);
     };
 }
 
@@ -43,7 +43,7 @@ function getErrorTranslator(t: TFunction<I18Namespace[]>) {
  */
 export function getResponseErrors<T extends Errors>(
     error: ResponseError,
-    t: TFunction<I18Namespace[]>
+    t: TFunction,
 ): T | string[] | undefined {
     const te = getErrorTranslator(t);
 
@@ -67,5 +67,5 @@ export function getResponseErrors<T extends Errors>(
         }
     }
 
-    return [error.message ?? t('error:unknown_error')];
+    return [error.message ?? t('error.unknown_error')];
 }

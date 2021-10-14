@@ -2,39 +2,38 @@ import { ThemeOptions } from '@material-ui/core/styles';
 
 const theme: ThemeOptions = {
     overrides: {
-        MuiCssBaseline: {
-            '@global': {}
-        },
         MuiButton: {
             root: {
                 '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)'
-                }
-            }
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                },
+            },
         },
         MuiIconButton: {
             root: {
                 '&:hover': {
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)'
-                }
-            }
-        }
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                },
+            },
+        },
     },
     palette: {
         type: 'light',
         background: {
-            default: '#f7f9fc',
-            secondary: '#fff'
+            // default: '#f7f9fc',
+            default: '#f3f5f8',
+            secondary: '#fff',
+            paper: '#fff',
         },
         primary: {
-            main: '#1976d2'
+            main: '#1976d2',
         },
         secondary: {
-            main: '#dc004e'
+            main: '#dc004e',
         },
         text: {
-            primary: 'rgba(0, 0, 0, 0.7)'
-        }
+            primary: 'rgba(0, 0, 0, 0.7)',
+        },
     },
     shadows: [
         'none',
@@ -61,8 +60,8 @@ const theme: ThemeOptions = {
         '0px 10px 13px -6px rgba(0,0,0,0.06),0px 21px 33px 3px rgba(0,0,0,0.08),0px 8px 40px 7px rgba(0,0,0,0.06)',
         '0px 10px 14px -6px rgba(0,0,0,0.06),0px 22px 35px 3px rgba(0,0,0,0.08),0px 8px 42px 7px rgba(0,0,0,0.06)',
         '0px 11px 14px -7px rgba(0,0,0,0.06),0px 23px 36px 3px rgba(0,0,0,0.08),0px 9px 44px 8px rgba(0,0,0,0.06)',
-        '0px 11px 15px -7px rgba(0,0,0,0.06),0px 24px 38px 3px rgba(0,0,0,0.08),0px 9px 46px 8px rgba(0,0,0,0.06)'
-    ]
+        '0px 11px 15px -7px rgba(0,0,0,0.06),0px 24px 38px 3px rgba(0,0,0,0.08),0px 9px 46px 8px rgba(0,0,0,0.06)',
+    ],
 };
 
 export default theme;

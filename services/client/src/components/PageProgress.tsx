@@ -17,7 +17,7 @@ function PageProgress({ open }: PageProgressProps): JSX.Element {
     return (
         <div
             className={clsx(classes.root, {
-                [classes.open]: open
+                [classes.open]: open,
             })}
         >
             <div className={classes.container}>

@@ -1,11 +1,11 @@
 import React from 'react';
 
 import axios from 'axios';
-import clsx from 'clsx';
+import Box from '@material-ui/core/Box';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
+import Typography from '@material-ui/core/Typography';
 import CheckIcon from '@material-ui/icons/Check';
 
 import { getUserSession, AppTheme } from '../contexts/SessionContext';
@@ -26,10 +26,8 @@ export interface ThemeMenuProps extends MenuProps {
 }
 
 function ThemeMenu(
-    {
-        open, themes, toggleMenu, ...rest
-    }: ThemeMenuProps,
-    ref: React.ForwardedRef<HTMLUListElement>
+    { open, themes, toggleMenu, ...rest }: ThemeMenuProps,
+    ref: React.ForwardedRef<HTMLUListElement>,
 ) {
     const classes = useStyles();
     const [{ theme, user }, setSession] = useSession();
@@ -39,14 +37,14 @@ function ThemeMenu(
 
         const newTheme = event.currentTarget.dataset.theme as AppTheme;
         setSession({
-            theme: newTheme
+            theme: newTheme,
         });
 
         if (user) {
             // Save theme selection for logged in users.
             try {
                 const response = await axios.put('/api/users/current', {
-                    theme: newTheme
+                    theme: newTheme,
                 });
 
                 if (response.data.user) {
@@ -71,15 +69,17 @@ function ThemeMenu(
                         onClick={handleThemeItemClick}
                         data-theme={themeKey}
                     >
-                        <ListItemIcon className={classes.listItemIcon}>
-                            {themes[themeKey].icon}
+                        <ListItemIcon className="narrow">
+                            <Box className={classes.listItemIcon} clone>
+                                {themes[themeKey].icon}
+                            </Box>
                         </ListItemIcon>
-                        <ListItemText>{themes[themeKey].label}</ListItemText>
+                        <Typography className={classes.listItemText}>
+                            {themes[themeKey].label}
+                        </Typography>
                         {selected ? (
-                            <ListItemIcon
-                                className={clsx(classes.listItemIcon, classes.listItemIconSelected)}
-                            >
-                                <CheckIcon />
+                            <ListItemIcon className={classes.listItemIconSelected}>
+                                <CheckIcon fontSize="small" />
                             </ListItemIcon>
                         ) : (
                             <ListItemIcon className={classes.listItemIconEmpty} />

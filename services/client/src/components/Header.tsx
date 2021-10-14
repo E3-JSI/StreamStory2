@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMediaQuery, useScrollTrigger } from '@material-ui/core';
-import { Theme } from '@material-ui/core/styles';
+import { Theme, useTheme } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
 import Box from '@material-ui/core/Box';
@@ -18,7 +18,7 @@ import BrightnessHighIcon from '@material-ui/icons/BrightnessHigh';
 import BrightnessMediumIcon from '@material-ui/icons/BrightnessMedium';
 import MenuIcon from '@material-ui/icons/Menu';
 
-import { User } from '../contexts/SessionContext';
+import { User } from '../types/api';
 import useSession from '../hooks/useSession';
 import { PageVariant } from './Page';
 import Logo from './Logo';
@@ -33,36 +33,39 @@ export interface HeaderProps {
     variant?: HeaderVariant;
 }
 
-function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
+function Header({ variant = 'application' }: HeaderProps): JSX.Element {
     const classes = useStyles();
-    const { t } = useTranslation(['common']);
+    const muiTheme = useTheme();
+    const { t } = useTranslation();
     const accountButtonRef = useRef(null);
     const themeButtonRef = useRef(null);
-    const [{
-        isSideNavOpen, isSideNavExpanded, theme: appTheme, user
-    }, setSession] = useSession();
+    const [{ isSideNavOpen, isSideNavExpanded, theme: appTheme, user }, setSession] = useSession();
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
     const [isUserAccountMenuOpen, setIsUserAccountMenuOpen] = useState(false);
     const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
     const visibilityTrigger = useScrollTrigger();
 
     const isSimpleHeader = variant === 'simple';
-    const isPublicHeader = variant !== 'dashboard';
+    const isPublicHeader = variant !== 'application';
     const iconColor = isPublicHeader ? 'default' : 'inherit';
     const themes = {
         light: {
-            label: t('common:light'),
-            icon: <BrightnessHighIcon />
+            label: t('light'),
+            icon: <BrightnessHighIcon />,
         },
         dark: {
-            label: t('common:dark'),
-            icon: <Brightness2Icon />
+            label: t('dark'),
+            icon: <Brightness2Icon />,
         },
         system: {
-            label: t('common:system'),
-            icon: <BrightnessMediumIcon />
-        }
+            label: t('system'),
+            icon: <BrightnessMediumIcon />,
+        },
     };
+    const menuButtonTooltip =
+        variant === 'application' && isScreenWidthGteMd
+            ? t(isSideNavExpanded ? 'collapse_menu' : 'expand_menu')
+            : t(isSideNavOpen ? 'close_menu' : 'open_menu');
 
     function getInitials({ email, firstName, lastName }: User) {
         const initials = [];
@@ -92,13 +95,13 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
 
     function handleMenuIconClick() {
         // Toggle sidebar.
-        if (variant === 'dashboard' && isScreenWidthGteMd) {
+        if (variant === 'application' && isScreenWidthGteMd) {
             setSession({
-                isSideNavExpanded: !isSideNavExpanded
+                isSideNavExpanded: !isSideNavExpanded,
             });
         } else {
             setSession({
-                isSideNavOpen: !isSideNavOpen
+                isSideNavOpen: !isSideNavOpen,
             });
         }
     }
@@ -109,27 +112,20 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
             color="transparent"
             className={clsx(classes.root, {
                 [classes.rootPublic]: isPublicHeader,
-                [classes.rootHidden]: isPublicHeader && visibilityTrigger
+                [classes.rootHidden]: isPublicHeader && visibilityTrigger,
             })}
         >
             <Toolbar>
                 {user !== null && (
                     <Tooltip
-                        title={
-                            variant === 'dashboard'
-                                ? t(
-                                    isSideNavExpanded
-                                        ? 'common:collapse_menu'
-                                        : 'common:expand_menu'
-                                )
-                                : t(isSideNavOpen ? 'common:close_menu' : 'common:open_menu')
-                        }
+                        title={menuButtonTooltip}
+                        enterDelay={muiTheme.timing.tooltipEnterDelay}
                     >
                         <IconButton
                             edge="start"
                             className={classes.menuButton}
                             color={iconColor}
-                            aria-label={t('common:open_sidebar')}
+                            aria-label={menuButtonTooltip}
                             onClick={handleMenuIconClick}
                         >
                             <MenuIcon />
@@ -141,7 +137,7 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
                         component={RouterLink}
                         to="/"
                         className={clsx(classes.logoLink, {
-                            [classes.logoLinkPublic]: isPublicHeader
+                            [classes.logoLinkPublic]: isPublicHeader,
                         })}
                         variant="h6"
                         color="inherit"
@@ -149,13 +145,16 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
                         <Logo />
                     </Link>
                 </Box>
-                <Tooltip title={t('common:change_theme')}>
+                <Tooltip
+                    title={t('change_theme')}
+                    enterDelay={muiTheme.timing.tooltipEnterDelay}
+                >
                     <IconButton
                         ref={themeButtonRef}
                         edge={isSimpleHeader ? 'end' : undefined}
                         color={iconColor}
                         onClick={toggleThemeMenu}
-                        aria-label={t('common:change_theme')}
+                        aria-label={t('change_theme')}
                         aria-controls="theme-menu"
                         aria-haspopup="true"
                     >
@@ -169,7 +168,7 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
                     themes={themes}
                     toggleMenu={toggleThemeMenu}
                     onClose={toggleThemeMenu}
-                    keepMounted
+                    // keepMounted
                 />
                 {!isSimpleHeader && user === null && (
                     <Button
@@ -178,19 +177,22 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
                         className={classes.loginButton}
                         color="primary"
                     >
-                        {t('common:login')}
+                        {t('login')}
                     </Button>
                 )}
                 {!isSimpleHeader && user !== null && (
                     <div>
-                        <Tooltip title={t('common:manage_your_account')}>
+                        <Tooltip
+                            title={t('manage_your_account')}
+                            enterDelay={muiTheme.timing.tooltipEnterDelay}
+                        >
                             <IconButton
                                 ref={accountButtonRef}
                                 className={classes.avatarButton}
                                 color="inherit"
                                 // edge="end"
                                 onClick={toggleUserAccountMenu}
-                                aria-label={t('common:manage_your_account')}
+                                aria-label={t('manage_your_account')}
                                 aria-controls="account-menu"
                                 aria-haspopup="true"
                             >
@@ -207,7 +209,7 @@ function Header({ variant = 'dashboard' }: HeaderProps): JSX.Element {
                             open={isUserAccountMenuOpen}
                             toggleMenu={toggleUserAccountMenu}
                             onClose={toggleUserAccountMenu}
-                            keepMounted
+                            // keepMounted
                         />
                     </div>
                 )}

@@ -1,17 +1,20 @@
 import bcrypt from 'bcryptjs';
 import { NextFunction, Request, Response } from 'express';
 
-import { rememberMeCookie } from '../config/globals';
+import { rememberMeCookie } from '../config/const';
 import * as users from '../db/users';
 import { User, UserSettings } from '../db/users';
 import { minPasswordLength } from './auth';
 
 export interface UserResponse {
-    // id: number;
+    id: number;
     firstName: string;
     lastName: string;
     email: string;
+    active: boolean;
     settings: UserSettings;
+    createdAt: number;
+    lastLogin: number | null;
 }
 
 /**
@@ -21,11 +24,14 @@ export interface UserResponse {
  */
 export function getUserResponse(user: User): UserResponse {
     return {
-        // id: user.id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        settings: user.settings
+        active: user.active,
+        settings: user.settings,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin,
     };
 }
 
@@ -44,7 +50,7 @@ export async function updateCurrentUser(
 
             if (!success) {
                 res.status(500).json({
-                    error: ['settings_update_failed']
+                    error: ['settings_update_failed'],
                 });
                 return;
             }
@@ -61,7 +67,7 @@ export async function updateCurrentUser(
 
             if (!success) {
                 res.status(500).json({
-                    error: ['details_update_failed']
+                    error: ['details_update_failed'],
                 });
                 return;
             }
@@ -75,8 +81,8 @@ export async function updateCurrentUser(
             if (!(await bcrypt.compare(oldPassword, user.password))) {
                 res.status(401).json({
                     error: {
-                        oldPassword: 'invalid_password'
-                    }
+                        oldPassword: 'invalid_password',
+                    },
                 });
                 return;
             }
@@ -84,8 +90,8 @@ export async function updateCurrentUser(
             if (oldPassword.length < minPasswordLength) {
                 res.status(422).json({
                     error: {
-                        oldPassword: 'short_password'
-                    }
+                        oldPassword: 'short_password',
+                    },
                 });
                 return;
             }
@@ -93,8 +99,8 @@ export async function updateCurrentUser(
             if (newPassword !== newPassword2) {
                 res.status(422).json({
                     error: {
-                        newPassword2: 'password_mismatch'
-                    }
+                        newPassword2: 'password_mismatch',
+                    },
                 });
                 return;
             }
@@ -103,22 +109,22 @@ export async function updateCurrentUser(
 
             if (!success) {
                 res.status(500).json({
-                    error: ['password_update_failed']
+                    error: ['password_update_failed'],
                 });
                 return;
             }
 
             res.status(200).json({
-                success
+                success,
             });
             return;
         }
 
         res.status(200).json({
-            user: getUserResponse((await users.findById(user.id)) as User)
+            user: getUserResponse((await users.findById(user.id)) as User),
         });
-    } catch (err) {
-        next(err);
+    } catch (error) {
+        next(error);
     }
 }
 
@@ -131,11 +137,11 @@ export async function deleteCurrentUser(
     const user = req.user as User;
 
     try {
-        const success = users.del(user.id);
+        const success = await users.del(user.id);
 
         if (!success) {
             res.status(500).json({
-                error: ['account_deletion_failed']
+                error: ['account_deletion_failed'],
             });
             return;
         }
@@ -150,9 +156,9 @@ export async function deleteCurrentUser(
         }
 
         res.status(200).json({
-            success
+            success,
         });
-    } catch (err) {
-        next(err);
+    } catch (error) {
+        next(error);
     }
 }

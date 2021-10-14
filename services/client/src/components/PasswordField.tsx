@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@material-ui/core/styles';
 import { TextFieldProps } from '@material-ui/core/TextField';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -24,12 +25,12 @@ export type PasswordFieldProps = Omit<
 const variantComponent = {
     standard: Input,
     filled: FilledInput,
-    outlined: OutlinedInput
+    outlined: OutlinedInput,
 };
 
 function PasswordField(
     props: PasswordFieldProps,
-    ref: React.ForwardedRef<HTMLDivElement>
+    ref: React.ForwardedRef<HTMLDivElement>,
 ): JSX.Element {
     const {
         autoComplete,
@@ -57,11 +58,13 @@ function PasswordField(
         placeholder,
         required = false,
         value,
-        variant = 'standard',
+        variant,
         ...other
     } = props;
-    const { t } = useTranslation(['common']);
+    const { t } = useTranslation();
+    const muiTheme = useTheme();
     const [passwordVisible, setPasswordVisible] = useState(false);
+    const textFieldVariant = variant || muiTheme.props?.MuiTextField?.variant || 'standard';
 
     function handleClickShowPassword() {
         setPasswordVisible((visible) => !visible);
@@ -74,7 +77,7 @@ function PasswordField(
     let inputNotched;
     let inputLabel;
 
-    if (variant === 'outlined') {
+    if (textFieldVariant === 'outlined') {
         if (InputLabelProps && typeof InputLabelProps.shrink !== 'undefined') {
             inputNotched = InputLabelProps.shrink;
         }
@@ -92,7 +95,7 @@ function PasswordField(
 
     const helperTextId = helperText && id ? `${id}-helper-text` : undefined;
     const inputLabelId = label && id ? `${id}-label` : undefined;
-    const InputComponent = variantComponent[variant];
+    const InputComponent = variantComponent[textFieldVariant];
     const InputElement = (
         <InputComponent
             {...filterDefinedProps<OutlinedInputProps>({
@@ -112,20 +115,25 @@ function PasswordField(
                 placeholder,
                 inputProps,
                 notched: inputNotched,
-                label: inputLabel
+                label: inputLabel,
             })}
             {...InputProps}
-            endAdornment={(
+            endAdornment={
                 <InputAdornment position="end">
                     <IconButton
-                        aria-label={t('common:toggle_password_visibility')}
+                        size="small"
+                        aria-label={t('toggle_password_visibility')}
                         onClick={handleClickShowPassword}
                         onMouseDown={handleMouseDownPassword}
                     >
-                        {passwordVisible ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                        {passwordVisible ? (
+                            <VisibilityIcon fontSize="small" />
+                        ) : (
+                            <VisibilityOffIcon fontSize="small" />
+                        )}
                     </IconButton>
                 </InputAdornment>
-            )}
+            }
         />
     );
 
@@ -134,6 +142,7 @@ function PasswordField(
             {...filterDefinedProps({
                 component: 'div',
                 className: clsx(className, classes && classes.root),
+                variant: textFieldVariant,
                 disabled,
                 error,
                 fullWidth,
@@ -141,7 +150,6 @@ function PasswordField(
                 ref,
                 required,
                 color,
-                variant
             })}
             {...other}
         >
@@ -149,7 +157,7 @@ function PasswordField(
                 <InputLabel
                     {...filterDefinedProps({
                         htmlFor: id,
-                        id: inputLabelId
+                        id: inputLabelId,
                     })}
                     {...InputLabelProps}
                 >

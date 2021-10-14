@@ -23,7 +23,7 @@ function SectionTitle({
                 component={component}
                 variant={variant}
                 className={clsx(className, {
-                    [classes.root]: variant === 'h2'
+                    [classes.root]: variant === 'h2',
                 })}
             >
                 {children}

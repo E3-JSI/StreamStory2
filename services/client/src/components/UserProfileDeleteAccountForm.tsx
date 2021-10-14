@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -21,9 +21,9 @@ export interface FormResponseData {
 export type FormErrors = Record<string, never>;
 
 function UserProfileDeleteAccountForm(): JSX.Element {
-    const { t } = useTranslation(['common']);
+    const { t } = useTranslation();
     const [, /* session */ setSession] = useSession();
-    const [dialogOpen, setDialogOpen] = React.useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [showSnackbar] = useSnackbar();
     const form = useForm();
 
@@ -32,56 +32,56 @@ function UserProfileDeleteAccountForm(): JSX.Element {
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (response) => {
         if (response.data.success) {
             setSession({
-                user: null
+                user: null,
             });
             showSnackbar({
-                title: t('common:successful_account_deletion.title'),
-                message: t('common:successful_account_deletion.message'),
+                title: t('successful_account_deletion.title'),
+                message: t('successful_account_deletion.message'),
                 severity: 'success',
-                autoHideDuration: null
+                autoHideDuration: null,
             });
         }
     };
 
     function handleSubmitClick(event: React.MouseEvent<HTMLButtonElement>) {
-        setDialogOpen(true);
+        setIsDeleteDialogOpen(true);
         event.preventDefault();
     }
 
-    function handleDialogClose() {
-        setDialogOpen(false);
+    function handleDialogAccept() {
+        setIsDeleteDialogOpen(false);
+        submitForm(formRef);
     }
 
-    function handleDialogYesClick() {
-        setDialogOpen(false);
-        submitForm(formRef);
+    function handleDialogClose() {
+        setIsDeleteDialogOpen(false);
     }
 
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
             method="delete"
-            handleResponse={handleResponse}
+            onResponse={handleResponse}
             submitButton={{
-                children: t('common:delete'),
+                children: t('delete'),
                 color: 'secondary',
                 startIcon: <DeleteForeverIcon />,
                 onClick: handleSubmitClick,
-                disabled: false
+                disabled: false,
             }}
             ref={formRef}
         >
             <Alert severity="warning" variant="standard">
-                {t('common:delete_account_warning')}
+                {t('delete_account_warning')}
             </Alert>
             <ConfirmationDialog
                 id="delete-account-dialog"
-                title={t('common:delete_account')}
-                content={t('common:delete_account_confirmation')}
-                open={dialogOpen}
+                title={t('delete_account')}
+                content={t('delete_account_confirmation')}
+                open={isDeleteDialogOpen}
                 onClose={handleDialogClose}
-                handleCancelClick={handleDialogClose}
-                handleOkClick={handleDialogYesClick}
+                onAccept={handleDialogAccept}
+                onDecline={handleDialogClose}
             />
         </UserProfileForm>
     );

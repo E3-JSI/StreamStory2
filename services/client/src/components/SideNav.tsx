@@ -30,44 +30,44 @@ export interface SideNavProps {
 
 export const sideNavWidth = {
     collapsed: 0,
-    expanded: 0
+    expanded: 0,
 };
 
 function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
     const classes = useStyles();
-    const { t } = useTranslation(['common']);
+    const muiTheme = useTheme();
+    const { t } = useTranslation();
     const [{ isSideNavOpen, isSideNavExpanded, currentModel }, setSession] = useSession();
     const [drawerRect, drawerRef] = useClientRect();
-    const theme = useTheme();
     const isPermanentSideNav = variant === 'permanent';
     const items = [
         {
             path: '/dashboard/offline-models',
-            title: t('common:offline_models'),
+            title: t('offline_models'),
             icon: <CollectionsBookmarkIcon />,
             divider: false,
-            skip: false
+            skip: false,
         },
         {
             path: '/dashboard/online-models',
-            title: t('common:online_models'),
+            title: t('online_models'),
             icon: <PlayCircleFilledIcon />,
             divider: currentModel !== null,
-            skip: false
+            skip: false,
         },
         {
-            path: `/model/${currentModel}`,
-            title: t('common:current_model'),
+            path: `/model/${currentModel?.id}`,
+            title: t('current_model'),
             icon: <BubbleChartIcon />,
             divider: false,
-            skip: currentModel === null
-        }
+            skip: currentModel === null,
+        },
     ];
 
     let width: string | number = 'auto';
 
     if (!sideNavWidth.collapsed) {
-        sideNavWidth.collapsed = theme.spacing(9) + 1;
+        sideNavWidth.collapsed = muiTheme.spacing(9) + 1;
     }
 
     if (drawerRect !== null && !sideNavWidth.expanded) {
@@ -81,7 +81,7 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
     function toggleDrawer(open: boolean) {
         return () => {
             setSession({
-                isSideNavOpen: open
+                isSideNavOpen: open,
             });
         };
     }
@@ -91,16 +91,16 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
             variant={variant}
             open={isSideNavOpen || isPermanentSideNav}
             className={clsx(classes.root, {
-                [classes.drawer]: isPermanentSideNav
+                [classes.drawer]: isPermanentSideNav,
             })}
             classes={{
                 paper: clsx(classes.paper, {
-                    [classes.drawer]: isPermanentSideNav
-                })
+                    [classes.drawer]: isPermanentSideNav,
+                }),
             }}
             PaperProps={{
                 ref: drawerRef,
-                style: { width }
+                style: { width },
             }}
             style={{ width }}
             onClose={toggleDrawer(false)}
@@ -108,10 +108,14 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
             <Toolbar className={classes.toolbar}>
                 {!isPermanentSideNav && (
                     <>
-                        <Tooltip title={t('common:close_menu')}>
+                        <Tooltip
+                            title={t('close_menu')}
+                            enterDelay={muiTheme.timing.tooltipEnterDelay}
+                        >
                             <IconButton
                                 className={classes.closeButton}
                                 edge="start"
+                                aria-label={t('close_menu')}
                                 onClick={toggleDrawer(false)}
                                 autoFocus
                             >
@@ -137,36 +141,39 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
                 onClick={toggleDrawer(false)}
             >
                 <List component="nav">
-                    {items.map((item) => (item.skip ? null : (
-                        <Tooltip
-                            key={item.path}
-                            title={isSideNavExpanded || isSideNavOpen ? '' : item.title}
-                            placement="right"
-                        >
-                            <ListItem
-                                component={NavLink}
-                                to={item.path}
-                                className={clsx(classes.navItem)}
-                                divider={item.divider}
-                                button
+                    {items.map((item) =>
+                        item.skip ? null : (
+                            <Tooltip
+                                key={item.path}
+                                title={isSideNavExpanded || isSideNavOpen ? '' : item.title}
+                                enterDelay={muiTheme.timing.tooltipEnterDelay}
+                                placement="right"
                             >
-                                <ListItemIcon className={clsx(classes.navItemIcon)}>
-                                    {item.icon}
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={item.title}
-                                    classes={{
-                                        primary: clsx(classes.navItemText, {
-                                            [classes.navItemTextCollapsed]:
-                                                    !isSideNavExpanded
-                                                    && isPermanentSideNav
-                                                    && sideNavWidth.expanded
-                                        })
-                                    }}
-                                />
-                            </ListItem>
-                        </Tooltip>
-                    )))}
+                                <ListItem
+                                    component={NavLink}
+                                    to={item.path}
+                                    className={clsx(classes.navItem)}
+                                    divider={item.divider}
+                                    button
+                                >
+                                    <ListItemIcon className={clsx(classes.navItemIcon)}>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={item.title}
+                                        classes={{
+                                            primary: clsx(classes.navItemText, {
+                                                [classes.navItemTextCollapsed]:
+                                                    !isSideNavExpanded &&
+                                                    isPermanentSideNav &&
+                                                    sideNavWidth.expanded,
+                                            }),
+                                        }}
+                                    />
+                                </ListItem>
+                            </Tooltip>
+                        ),
+                    )}
                 </List>
             </div>
         </Drawer>

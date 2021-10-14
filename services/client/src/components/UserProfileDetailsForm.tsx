@@ -6,8 +6,9 @@ import TextField from '@material-ui/core/TextField';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import LockIcon from '@material-ui/icons/Lock';
 
+import { User } from '../types/api';
 import { extendRegRet } from '../utils/forms';
-import { getUserSession, User } from '../contexts/SessionContext';
+import { getUserSession } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
@@ -25,27 +26,27 @@ export interface FormResponseData {
 export type FormErrors = Record<string, never>;
 
 function UserProfileDetailsForm(): JSX.Element {
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation();
     const [{ user }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 
     const form = useForm<FormRequestData>({
         defaultValues: {
             firstName: user?.firstName,
-            lastName: user?.lastName
-        }
+            lastName: user?.lastName,
+        },
     });
     const { register, reset } = form;
 
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (
         response,
-        requestData
+        requestData,
     ) => {
         if (response.data.user) {
             setSession(getUserSession(response.data.user));
             showSnackbar({
-                message: t('common:details_successfully_saved'),
-                severity: 'success'
+                message: t('details_successfully_saved'),
+                severity: 'success',
                 // autoHideDuration: null
             });
             reset(requestData);
@@ -55,12 +56,11 @@ function UserProfileDetailsForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
-            handleResponse={handleResponse}
+            onResponse={handleResponse}
         >
             <TextField
                 id="first-name"
-                label={t('common:first_name')}
-                variant="standard"
+                label={t('first_name')}
                 margin="normal"
                 autoFocus
                 fullWidth
@@ -68,28 +68,26 @@ function UserProfileDetailsForm(): JSX.Element {
             />
             <TextField
                 id="last-name"
-                label={t('common:last_name')}
-                variant="standard"
+                label={t('last_name')}
                 margin="normal"
                 fullWidth
                 {...extendRegRet(register('lastName'))}
             />
             <TextField
                 id="email"
-                label={t('common:email_address')}
+                label={t('email_address')}
                 value={user?.email}
                 InputProps={{
                     endAdornment: (
                         <InputAdornment position="end">
-                            <LockIcon color="secondary" />
+                            <LockIcon fontSize="small" color="secondary" />
                         </InputAdornment>
                     ),
                     inputProps: {
                         readOnly: true,
-                        tabIndex: -1
-                    }
+                        tabIndex: -1,
+                    },
                 }}
-                variant="standard"
                 margin="normal"
                 fullWidth
             />

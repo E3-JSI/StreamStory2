@@ -26,7 +26,7 @@ function Section({
             className={clsx(className, classes.root, {
                 [classes.rootSecondary]: bgColor === 'secondary',
                 [classes.rootBorderTop]: border === 'top' || border === 'both',
-                [classes.rootBorderBottom]: border === 'bottom' || border === 'both'
+                [classes.rootBorderBottom]: border === 'bottom' || border === 'both',
             })}
             {...other}
         >

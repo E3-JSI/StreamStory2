@@ -6,7 +6,7 @@ const pool = new Pool({
     database: process.env.POSTGRES_DB || 'streamstory',
     user: process.env.POSTGRES_USER || 'root',
     password: process.env.POSTGRES_PASSWORD || 'password',
-    ssl: false
+    ssl: false,
 });
 
 export async function waitForDB(): Promise<void> {
@@ -24,7 +24,7 @@ export async function waitForDB(): Promise<void> {
 
             client.release();
             ready = true;
-        } catch (err) {
+        } catch {
             // console.log('Connection to database failed!');
             count += 1;
         }

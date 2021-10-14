@@ -13,9 +13,7 @@ export interface PageRouteProps extends Omit<RouteProps, 'children' | 'render'> 
     component: React.FC;
 }
 
-function PageRoute({
-    component: Component, variant, type, ...rest
-}: PageRouteProps): JSX.Element {
+function PageRoute({ component: Component, variant, type, ...rest }: PageRouteProps): JSX.Element {
     const [{ user }] = useSession();
     const isUserLoggedIn = user !== null;
 

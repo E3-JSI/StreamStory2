@@ -24,6 +24,8 @@ router.put(`${usersPath}/current`, requireAuth, users.updateCurrentUser);
 router.delete(`${usersPath}/current`, requireAuth, users.deleteCurrentUser);
 
 const modelsPath = '/models';
+router.post(`${modelsPath}/data`, requireAuth, models.storeData);
+router.delete(`${modelsPath}/data`, requireAuth, models.deleteData);
 router.post(`${modelsPath}/`, requireAuth, models.createModel);
 router.get(`${modelsPath}/`, requireAuth, models.getModels);
 router.get(`${modelsPath}/:id`, requireAuth, models.getModel);

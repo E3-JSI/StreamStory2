@@ -36,8 +36,8 @@ async function main() {
             saveUninitialized: false,
             store: new PgSession({
                 pool: db,
-                tableName: 'sessions'
-            })
+                tableName: 'sessions',
+            }),
         })
     );
 

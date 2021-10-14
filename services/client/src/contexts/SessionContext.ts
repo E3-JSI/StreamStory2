@@ -2,40 +2,28 @@ import React from 'react';
 
 import { PaletteType } from '@material-ui/core';
 
+import { Model, User } from '../types/api';
+
 export type AppTheme = PaletteType | 'system';
-
-export interface User {
-    // id: number;
-    email: string;
-    firstName: string;
-    lastName: string;
-    settings: Record<string, unknown>;
-}
-
-export interface SessionProps {
-    user?: User | null;
-    theme?: AppTheme;
-    isSideNavOpen?: boolean;
-    isSideNavExpanded?: boolean;
-    isPageLoading?: boolean;
-    currentModel?: string | null;
-}
-
-export type RequiredSessionProps = {
-    [K in keyof SessionProps]-?: SessionProps[K];
-};
 
 export type UpdateSession = (props: SessionProps) => void;
 
-export type Session = RequiredSessionProps & {
+export interface Session {
+    user: User | null;
+    theme: AppTheme;
+    isSideNavOpen: boolean;
+    isSideNavExpanded: boolean;
+    isPageLoading: boolean;
+    modelsPerPage: Record<string, number>;
+    currentModel: Model | null;
     update: null | UpdateSession;
-};
+}
 
-export type SessionKey = keyof Session;
+export type SessionProps = Partial<Omit<Session, 'update'>>;
 
 export function getUserSession(user: User): SessionProps {
     const session: SessionProps = {
-        user
+        user,
     };
 
     if (user.settings.theme) {
@@ -45,14 +33,19 @@ export function getUserSession(user: User): SessionProps {
     return session;
 }
 
-const SessionContext = React.createContext<Session>({
+export const defaultProps: Required<SessionProps> = {
     user: null,
     theme: 'system',
     isSideNavOpen: false,
     isSideNavExpanded: false,
     isPageLoading: true,
-    currentModel: 'model-id',
-    update: null
+    modelsPerPage: {},
+    currentModel: null,
+};
+
+const SessionContext = React.createContext<Session>({
+    ...defaultProps,
+    update: null,
 });
 
 export default SessionContext;

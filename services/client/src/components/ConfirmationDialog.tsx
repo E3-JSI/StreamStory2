@@ -12,23 +12,23 @@ export interface ConfirmationDialogProps extends DialogProps {
     id: string;
     title: string;
     content: React.ReactNode;
-    cancelLabel?: string;
-    okLabel?: string;
-    handleCancelClick?: React.ReactEventHandler<HTMLElement>;
-    handleOkClick?: React.ReactEventHandler<HTMLElement>;
+    acceptLabel?: string;
+    declineLabel?: string;
+    onAccept?: React.ReactEventHandler<HTMLElement>;
+    onDecline?: React.ReactEventHandler<HTMLElement>;
 }
 
 function ConfirmationDialog({
     id,
     title,
     content,
-    cancelLabel,
-    okLabel,
-    handleCancelClick,
-    handleOkClick,
+    acceptLabel,
+    declineLabel,
+    onAccept,
+    onDecline,
     ...other
 }: ConfirmationDialogProps): JSX.Element {
-    const { t } = useTranslation(['common']);
+    const { t } = useTranslation();
 
     return (
         <Dialog aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...other}>
@@ -36,20 +36,16 @@ function ConfirmationDialog({
             <DialogContent>
                 <DialogContentText id={`${id}-description`}>{content}</DialogContentText>
             </DialogContent>
-            {(handleCancelClick || handleOkClick) && (
+            {(onDecline || onAccept) && (
                 <DialogActions>
-                    {handleCancelClick && (
-                        <Button onClick={handleCancelClick} color="primary" autoFocus>
-                            {cancelLabel || t('common:cancel')}
+                    {onDecline && (
+                        <Button onClick={onDecline} color="primary" autoFocus>
+                            {declineLabel || t('cancel')}
                         </Button>
                     )}
-                    {handleOkClick && (
-                        <Button
-                            onClick={handleOkClick}
-                            color="secondary"
-                            autoFocus={!handleCancelClick}
-                        >
-                            {okLabel || t('common:ok')}
+                    {onAccept && (
+                        <Button onClick={onAccept} color="secondary" autoFocus={!onDecline}>
+                            {acceptLabel || t('ok')}
                         </Button>
                     )}
                 </DialogActions>

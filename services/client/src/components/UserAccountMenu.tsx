@@ -3,20 +3,19 @@ import React from 'react';
 import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Menu, { MenuProps } from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
+import Divider from '@material-ui/core/Divider';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import Divider from '@material-ui/core/Divider';
+import Menu, { MenuProps } from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import Typography from '@material-ui/core/Typography';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
+import { User } from '../types/api';
 import { getResponseErrors } from '../utils/errors';
-import { User } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
-
-import useStyles from './UserAccountMenu.styles';
 
 export interface UserAccountMenuProps extends MenuProps {
     toggleMenu: () => void;
@@ -24,10 +23,9 @@ export interface UserAccountMenuProps extends MenuProps {
 
 function UserAccountMenu(
     { open, toggleMenu, ...rest }: UserAccountMenuProps,
-    ref: React.ForwardedRef<HTMLDivElement>
+    ref: React.ForwardedRef<HTMLDivElement>,
 ) {
-    const classes = useStyles();
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation();
     const [{ user }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 
@@ -57,7 +55,7 @@ function UserAccountMenu(
 
             if (response.data.success) {
                 setSession({
-                    user: null
+                    user: null,
                 });
             }
         } catch (error) {
@@ -66,7 +64,7 @@ function UserAccountMenu(
             if (Array.isArray(errors)) {
                 showSnackbar({
                     message: errors,
-                    severity: 'error'
+                    severity: 'error',
                 });
             }
         }
@@ -74,20 +72,25 @@ function UserAccountMenu(
 
     return (
         <Menu ref={ref} open={open} {...rest}>
-            <MenuItem component={RouterLink} to="/profile" alignItems="center" onClick={toggleMenu}>
-                <ListItemIcon className={classes.listItemIcon}>
-                    <AccountCircleIcon />
+            <MenuItem
+                component={RouterLink}
+                to="/profile"
+                alignItems="flex-start"
+                onClick={toggleMenu}
+            >
+                <ListItemIcon className="narrow">
+                    <AccountCircleIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText secondary={getUserDisplayName(user as User)}>
-                    {t('common:my_profile')}
+                    {t('my_profile')}
                 </ListItemText>
             </MenuItem>
             <Divider light />
             <MenuItem component="a" onClick={handleLogoutClick}>
-                <ListItemIcon className={classes.listItemIcon}>
-                    <ExitToAppIcon />
+                <ListItemIcon className="narrow">
+                    <ExitToAppIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>{t('common:log_out')}</ListItemText>
+                <Typography>{t('log_out')}</Typography>
             </MenuItem>
         </Menu>
     );

@@ -8,7 +8,8 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Radio from '@material-ui/core/Radio';
 
-import { getUserSession, User } from '../contexts/SessionContext';
+import { User } from '../types/api';
+import { getUserSession } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
@@ -25,7 +26,7 @@ export interface FormResponseData {
 export type FormErrors = Record<string, never>;
 
 function UserProfileSettingsForm(): JSX.Element {
-    const { t } = useTranslation(['common']);
+    const { t } = useTranslation();
     const [{ theme }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 
@@ -34,14 +35,14 @@ function UserProfileSettingsForm(): JSX.Element {
 
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (
         response,
-        requestData
+        requestData,
     ) => {
         if (response.data.user) {
             // Sync session.
             setSession(getUserSession(response.data.user));
             showSnackbar({
-                message: t('common:settings_successfully_saved'),
-                severity: 'success'
+                message: t('settings_successfully_saved'),
+                severity: 'success',
                 // autoHideDuration: null
             });
             reset(requestData);
@@ -51,11 +52,11 @@ function UserProfileSettingsForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
-            handleResponse={handleResponse}
+            onResponse={handleResponse}
         >
             <FormControl component="fieldset">
                 <FormLabel id="theme-settings" component="legend">
-                    {t('common:theme')}
+                    {t('theme')}
                 </FormLabel>
                 <Controller
                     name="theme"
@@ -71,17 +72,17 @@ function UserProfileSettingsForm(): JSX.Element {
                             <FormControlLabel
                                 value="light"
                                 control={<Radio />}
-                                label={t('common:light')}
+                                label={t('light')}
                             />
                             <FormControlLabel
                                 value="dark"
                                 control={<Radio />}
-                                label={t('common:dark')}
+                                label={t('dark')}
                             />
                             <FormControlLabel
                                 value="system"
                                 control={<Radio />}
-                                label={t('common:system')}
+                                label={t('system')}
                             />
                         </RadioGroup>
                     )}

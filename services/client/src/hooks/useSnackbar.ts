@@ -4,7 +4,7 @@ import SnackbarContext, {
     defaultProps,
     SnackbarProps,
     ShowSnackbar,
-    HideSnackbar
+    HideSnackbar,
 } from '../contexts/SnackbarContext';
 
 function useSnackbar(): [ShowSnackbar, HideSnackbar] {
@@ -14,7 +14,7 @@ function useSnackbar(): [ShowSnackbar, HideSnackbar] {
         if (show !== null) {
             show({
                 ...defaultProps,
-                ...props
+                ...props,
             });
         }
     }

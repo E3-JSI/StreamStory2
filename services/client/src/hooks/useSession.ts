@@ -1,12 +1,8 @@
 import { useContext } from 'react';
 
-import SessionContext, {
-    RequiredSessionProps,
-    SessionProps,
-    UpdateSession
-} from '../contexts/SessionContext';
+import SessionContext, { SessionProps, UpdateSession } from '../contexts/SessionContext';
 
-function useSession(): [RequiredSessionProps, UpdateSession] {
+function useSession(): [Required<SessionProps>, UpdateSession] {
     const { update, ...sessionProps } = useContext(SessionContext);
 
     function setSession(props: SessionProps) {

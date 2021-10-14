@@ -3,7 +3,6 @@ import React from 'react';
 import axios, { AxiosResponse, Method } from 'axios';
 import { SubmitHandler, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import SaveIcon from '@material-ui/icons/Save';
 
@@ -15,15 +14,15 @@ import useStyles from './UserProfileForm.styles';
 
 export type FormResponseHandler<FormResponseData, FormRequestData> = (
     response: AxiosResponse<FormResponseData>,
-    requestData?: FormRequestData
+    requestData?: FormRequestData,
 ) => void;
 
 export interface UserProfileFormProps<FormRequestData, FormResponseData> {
     children: React.ReactNode;
     form: UseFormReturn;
     method?: Method;
-    handleResponse: FormResponseHandler<FormResponseData, FormRequestData>;
     submitButton?: LoadingButtonProps | null;
+    onResponse: FormResponseHandler<FormResponseData, FormRequestData>;
 }
 
 function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends Errors>(
@@ -31,35 +30,35 @@ function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends E
         children,
         form,
         method = 'put',
-        handleResponse,
-        submitButton = {}
+        submitButton = {},
+        onResponse,
     }: UserProfileFormProps<FormRequestData, FormResponseData>,
-    ref: React.ForwardedRef<HTMLFormElement>
+    ref: React.ForwardedRef<HTMLFormElement>,
 ): JSX.Element {
     const classes = useStyles();
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation();
     const [showSnackbar] = useSnackbar();
 
     const {
         formState: { isSubmitting, isDirty },
         handleSubmit: onSubmit,
-        setError
+        setError,
     } = form;
     const { children: submitLabel, ...submitButtonProps } = submitButton || {};
 
     const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
-        if (isSubmitting) {
-            return;
-        }
+        // if (isSubmitting) {
+        //     return;
+        // }
 
         try {
             const response = await axios.request<FormResponseData>({
                 url: '/api/users/current',
                 method,
-                data
+                data,
             });
 
-            handleResponse(response, data as FormRequestData);
+            onResponse(response, data as FormRequestData);
         } catch (error) {
             // Handle form errors.
             const errors = getResponseErrors<FormErrors>(error, t);
@@ -70,7 +69,7 @@ function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends E
                 if (message.length) {
                     showSnackbar({
                         message: errors,
-                        severity: 'error'
+                        severity: 'error',
                     });
                 }
             } else if (errors !== undefined) {
@@ -79,9 +78,9 @@ function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends E
                         name,
                         {
                             type: 'manual',
-                            message: errors[name]
+                            message: errors[name],
                         },
-                        { shouldFocus: i < 1 }
+                        { shouldFocus: i < 1 },
                     );
                 });
             }
@@ -89,29 +88,27 @@ function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends E
     };
 
     return (
-        <form ref={ref} onSubmit={onSubmit(handleSubmit)} noValidate>
-            <Box maxWidth={600}>
-                {children}
-                {submitButton && (
-                    <Grid className={classes.buttons} spacing={1} container>
-                        {submitButton && (
-                            <Grid item>
-                                <LoadingButton
-                                    type="submit"
-                                    variant="contained"
-                                    color="primary"
-                                    loading={isSubmitting}
-                                    disabled={!isDirty}
-                                    startIcon={<SaveIcon />}
-                                    {...submitButtonProps}
-                                >
-                                    {submitLabel || t('common:save')}
-                                </LoadingButton>
-                            </Grid>
-                        )}
-                    </Grid>
-                )}
-            </Box>
+        <form className={classes.root} ref={ref} onSubmit={onSubmit(handleSubmit)} noValidate>
+            {children}
+            {submitButton && (
+                <Grid className={classes.buttons} spacing={1} container>
+                    {submitButton && (
+                        <Grid item>
+                            <LoadingButton
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                loading={isSubmitting}
+                                disabled={!isDirty}
+                                startIcon={<SaveIcon />}
+                                {...submitButtonProps}
+                            >
+                                {submitLabel || t('save')}
+                            </LoadingButton>
+                        </Grid>
+                    )}
+                </Grid>
+            )}
         </form>
     );
 }
@@ -120,9 +117,9 @@ export default React.forwardRef(UserProfileForm) as <
     FormRequestData,
     FormResponseData,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    FormErrors extends Errors
+    FormErrors extends Errors,
 >(
     props: UserProfileFormProps<FormRequestData, FormResponseData> & {
         ref?: React.ForwardedRef<HTMLFormElement>;
-    }
+    },
 ) => ReturnType<typeof UserProfileForm>;

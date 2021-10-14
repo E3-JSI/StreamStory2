@@ -14,9 +14,10 @@ import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 
+import { User } from '../types/api';
 import { validationPatterns, minPasswordLength, extendRegRet } from '../utils/forms';
 import { Errors, getResponseErrors } from '../utils/errors';
-import { getUserSession, User } from '../contexts/SessionContext';
+import { getUserSession } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import Copyright from './Copyright';
@@ -69,7 +70,7 @@ export interface AltLink {
 function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
     const classes = useStyles();
     const history = useHistory();
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation();
     const [, /* session */ setSession] = useSession();
     const [showSnackbar] = useSnackbar();
     const passwordRef = useRef<HTMLInputElement | null>(null);
@@ -78,7 +79,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
         handleSubmit: onSubmit,
         register,
         reset,
-        setError
+        setError,
     } = useForm();
     const { token } = useParams<UserAccountFormUrlParams>();
 
@@ -98,43 +99,43 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
 
     switch (variant) {
         case 'registration':
-            title = t('common:registration');
+            title = t('registration');
             url = '/api/auth/registration';
-            actionName = t('common:register');
+            actionName = t('register');
             altLink2 = {
                 url: '/login',
-                title: t('common:already_have_an_account')
+                title: t('already_have_an_account'),
             };
             handleResponse = (response) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
-                        title: t('common:successful_registration.title'),
-                        message: t('common:successful_registration.message'),
+                        title: t('successful_registration.title'),
+                        message: t('successful_registration.message'),
                         severity: 'success',
-                        autoHideDuration: null
+                        autoHideDuration: null,
                     });
                 }
             };
             break;
 
         case 'password-reset':
-            title = t('common:password_reset');
+            title = t('password_reset');
             url = '/api/auth/password';
             method = 'put';
-            actionName = t('common:reset_password');
+            actionName = t('reset_password');
             altLink2 = {
                 url: '/password-reset',
-                title: t('common:reset_link_expired')
+                title: t('reset_link_expired'),
             };
             handleResponse = (response) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
-                        title: t('common:successful_password_reset.title'),
-                        message: t('common:successful_password_reset.message'),
+                        title: t('successful_password_reset.title'),
+                        message: t('successful_password_reset.message'),
                         severity: 'success',
-                        autoHideDuration: null
+                        autoHideDuration: null,
                     });
                     history.push('/login');
                 }
@@ -142,22 +143,22 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
             break;
 
         case 'password-reset-init':
-            title = t('common:forgot_password');
-            description = t('common:send_request_for_password_reset');
+            title = t('forgot_password');
+            description = t('send_request_for_password_reset');
             url = '/api/auth/password';
-            actionName = t('common:send');
+            actionName = t('send');
             altLink2 = {
                 url: '/login',
-                title: t('common:back_to_login')
+                title: t('back_to_login'),
             };
             handleResponse = (response) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
-                        title: t('common:successful_password_reset_initiation.title'),
-                        message: t('common:successful_password_reset_initiation.message'),
+                        title: t('successful_password_reset_initiation.title'),
+                        message: t('successful_password_reset_initiation.message'),
                         severity: 'success',
-                        autoHideDuration: null
+                        autoHideDuration: null,
                     });
                 }
             };
@@ -165,16 +166,16 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
 
         case 'login':
         default:
-            title = t('common:login');
+            title = t('login');
             url = '/api/auth/login';
-            actionName = t('common:log_in');
+            actionName = t('log_in');
             altLink = {
                 url: '/registration',
-                title: t('common:dont_have_an_account')
+                title: t('dont_have_an_account'),
             };
             altLink2 = {
                 url: '/password-reset',
-                title: t('common:forgot_password')
+                title: t('forgot_password'),
             };
             handleResponse = (response) => {
                 if (response.data.user) {
@@ -185,15 +186,15 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
     }
 
     const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
-        if (isSubmitting) {
-            return;
-        }
+        // if (isSubmitting) {
+        //     return;
+        // }
 
         try {
             const response = await axios.request<FormResponseData>({
                 url,
                 method,
-                data
+                data,
             });
 
             handleResponse(response);
@@ -207,7 +208,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                 if (message.length) {
                     showSnackbar({
                         message: responseErrors,
-                        severity: 'error'
+                        severity: 'error',
                     });
                 }
             } else if (responseErrors !== undefined) {
@@ -216,9 +217,9 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                         name,
                         {
                             type: 'manual',
-                            message: responseErrors[name]
+                            message: responseErrors[name],
                         },
-                        { shouldFocus: i < 1 }
+                        { shouldFocus: i < 1 },
                     );
                 });
             }
@@ -245,7 +246,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                         <TextField
                             id="email"
                             type="email"
-                            label={t('common:email_address')}
+                            label={t('email_address')}
                             defaultValue=""
                             error={!!errors.email}
                             helperText={errors.email?.message}
@@ -255,21 +256,24 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             autoFocus
                             fullWidth
                             required
+                            InputLabelProps={{
+                                required: true,
+                            }}
                             {...extendRegRet(
                                 register('email', {
-                                    required: t('error:required_field'),
+                                    required: t('error.required_field'),
                                     pattern: {
                                         value: validationPatterns.emailLoose,
-                                        message: t('error:invalid_email')
-                                    }
-                                })
+                                        message: t('error.invalid_email'),
+                                    },
+                                }),
                             )}
                         />
                     )}
                     {!isPasswordResetInitForm && (
                         <PasswordField
                             id="password"
-                            label={t('common:password')}
+                            label={t('password')}
                             defaultValue=""
                             error={!!errors.password}
                             helperText={errors.password?.message}
@@ -279,28 +283,31 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             autoFocus={isPasswordResetForm}
                             fullWidth
                             required
+                            InputLabelProps={{
+                                required: true,
+                            }}
                             {...extendRegRet(
                                 register('password', {
-                                    required: t('error:required_field'),
+                                    required: t('error.required_field'),
                                     minLength: {
                                         value: minPasswordLength,
-                                        message: t('error:short_password', {
-                                            count: minPasswordLength
-                                        })
-                                    }
+                                        message: t('error.short_password', {
+                                            count: minPasswordLength,
+                                        }),
+                                    },
                                 }),
                                 {
                                     ref: (instance) => {
                                         passwordRef.current = instance;
-                                    }
-                                }
+                                    },
+                                },
                             )}
                         />
                     )}
                     {(isRegistrationForm || isPasswordResetForm) && (
                         <PasswordField
                             id="password2"
-                            label={t('common:password_confirmation')}
+                            label={t('password_confirmation')}
                             defaultValue=""
                             error={!!errors.password2}
                             helperText={errors.password2?.message}
@@ -308,25 +315,29 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             margin="normal"
                             fullWidth
                             required
+                            InputLabelProps={{
+                                required: true,
+                            }}
                             {...extendRegRet(
                                 register('password2', {
-                                    required: t('error:required_field'),
-                                    validate: (value) => value === passwordRef.current?.value
-                                        || t('error:password_mismatch')
-                                })
+                                    required: t('error.required_field'),
+                                    validate: (value) =>
+                                        value === passwordRef.current?.value ||
+                                        t('error.password_mismatch'),
+                                }),
                             )}
                         />
                     )}
                     {isLoginForm && (
                         <FormControlLabel
-                            control={(
+                            control={
                                 <Checkbox
                                     defaultChecked={false}
                                     color="primary"
                                     {...extendRegRet(register('remember'))}
                                 />
-                            )}
-                            label={t('common:remember_me')}
+                            }
+                            label={t('remember_me')}
                         />
                     )}
                     <Box mt={3} mb={2}>

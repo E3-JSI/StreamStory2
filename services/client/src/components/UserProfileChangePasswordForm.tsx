@@ -27,28 +27,28 @@ export interface FormErrors extends Errors {
 }
 
 function UserProfileChangePasswordForm(): JSX.Element {
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation();
     const [showSnackbar] = useSnackbar();
     const newPasswordRef = useRef<HTMLInputElement | null>(null);
 
     const defaultValues = {
         oldPassword: '',
         newPassword: '',
-        newPassword2: ''
+        newPassword2: '',
     };
     const form = useForm<FormRequestData>({ defaultValues });
     const {
         formState: { errors },
         register,
         reset,
-        setFocus
+        setFocus,
     } = form;
 
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (response) => {
         if (response.data.success) {
             showSnackbar({
-                message: t('common:password_successfully_changed'),
-                severity: 'success'
+                message: t('password_successfully_changed'),
+                severity: 'success',
                 // autoHideDuration: null
             });
             reset(defaultValues);
@@ -59,15 +59,14 @@ function UserProfileChangePasswordForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
-            handleResponse={handleResponse}
+            onResponse={handleResponse}
         >
             <PasswordField
                 id="old-password"
-                label={t('common:current_password')}
+                label={t('current_password')}
                 defaultValue=""
                 error={!!errors.oldPassword}
                 helperText={errors.oldPassword?.message}
-                variant="standard"
                 margin="normal"
                 // autoComplete="password"
                 autoFocus
@@ -75,58 +74,57 @@ function UserProfileChangePasswordForm(): JSX.Element {
                 required
                 {...extendRegRet(
                     register('oldPassword', {
-                        required: t('error:required_field'),
+                        required: t('error.required_field'),
                         minLength: {
                             value: minPasswordLength,
-                            message: t('error:short_password', {
-                                count: minPasswordLength
-                            })
-                        }
-                    })
+                            message: t('error.short_password', {
+                                count: minPasswordLength,
+                            }),
+                        },
+                    }),
                 )}
             />
             <PasswordField
                 id="new-password"
-                label={t('common:new_password')}
+                label={t('new_password')}
                 defaultValue=""
                 error={!!errors.newPassword}
                 helperText={errors.newPassword?.message}
-                variant="standard"
                 margin="normal"
                 fullWidth
                 required
                 {...extendRegRet(
                     register('newPassword', {
-                        required: t('error:required_field'),
+                        required: t('error.required_field'),
                         minLength: {
                             value: minPasswordLength,
-                            message: t('error:short_password', {
-                                count: minPasswordLength
-                            })
-                        }
+                            message: t('error.short_password', {
+                                count: minPasswordLength,
+                            }),
+                        },
                     }),
                     {
                         ref: (instance) => {
                             newPasswordRef.current = instance;
-                        }
-                    }
+                        },
+                    },
                 )}
             />
             <PasswordField
                 id="new-password2"
-                label={t('common:new_password_confirmation')}
+                label={t('new_password_confirmation')}
                 defaultValue=""
                 error={!!errors.newPassword2}
                 helperText={errors.newPassword2?.message}
-                variant="standard"
                 margin="normal"
                 fullWidth
                 required
                 {...extendRegRet(
                     register('newPassword2', {
-                        required: t('error:required_field'),
-                        validate: (value) => value === newPasswordRef.current?.value || t('error:password_mismatch')
-                    })
+                        required: t('error.required_field'),
+                        validate: (value) =>
+                            value === newPasswordRef.current?.value || t('error.password_mismatch'),
+                    }),
                 )}
             />
         </UserProfileForm>

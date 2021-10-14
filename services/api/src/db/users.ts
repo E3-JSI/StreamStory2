@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { QueryResultRow } from 'pg';
 
-import { salt } from '../config/globals';
+import { salt } from '../config/const';
 import db from '../config/db';
 
 export interface UserSettings {
@@ -17,8 +17,8 @@ export interface User {
     password: string;
     active: boolean;
     settings: UserSettings;
-    createdAt: Date;
-    lastLogin: Date;
+    createdAt: number;
+    lastLogin: number | null;
 }
 
 function getUser(row: QueryResultRow): User {
@@ -31,8 +31,8 @@ function getUser(row: QueryResultRow): User {
         password: row.password,
         active: row.active,
         settings: row.settings,
-        createdAt: row.created_at,
-        lastLogin: row.last_login
+        createdAt: (row.created_at as Date).getTime(),
+        lastLogin: (row.last_login_at as Date)?.getTime(),
     };
 }
 
@@ -70,7 +70,7 @@ export async function updateLastLogin(id: number): Promise<boolean> {
     const { rowCount } = await db.query(
         `
         UPDATE users
-        SET last_login = $1
+        SET last_login_at = $1
         WHERE id = $2;`,
         [new Date(), id]
     );
@@ -82,15 +82,16 @@ export async function add(
     email: string,
     password: string,
     settings: UserSettings
-): Promise<boolean> {
+): Promise<number> {
     const hashedPassword = await bcrypt.hash(password, salt);
-    const { rowCount } = await db.query(
+    const { rowCount, rows } = await db.query(
         `
         INSERT INTO users(group_id, email, password, settings)
-        VALUES ($1, $2, $3, $4);`,
+        VALUES ($1, $2, $3, $4)
+        RETURNING id;`,
         [groupId, email, hashedPassword, settings]
     );
-    return rowCount > 0;
+    return rowCount && rows[0].id;
 }
 
 export async function del(id: number): Promise<boolean> {
@@ -100,6 +101,12 @@ export async function del(id: number): Promise<boolean> {
         await client.query(
             `
             DELETE FROM tokens
+            WHERE user_id = $1;`,
+            [id]
+        );
+        await client.query(
+            `
+            DELETE FROM models
             WHERE user_id = $1;`,
             [id]
         );
@@ -173,7 +180,7 @@ export async function setPasswordResetToken(id: number, token: string): Promise<
         const { settings } = rows[0];
         settings.passwordReset = {
             token,
-            createdAt: new Date()
+            createdAt: new Date(),
         };
 
         const { rowCount } = await client.query(

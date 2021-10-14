@@ -3,6 +3,9 @@
 /.pnp
 .pnp.js
 
+# data
+/uploads
+
 # testing
 /coverage
 

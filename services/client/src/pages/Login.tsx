@@ -17,7 +17,7 @@ export interface LoginUrlParams {
 
 function Login(): JSX.Element {
     const history = useHistory();
-    const { t } = useTranslation(['common', 'error']);
+    const { t } = useTranslation();
     const [, /* session */ setSession] = useSession();
     const [showSnackbar] = useSnackbar();
     const { token } = useParams<LoginUrlParams>();
@@ -44,10 +44,10 @@ function Login(): JSX.Element {
 
                 if (response.data.success) {
                     showSnackbar({
-                        title: t('common:successful_account_activation.title'),
-                        message: t('common:successful_account_activation.message'),
+                        title: t('successful_account_activation.title'),
+                        message: t('successful_account_activation.message'),
                         severity: 'success',
-                        autoHideDuration: null
+                        autoHideDuration: null,
                     });
                 }
             } catch (error) {
@@ -58,7 +58,7 @@ function Login(): JSX.Element {
                 if (Array.isArray(errors)) {
                     showSnackbar({
                         message: errors,
-                        severity: 'error'
+                        severity: 'error',
                     });
                 }
             }
