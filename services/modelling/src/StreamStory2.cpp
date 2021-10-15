@@ -329,12 +329,12 @@ bool TCsvReader::ReadValue(TSIn& SIn, TChA& dest, int rowNo, int colNo)
 		// Double quote?
 		if (ch2 == Quote) { dest += SIn.GetCh(); continue; }
 		// Quote followed by a separator or EOL?
-		if (ch2 == '\r' || ch2 == '\n' || separator.IsChIn(ch2)) break;
+		if (ch2 == '\r' || ch2 == '\n' || separator.IsChIn(ch2)) { return true; }
 		// Otherwise it's an error.
 		errMsg = TStr::Fmt("Error in CSV data (row %d, col %d): unexpected character after the end of a quoted value (separator or EOL/EOF expected).", rowNo, colNo);
 		return false;
 	}
-	errMsg = TStr::Fmt("Error in CSV data (row %d, col %d): unexpected EOL/EOF in a quoted value.", rowNo, colNo);
+	errMsg = TStr::Fmt("Error in CSV data (row %d, col %d): unexpected EOF in a quoted value.", rowNo, colNo);
 	return false;
 }
 

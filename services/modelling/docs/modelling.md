@@ -72,7 +72,7 @@ The model object contains the following attributes:
 - `scales`: an array of objects, one for each scale in the multi-scale hierarchical model.
 - `totalHistograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst all the datapoints of the dataset.  
 
-For the sturcture of the objects representing scales and histograms, see the subsequent sections.
+For the structure of the objects representing scales and histograms, see the subsequent sections.
 
 ### Structure of a scale object
 
