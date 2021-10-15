@@ -27,8 +27,8 @@ const useStyles = makeStyles((theme: Theme) =>
             flex: '1 1 100%',
             fontWeight: theme.typography.fontWeightMedium,
         },
-        titleDisabled: {
-            color: theme.palette.text.secondary,
+        textDisabled: {
+            color: theme.palette.text.disabled,
             cursor: 'default',
         },
         searchButton: {

@@ -1,17 +1,15 @@
-import { once } from 'events';
 import fs from 'fs';
 import path from 'path';
-import readline from 'readline';
 
 import { NextFunction, Request, Response } from 'express';
-import csvParse from 'csv-parse/lib/sync';
 import multer from 'multer';
 import slugify from 'slugify';
 
+import modelling from '../config/modelling';
+import { getDatasetAttributes } from '../lib/Modelling';
 import * as models from '../db/models';
 import { Model } from '../db/models';
 import { User } from '../db/users';
-import { isNumeric } from '../utils/misc';
 
 export interface ModelResponse {
     id: number;
@@ -24,11 +22,6 @@ export interface ModelResponse {
     public: boolean;
     createdAt: number;
     model?: string;
-}
-
-export interface DataAttribute {
-    name: string;
-    numeric: boolean;
 }
 
 const storage = multer.diskStorage({
@@ -72,8 +65,7 @@ function getDataDirName(req: Request): string {
 }
 
 function getDataDirPath(req: Request, create = false): string {
-    const dataRoot = path.join('data', 'uploads');
-    const dirPath = path.join(dataRoot, getDataDirName(req));
+    const dirPath = path.resolve('data', 'uploads', getDataDirName(req));
 
     if (create && !fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
@@ -98,44 +90,6 @@ function cleanUpData(req: Request) {
     }
 }
 
-async function getAttributes(filePath: string): Promise<DataAttribute[]> {
-    const attributes: DataAttribute[] = [];
-
-    try {
-        const lines: string[][] = [];
-        const fileStream = fs.createReadStream(filePath);
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity,
-        });
-        const readFirstLines = (line: string) => {
-            lines.push(...csvParse(line));
-
-            if (lines.length > 1) {
-                rl.off('line', readFirstLines).close();
-            }
-        };
-
-        rl.on('line', readFirstLines);
-        await once(rl, 'close');
-
-        if (lines.length === 2 && lines[0].length === lines[1].length) {
-            const [header, data] = lines;
-
-            header.forEach((h, i) => {
-                attributes.push({
-                    name: h,
-                    numeric: isNumeric(data[i]),
-                });
-            });
-        }
-    } catch {
-        // Failed to read attributes.
-    }
-
-    return attributes;
-}
-
 export async function storeData(req: Request, res: Response, next: NextFunction): Promise<void> {
     upload(req, res, async (err: unknown) => {
         try {
@@ -143,7 +97,7 @@ export async function storeData(req: Request, res: Response, next: NextFunction)
                 throw err;
             }
 
-            const attributes = await getAttributes(getDataFilePath(req));
+            const attributes = await getDatasetAttributes(getDataFilePath(req));
 
             if (attributes.length < 2) {
                 cleanUpData(req);
@@ -175,16 +129,42 @@ export async function createModel(req: Request, res: Response, next: NextFunctio
     const user = req.user as User;
 
     try {
-        // TODO:
-        // Generate call JSON
-        // Send request
-        const model = '{}';
+        const {
+            selectedAttributes,
+            timeAttribute,
+            includeTimeAttribute,
+            categoricalAttributes,
+            numberOfStates,
+            name,
+            description,
+            dataset,
+            online,
+        } = req.body;
+
+        // Build model.
+        const modellingResponse = await modelling.buildFromModelConfig({
+            filePath: getDataFilePath(req),
+            selectedAttributes,
+            timeAttribute,
+            includeTimeAttribute,
+            categoricalAttributes,
+            numberOfStates,
+            numberOfHistogramBuckets: 10,
+        });
+
+        if (modellingResponse.status === 'error') {
+            res.status(400).json({
+                error: modellingResponse.errors,
+            });
+            return;
+        }
+
+        const model = JSON.stringify(modellingResponse.model);
 
         // Delete dataset.
         cleanUpData(req);
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const { name, description, dataset, online } = req.body;
         const modelId = await models.add(user.id, name, description, dataset, online, model);
 
         if (!modelId) {
@@ -205,6 +185,7 @@ export async function createModel(req: Request, res: Response, next: NextFunctio
 
         res.status(200).json({
             model: getModelResponse(modelData, true),
+            error: modellingResponse.errors,
         });
     } catch (error) {
         next(error);

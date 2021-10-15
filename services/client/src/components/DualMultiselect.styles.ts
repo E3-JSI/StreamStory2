@@ -55,6 +55,10 @@ const useStyles = makeStyles((theme: Theme) =>
         status: {
             marginTop: theme.spacing(0.5),
         },
+        textDisabled: {
+            color: theme.palette.text.disabled,
+            cursor: 'default',
+        },
     }),
 );
 

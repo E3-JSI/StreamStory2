@@ -52,7 +52,7 @@ export function getResponseErrors<T extends Errors>(
             const errors = error.response.data.error;
 
             if (Array.isArray(errors)) {
-                return errors.map((e: ErrorKey) => te(e));
+                return errors.map((e: ErrorKey) => /^[a-z0-9_]+$/.test(e) ? te(e) : e);
             }
 
             if (typeof errors === 'object') {

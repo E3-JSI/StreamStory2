@@ -49,6 +49,7 @@ export interface MultiselectProps extends Omit<PaperProps, 'onChange'> {
     searchPlaceholder?: string;
     selectionI18nKey?: string;
     emptyI18nKey?: string;
+    disabled?: boolean;
     // onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
     onChange?: React.FormEventHandler<HTMLElement>;
 }
@@ -68,6 +69,7 @@ function Multiselect({
     searchPlaceholder = '',
     selectionI18nKey = 'm_of_n_items_selected',
     emptyI18nKey = 'n_items',
+    disabled = false,
     // onChange,
     ...other
 }: MultiselectProps): JSX.Element {
@@ -198,7 +200,7 @@ function Multiselect({
                             }
                             size="small"
                             color="primary"
-                            disabled={!currentOptions.length}
+                            disabled={!currentOptions.length || disabled}
                             inputProps={{ 'aria-label': t('select_all_items') }}
                             onClick={handleToggleAllClick}
                             onChange={handleCheckboxChange}
@@ -210,11 +212,12 @@ function Multiselect({
                         {search === null ? (
                             <Typography
                                 className={clsx(classes.title, {
-                                    [classes.titleDisabled]: !currentOptions.length,
+                                    [classes.textDisabled]: !currentOptions.length || disabled,
                                 })}
                                 variant="body2"
                                 component="label"
                                 htmlFor={selectId}
+                                // color="error"
                                 noWrap
                             >
                                 {label}
@@ -227,6 +230,7 @@ function Multiselect({
                                 }}
                                 placeholder={searchPlaceholder || t('search')}
                                 value={search}
+                                disabled={disabled}
                                 onChange={handleSearchChange}
                                 onKeyDown={handleSearchInputKeyDown}
                                 autoFocus
@@ -248,7 +252,7 @@ function Multiselect({
                                     size="small"
                                     edge="end"
                                     color={search !== null ? 'secondary' : 'default'}
-                                    disabled={!currentOptions.length}
+                                    disabled={!currentOptions.length || disabled}
                                     onClick={handleToggleSearch}
                                 >
                                     {search !== null ? (
@@ -278,7 +282,7 @@ function Multiselect({
                                     className={classes.listItem}
                                     role="listitem"
                                     data-value={option.value}
-                                    disabled={!!option?.disabled}
+                                    disabled={!!option?.disabled || disabled}
                                     onClick={(e) => {
                                         handleItemClick(e, i);
                                     }}
@@ -376,6 +380,9 @@ function Multiselect({
                         )}
                         subheaderTypographyProps={{
                             variant: 'body2',
+                            className: clsx({
+                                [classes.textDisabled]: disabled,
+                            })
                         }}
                     />
                 </>
