@@ -56,6 +56,7 @@ export interface DualMultiselectProps extends Omit<GridProps, 'onChange'> {
     moveToAvailableButtonLabel?: string;
     selectionI18nKey?: string;
     emptyI18nKey?: string;
+    disabled?: boolean;
     // onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
     onChange?: React.FormEventHandler<HTMLElement>;
 }
@@ -75,6 +76,7 @@ function DualMultiselect({
     moveToAvailableButtonLabel,
     selectionI18nKey = 'm_of_n_items_selected',
     emptyI18nKey = 'n_items',
+    disabled = false,
     // onChange,
     ...other
 }: DualMultiselectProps): JSX.Element {
@@ -221,6 +223,7 @@ function DualMultiselect({
                     options={availableOptions}
                     variant={variant}
                     status={status === 'dual'}
+                    disabled={disabled}
                     onChange={(e) => {
                         handleMultiselectChange(
                             e as React.ChangeEvent<HTMLSelectElement>,
@@ -243,7 +246,9 @@ function DualMultiselect({
                             onClick={() => {
                                 handleMoveToButtonClick('selected');
                             }}
-                            disabled={optionStateCount[OptionState.AvailableChecked] === 0}
+                            disabled={
+                                optionStateCount[OptionState.AvailableChecked] === 0 || disabled
+                            }
                         >
                             <ArrowForwardIcon />
                         </IconButton>
@@ -257,6 +262,7 @@ function DualMultiselect({
                     options={selectedOptions}
                     variant={variant}
                     status={status === 'dual'}
+                    disabled={disabled}
                     onChange={(e) => {
                         handleMultiselectChange(
                             e as React.ChangeEvent<HTMLSelectElement>,
@@ -279,7 +285,9 @@ function DualMultiselect({
                             onClick={() => {
                                 handleMoveToButtonClick('available');
                             }}
-                            disabled={optionStateCount[OptionState.SelectedChecked] === 0}
+                            disabled={
+                                optionStateCount[OptionState.SelectedChecked] === 0 || disabled
+                            }
                         >
                             <ArrowBackIcon />
                         </IconButton>
@@ -304,7 +312,13 @@ function DualMultiselect({
                 </select>
             </Box>
             {status === 'single' && (
-                <Typography className={classes.status} variant="body2" color="textSecondary">
+                <Typography
+                    className={clsx(classes.status, {
+                        [classes.textDisabled]: disabled,
+                    })}
+                    variant="body2"
+                    color="textSecondary"
+                >
                     {t(
                         (currentOptions.length > 0 ? selectionI18nKey : emptyI18nKey) as Parameters<
                             typeof t

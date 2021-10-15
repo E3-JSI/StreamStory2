@@ -35,6 +35,15 @@ services:
             EMAIL_PORT: ${EMAIL_PORT}
             EMAIL_USER: ${EMAIL_USER}
             EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+            # db
+            POSTGRES_HOST: ${POSTGRES_HOST:-db}
+            POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+            POSTGRES_DB: ${POSTGRES_DB:-streamstory}
+            POSTGRES_USER: ${POSTGRES_USER:-root}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+            # modelling
+            MODELLING_HOST: ${MODELLING_HOST:-modelling}
+            MODELLING_PORT: ${MODELLING_PORT:-8096}
 
     modelling:
         # container_name: streamstory_modelling

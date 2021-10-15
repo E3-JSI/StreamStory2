@@ -138,7 +138,7 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
         {
             label: t('dp_means'),
             value: 'dpMeans',
-            disabled: false,
+            disabled: true,
         },
     ];
     const clusteringAlgorithm =
@@ -156,7 +156,7 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
         {
             label: t('transition_based'),
             value: 'mchainPartitioning',
-            disabled: false,
+            disabled: true,
         },
     ];
 
@@ -250,6 +250,7 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
                             margin="normal"
                             select
                             fullWidth
+                            disabled
                             {...muiRegister('timeUnit')}
                         >
                             {timeUnitOptions.map((option) => (
@@ -263,6 +264,7 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
                                 <Checkbox
                                     defaultChecked={defaultValues.includeTimeAttribute}
                                     color="primary"
+                                    disabled
                                     {...muiRegister('includeTimeAttribute')}
                                 />
                             }
@@ -309,9 +311,10 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
                                         searchPlaceholder={t('search_attributes')}
                                         selectionI18nKey="m_of_n_attributes_selected"
                                         emptyI18nKey="n_attributes"
+                                        disabled
                                         {...muiRegister('derivatives')}
                                     />
-                                    <FormHelperText>
+                                    <FormHelperText disabled>
                                         {t('include_derivatives_of_selected_attributes')}
                                     </FormHelperText>
                                 </FormControl>
@@ -532,6 +535,7 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
                                         status="single"
                                         selectionI18nKey="m_of_n_attributes_ignored"
                                         emptyI18nKey="n_attributes"
+                                        disabled
                                         {...muiRegister('ignoredAttributes')}
                                     />
                                 </FormControl>
