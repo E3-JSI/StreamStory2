@@ -467,7 +467,7 @@ void TDataset::InitColsFromConfig(const PModelConfig& config_)
 	{
 		const TAttrDesc &attr = config->attrs[colIdx];
 		cols.Add(); TDataColumn &col = cols.Last();
-		col.name = attr.name; col.sourceName = attr.sourceName;
+		col.name = attr.name; col.sourceName = attr.sourceName; col.userFriendlyLabel = attr.userFriendlyLabel;
 		col.idxInConfig = colIdx; col.distWeight = attr.distWeight;
 		col.type = attr.type; col.subType = attr.subType; col.formatStr = attr.formatStr; col.timeType = attr.timeType;
 	}
@@ -996,11 +996,39 @@ PJsonVal THistogram::SaveToJson(const TDataColumn &col) const
 	return vResult;
 }
 
+void THistogram::CalcHistograms(THistogramV& dest, const TDataset& dataset, const TIntV& rowNos, bool allRows, int nBucketsOverride)
+{
+	const int nCols = dataset.cols.Len(); dest.Clr(); dest.Gen(nCols);
+	TIntV allRowNos; if (allRows) for (int rowNo = 0; rowNo < dataset.nRows; ++rowNo) allRowNos.Add(rowNo); 
+	int nBuckets = (nBucketsOverride >= 0) ? nBucketsOverride : dataset.config->numHistogramBuckets;
+	for (int colNo = 0; colNo < nCols; ++colNo) {
+		PHistogram hist = new THistogram(); dest[colNo] = hist;
+		hist->Init(dataset.cols[colNo], nBuckets, allRows ? allRowNos : rowNos); }
+}
+
 //-----------------------------------------------------------------------------
 //
 // TState
 //
 //-----------------------------------------------------------------------------
+
+bool TStateLabel::SetIfBetter(int nCoveredInState_, int nStateMembers, int nCoveredTotal, int nAllInstances, double eps, int nBuckets) 
+{
+	// We'll outright reject labels that cover a less than average number of state members.
+	if (nCoveredInState_ * nBuckets < nStateMembers) return false;
+	// Otherwise, keep the label with the best odds-ratio.
+	int nNotCoveredInState_ = nStateMembers - nCoveredInState_;
+	int nCoveredOutsideState_ = nCoveredTotal - nCoveredInState_;
+	int nNotCoveredOutsideState_ = (nAllInstances - nStateMembers) - nCoveredOutsideState_;
+	// OddsRatio = Odds(Covered | InState) / Odds(Covered | OutsideState) = 
+	//             (nCoveredInState / nNotCoveredInState) / (nCoveredOutsideState / nNotCoveredOutsideState) 
+	eps = 0.1;
+	double candOddsRatio = (log(nCoveredInState_ + eps) - log(nNotCoveredInState_ + eps)) - (log(nCoveredOutsideState_ + eps) - log(nNotCoveredOutsideState_ + eps));
+	if (isnan(logOddsRatio) || candOddsRatio > logOddsRatio) {
+		logOddsRatio = candOddsRatio; nCoveredInState = nCoveredInState_; nNotCoveredInState = nNotCoveredInState_; nCoveredOutsideState = nCoveredOutsideState_; nNotCoveredOutsideState = nNotCoveredOutsideState_; 
+		return true; }
+	return false; 
+}
 
 void TState::InitCentroid0(const TDataset& dataset) 
 { 
@@ -1020,10 +1048,63 @@ void TState::AddToCentroid(const TDataset& dataset, const TCentroidComponentV& o
 	for (int iCol = 0; iCol < nCols; ++iCol) centroid[iCol].Add(dataset.cols[iCol], other[iCol], coef);
 }
 
-PJsonVal TState::SaveToJson(const TDataset& dataset) const
+void TState::CalcLabels(const TDataset& dataset, const TStateV& states, const THistogramV& totalHists)
+{ 
+	double eps = dataset.nRows / double(TInt::GetMx(states.Len(), 1));
+	for (int stateNo = 0; stateNo < states.Len(); ++stateNo) 
+		states[stateNo]->CalcLabel(dataset, stateNo, totalHists, eps); 
+}
+
+void TState::CalcLabel(const TDataset& dataset, int thisStateNo, const THistogramV& totalHists, double eps)
+{
+	TStateLabel &bestLabel = this->label; bestLabel = TStateLabel(); bestLabel.label = TInt::GetStr(thisStateNo);
+	static const char *dowNames[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	static const char *bucketNames[] = { "LOWEST", "LOW", "MEDIUM", "HIGH", "HIGHEST", "ERROR" };
+	static const char *monthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+	const int nStateMembers = members.Len(), nAllInstances = dataset.nRows;
+	for (int colNo = 0; colNo < dataset.cols.Len(); ++colNo) 
+	{
+		THistogram hist; hist.Init(dataset.cols[colNo], 5, members); 
+		const THistogram& totalHist = *totalHists[colNo]; IAssert(hist.nBuckets == totalHist.nBuckets);
+		const TDataColumn &col = dataset.cols[colNo];
+		if (col.type == TAttrType::Numeric) 
+		{ 
+			IAssert(hist.nBuckets == 5);
+			for (int bucketNo = 0; bucketNo < hist.nBuckets; ++bucketNo)
+				if (bestLabel.SetIfBetter(hist.freqs[bucketNo], nStateMembers, totalHist.freqs[bucketNo], nAllInstances, eps, hist.freqs.Len()))
+					bestLabel.label = col.userFriendlyLabel + " " + (0 <= bucketNo && bucketNo < 5 ? bucketNames[bucketNo] : bucketNames[5]); 
+		}
+		else if (col.type == TAttrType::Categorical) 
+		{
+			for (int bucketNo = 0; bucketNo < hist.nBuckets; ++bucketNo)
+				if (bestLabel.SetIfBetter(hist.freqs[bucketNo], nStateMembers, totalHist.freqs[bucketNo], nAllInstances, eps, hist.freqs.Len())) {
+					bestLabel.label = col.userFriendlyLabel + " = "; 
+					if (col.subType == TAttrSubtype::String) bestLabel.label += col.strKeyMap[bucketNo];
+					else if (col.subType == TAttrSubtype::Int) bestLabel.label += TInt::GetStr(col.intKeyMap[bucketNo]);
+					else IAssert(false); } 
+		}
+		else if (col.type == TAttrType::Time && col.timeType == TTimeType::Time)
+		{
+			for (int bucketNo = 0; bucketNo < 24; ++bucketNo) if (bestLabel.SetIfBetter(hist.hourFreqs[bucketNo], nStateMembers, totalHist.hourFreqs[bucketNo], nAllInstances, eps, hist.hourFreqs.Len())) bestLabel.label = "HOUR(" + col.userFriendlyLabel + ") = " + TInt::GetStr(bucketNo); 
+			for (int bucketNo = 0; bucketNo < 12; ++bucketNo) if (bestLabel.SetIfBetter(hist.monthFreqs[bucketNo], nStateMembers, totalHist.monthFreqs[bucketNo], nAllInstances, eps, hist.monthFreqs.Len())) bestLabel.label = col.userFriendlyLabel + " = " + monthNames[bucketNo]; 
+			for (int bucketNo = 0; bucketNo < 7; ++bucketNo) if (bestLabel.SetIfBetter(hist.dowFreqs[bucketNo], nStateMembers, totalHist.dowFreqs[bucketNo], nAllInstances, eps, hist.dowFreqs.Len())) bestLabel.label = col.userFriendlyLabel + " = " + dowNames[bucketNo];
+		}
+	}
+}
+
+PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PStatePartition& nextLowerScale) const
 {
 	PJsonVal vState = TJsonVal::NewObj();
+	vState->AddToObj("stateNo", TJsonVal::NewNum(thisStateNo));
 	vState->AddToObj("initialStates", TJsonVal::NewArr(initialStates));
+	vState->AddToObj("nMembers", TJsonVal::NewNum(members.Len()));
+	PJsonVal vLabel = TJsonVal::NewObj(); vState->AddToObj("suggestedLabel", vLabel);
+	vLabel->AddToObj("label", label.label);
+	vLabel->AddToObj("nCoveredInState", label.nCoveredInState);
+	vLabel->AddToObj("nCoveredOutsideState", label.nCoveredOutsideState);
+	vLabel->AddToObj("nNotCoveredInState", label.nNotCoveredInState);
+	vLabel->AddToObj("nNotCoveredOutsideState", label.nNotCoveredOutsideState);
+	vLabel->AddToObj("logOddsRatio", label.logOddsRatio);
 	PJsonVal vCentroid = TJsonVal::NewArr(); vState->AddToObj("centroid", vCentroid);
 	PJsonVal vHistograms = TJsonVal::NewArr(); vState->AddToObj("histograms", vHistograms);
 	for (int colNo = 0; colNo < centroid.Len(); ++colNo)
@@ -1031,15 +1112,19 @@ PJsonVal TState::SaveToJson(const TDataset& dataset) const
 		vCentroid->AddToArr(centroid[colNo].SaveToJson(dataset, colNo));
 		vHistograms->AddToArr(histograms[colNo]->SaveToJson(dataset.cols[colNo]));
 	}
+	if (! nextLowerScale.Empty())
+	{
+		TIntV childStates;
+		for (int childStateNo = 0; childStateNo < nextLowerScale->aggStates.Len(); ++childStateNo)
+		{
+			TState &child = *(nextLowerScale->aggStates[childStateNo]);
+			bool isChild = true;
+			for (int initState : child.initialStates) if (! this->initialStates.IsIn(initState)) { isChild = false; break; }
+			if (isChild) childStates.Add(childStateNo);
+		}
+		vState->AddToObj("childStates", TJsonVal::NewArr(childStates));
+	}	
 	return vState;
-}
-
-void TState::CalcHistograms(const TDataset& dataset)
-{
-	const int nCols = dataset.cols.Len(); histograms.Clr(); histograms.Gen(nCols);
-	for (int colNo = 0; colNo < nCols; ++colNo) {
-		PHistogram hist = new THistogram(); histograms[colNo] = hist;
-		hist->Init(dataset.cols[colNo], dataset.config->numHistogramBuckets, members); }
 }
 
 //-----------------------------------------------------------------------------
@@ -1083,12 +1168,15 @@ PJsonVal TModel::SaveToJson() const
 {
 	PJsonVal vModel = TJsonVal::NewObj();
 	PJsonVal vScales = TJsonVal::NewArr(); vModel->AddToObj("scales", vScales);
-	for (const PStatePartition& scale : statePartitions) 
+	for (int scaleNo = 0; scaleNo < statePartitions.Len(); ++scaleNo)
 	{
-		PJsonVal vScale = scale->SaveToJson(*dataset);
+		const PStatePartition scale = statePartitions[scaleNo];
+		PJsonVal vScale = scale->SaveToJson(*dataset, scale->aggStates.Len() == initialStates.Len(), (scaleNo == 0) ? PStatePartition{} : statePartitions[scaleNo - 1]);
 		vScales->AddToArr(vScale);
-		vScale->AddToObj("areTheseInitialStates", TJsonVal::NewBool(scale->aggStates.Len() == initialStates.Len()));
 	}
+	PJsonVal vHistograms = TJsonVal::NewArr(); vModel->AddToObj("totalHistograms", vHistograms);
+	for (int colNo = 0; colNo < totalHistograms.Len(); ++colNo)
+		vHistograms->AddToArr(totalHistograms[colNo]->SaveToJson(dataset->cols[colNo]));
 	return vModel;
 }
 
@@ -1260,7 +1348,7 @@ void TStatePartition::CalcEigenVals()
 	IAssert(eigenVals.Len() == n); IAssert(eigenVectors.GetXDim() == n); IAssert(eigenVectors.GetYDim() == n);
 }
 
-PJsonVal TStatePartition::SaveToJson(const TDataset& dataset) const
+PJsonVal TStatePartition::SaveToJson(const TDataset& dataset, bool areTheseInitialStates, const PStatePartition& nextLowerScale) const
 {
 	PJsonVal vPartition = TJsonVal::NewObj();
 	const int nStates = aggStates.Len();
@@ -1268,11 +1356,12 @@ PJsonVal TStatePartition::SaveToJson(const TDataset& dataset) const
 	PJsonVal vStates = TJsonVal::NewArr(); vPartition->AddToObj("states", vStates);
 	for (int i = 0; i < nStates; ++i)
 	{
-		PJsonVal vState = aggStates[i]->SaveToJson(dataset); vStates->AddToArr(vState);
+		PJsonVal vState = aggStates[i]->SaveToJson(i, dataset, nextLowerScale); vStates->AddToArr(vState);
 		vState->AddToObj("stationaryProbability", TJsonVal::NewNum(statProbs[i]));
 		PJsonVal vNextProb = TJsonVal::NewArr(); vState->AddToObj("nextStateProbDistr", vNextProb);
 		for (int j = 0; j < nStates; ++j) vNextProb->AddToArr(TJsonVal::NewNum(transMx(i, j)));
 	}
+	vPartition->AddToObj("areTheseInitialStates", TJsonVal::NewBool(areTheseInitialStates));
 	return vPartition;
 }
 
@@ -1489,5 +1578,6 @@ void TStateAggScaleSelector::SelectScales(int nToSelect, TStatePartitionV& dest)
 		IAssert(bestScale > 0);
 		dest.Add(allPartitions[bestScale]);
 	}
+	std::sort(dest.begin(), dest.end(), [] (const PStatePartition &x, const PStatePartition &y) { return x->aggStates.Len() > y->aggStates.Len(); });
 }
 

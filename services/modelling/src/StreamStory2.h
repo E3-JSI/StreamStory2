@@ -183,7 +183,7 @@ class TDataColumn
 public:
 	int idxInConfig;
 	// The following fields are copied from TAttrDesc, for convenience.
-	TStr name, sourceName, formatStr;
+	TStr name, sourceName, userFriendlyLabel, formatStr;
 	TAttrType type;
 	TAttrSubtype subType;
 	TTimeType timeType;
@@ -274,13 +274,28 @@ public:
 	void Clr() { nBuckets = 0; freqSum = 0; ClrAll(freqs, bounds, dowFreqs, monthFreqs, hourFreqs); }
 	void Init(const TDataColumn &col, int nBuckets_, const TIntV& rowNos);
 	PJsonVal SaveToJson(const TDataColumn &col) const;
+	static void CalcHistograms(THistogramV& dest, const TDataset& dataset, const TIntV& rowNos, bool allRows = false, int nBucketsOverride = -1);
 };
 
 class TState;
 typedef TPt<TState> PState;
 typedef TVec<PState> TStateV;
 
+class TStatePartition;
+typedef TPt<TStatePartition> PStatePartition;
+typedef TVec<PStatePartition> TStatePartitionV;
+
 class TDataset;
+
+class TStateLabel
+{
+public:
+	TStr label;
+	int nCoveredInState, nNotCoveredInState, nCoveredOutsideState, nNotCoveredOutsideState;
+	double logOddsRatio;
+	TStateLabel() { nCoveredInState = 0; nNotCoveredInState = 0; nCoveredOutsideState = 0; nNotCoveredOutsideState = 0; logOddsRatio = std::numeric_limits<double>::quiet_NaN(); }
+	bool SetIfBetter(int nCoveredInState_, int nStateMembers, int nCoveredTotal, int nAllInstances, double eps, int nBuckets);
+};
 
 class TState
 {
@@ -292,17 +307,16 @@ public:
 	TIntV members; // contains row indices into the dataset
 	TIntV initialStates; // indexes of initial states from which this state has been aggregated
 	THistogramV histograms; // index: column number, same as TDataset::cols
+	TStateLabel label;
 	void InitCentroid0(const TDataset& dataset);
 	void AddToCentroid(const TDataset& dataset, int rowNo, double coef);  // Works like centroid += coef * dataset[rowNo].
 	void AddToCentroid(const TDataset& dataset, const TCentroidComponentV& other, double coef); // centroid += coef * other.
 	void MulCentroidBy(double coef) { for (TCentroidComponent &comp : centroid) comp.MulBy(coef); }
-	void CalcHistograms(const TDataset& dataset);
-	PJsonVal SaveToJson(const TDataset& dataset) const;
+	void CalcHistograms(const TDataset& dataset) { THistogram::CalcHistograms(histograms, dataset, members, false); }
+	void CalcLabel(const TDataset& dataset, int thisStateNo, const THistogramV& totalHists, double eps);
+	static void CalcLabels(const TDataset& dataset, const TStateV& states, const THistogramV& totalHists);
+	PJsonVal SaveToJson(int thisStateNo, const TDataset& dataset, const PStatePartition& nextLowerScale) const;
 };
-
-class TStatePartition;
-typedef TPt<TStatePartition> PStatePartition;
-typedef TVec<PStatePartition> TStatePartitionV;
 
 // Represents a partition of initial states into a smaller number of aggregate states.
 class TStatePartition 
@@ -320,7 +334,8 @@ public:
 	void CalcTransMx(const TFltVV& initStateTransMx, const TFltV& initStateStatProbs);
 	void CalcEigenVals();
 	void CalcHistograms(const TDataset& dataset) { for (const PState& state : aggStates) state->CalcHistograms(dataset); }
-	PJsonVal SaveToJson(const TDataset& dataset) const;
+	void CalcLabels(const TDataset& dataset, const THistogramV& totalHists) { TState::CalcLabels(dataset, aggStates, totalHists); }
+	PJsonVal SaveToJson(const TDataset& dataset, bool areTheseInitialStates, const PStatePartition& nextLowerScale) const;
 };
 
 typedef TPt<TDataset> PDataset;
@@ -362,13 +377,20 @@ public:
 	TStateV initialStates;
 	TIntV rowToInitialState;
 	TStatePartitionV statePartitions; // ordered in decreasing number of states; statePartitions[0] contains the original initial states without aggregation
+	THistogramV totalHistograms; // histograms for the entire dataset, as opposed to for an individual state
 	TModel(const PDataset& dataset_) : dataset(dataset_) { }
 	void CalcTransMx(TFltV& statProbs, TFltVV& transMx) const;
 	void BuildRowToInitialState();
 	double RowCentrDist2(int rowNo, int initialStateNo) const { return dataset->RowCentrDist2(rowNo, initialStates[initialStateNo]->centroid); }
 	void CalcHistograms() { 
+		THistogram::CalcHistograms(totalHistograms, *dataset, {}, true); 
 		for (const PState& state : initialStates) state->CalcHistograms(*dataset); 
 		for (const PStatePartition& scale : statePartitions) scale->CalcHistograms(*dataset); }
+	void CalcLabels() { 
+		THistogramV totalHists; THistogram::CalcHistograms(totalHists, *dataset, {}, true, 5); 
+		TState::CalcLabels(*dataset, initialStates, totalHists);
+		for (const PStatePartition& scale : statePartitions) scale->CalcLabels(*dataset, totalHists); }
+
 	PJsonVal SaveToJson() const;
 };
 

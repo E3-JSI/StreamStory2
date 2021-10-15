@@ -61,22 +61,44 @@ The following combinations of `type` and `subType` are allowed:
 
 # Structure of the response JSON object
 
-The response JSON contains the following attributes:
+The response JSON object contains the following attributes:
 
 - `status`: a string value, either `"ok"` or `"error"`
 - `errors`: an array of strings, one per each error encountered.  This includes e.g. any errors in the request JSON objecs or errors encountered in the input data.  Some (non-fatal) errors may be reported even if `status == "ok"`.
 - `model`: a JSON object representing the model produced from the input data given the specifications in the request object.
 
-The model object currently contains just one field, `scales`.  Its value is an array of objects, one for each scale in the multi-scale hierarchical model.  Each scale is represented by an object containing the following attributes:
+The model object contains the following attributes:
+
+- `scales`: an array of objects, one for each scale in the multi-scale hierarchical model.
+- `totalHistograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst all the datapoints of the dataset.  
+
+For the sturcture of the objects representing scales and histograms, see the subsequent sections.
+
+### Structure of a scale object
+
+A scale object contains the following attributes:
 
 - `nStates`: the number of the states at this scale.  These states are obtained by aggregating the initial states (whose number was specified by `config.numInitialStates` of the input JSON object).
 - `areTheseInitialStates`: a boolean value indicating if this scale consists of the initial states without any aggregation (i.e. if `nStates == config.numInitialStates`).
-- `states`: a vector of objects representing the states at this scale.  Each of these objects contains the following attributes:
-  - `initialStates`: an array of integers listing the initial states that have been aggregated to form the state represented by this object.
-  - `centroid`: a vector of objects representing the centroid of this state (i.e. the centroid of all the input datapoints that have been assigned, during clustering, into those initial states out of which the current state has been aggregated).  Each of these objects contains two fields, `attrName` and `value`.  
-  - `stationaryProbability`: the stationary probability of this state, i.e. the proportion of input datapoints that belong to the initial states (clusters) from which this state has been aggregated.
-  - `nextStateProbDistr`: an array of floating-point values containing the probabilities of the next state.  Thus, `states[i].nextStateProbDistr[j]` is the probability that the next datapoint belongs to `states[j]` conditional on the fact that the current datapoint belongs to `states[i]`. 
-  - `histograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst the datapoints that belong to the current state.  For more detauls about the structure of the histogram objects, see a subsequent section.
+- `states`: an array of objects representing the states at this scale.  For their structure, see a subsequent section.
+
+### Structure of a state object
+
+A state object contains the following attributes:
+
+- `stateNo`: the zero-based index of this state in the `states` array for this scale.
+- `initialStates`: an array of integers listing the initial states that have been aggregated to form the state represented by this object.
+- `childStates`: the zero-based indices of the children of this state on the scale immediately below the current one; that is, these are the states whose `initialStates` set is a subset of the `initialStates` set of the current state.  At the lowest scale, which contains the initial states without any aggregation, the objects do not have a `childStates` attribute.
+- `centroid`: a vector of objects representing the centroid of this state (i.e. the centroid of all the input datapoints that have been assigned, during clustering, into those initial states out of which the current state has been aggregated).  Each of these objects contains two fields, `attrName` and `value`.  
+- `stationaryProbability`: the stationary probability of this state, i.e. the proportion of input datapoints that belong to the initial states (clusters) from which this state has been aggregated.
+- `nMembers`: the number of datapoints (from the input dataset) belonging to this state (or, in other words, to the initial states out of which the present state has been aggregated).
+- `nextStateProbDistr`: an array of floating-point values containing the probabilities of the next state.  Thus, `states[i].nextStateProbDistr[j]` is the probability that the next datapoint belongs to `states[j]` conditional on the fact that the current datapoint belongs to `states[i]`. 
+- `histograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst the datapoints that belong to the current state.  For more detauls about the structure of the histogram objects, see a subsequent section.
+- `suggestedLabel`: an object containing the following attributes:
+  - `label`: a suggested string label for this state, e.g. `"humidity HIGH"`.  
+  - `nCoveredInState`, `nNotCoveredInState`: the number of instances that belong to this state and do/don't match the label.
+  - `nCoveredOutsideState`, `nNotCoveredOutsideState`: the number of instances that don't belong to this state and do/don't match the label.
+  - `logOddsRatio`: the logarithm of the odds-ratio calculated from the above values.  The caller may wish to use this to decide whether to display the suggested label at all; if `logOddsRatio` is low, the suggested label might be considered misleading or useless, and a generic label (e.g. based on `stateNo`) might be preferred instead.
 
 ### Structure of a histogram object
 
@@ -95,4 +117,4 @@ The JSON object representing a histogram contains the following properties:
 - `freqSum`: the sum of the values in `freqs`, and thus also the total number of datapoints belonging to this state.  Thus by dividing the values in `freqs` by `freqSum`, the user can convert them into probabilities.
 - `bounds`: an array of numbers, where `bounds[i]` and `bounds[i + 1]` are the lower and upper bounds of the `i`th bucket, respectively (the lower bound is inclusive, the upper is exclusive, except for the last bucket where both are inclusive).  This property is present only if the attribute to which this histogram refers is a numerical one.
 - `keys`: an array of values such that `freqs[i]` is the number of datapoints belonging to the current state and having `keys[i]` are the value of the current attribute.  This property is present only if the attribute to which the histogram refers is a numerical one.  The elements of `keys` may be integers or strings, depending on the attribute's `subType`.
-- `dayOfWeekFreqs`, `monthFreqs`, `hourFreqs`: present only if the attribute to which this histogram refers is a timestamp.  These properties are arrays of 7, 12 and 24 integers, respectively, giving the number of datapoints belonging to the present state whose timestamp belongs to a particular day of week, month of the year, or hour of the day, respectively.  `dayOfWeekFreqs[0]` refers to Sunday, monthFreqs[0]` to January, `hourFreqs[0]` to all moments in time from midnight (inclusive) to 1 AM (exclusive), etc.
+- `dayOfWeekFreqs`, `monthFreqs`, `hourFreqs`: present only if the attribute to which this histogram refers is a timestamp.  These properties are arrays of 7, 12 and 24 integers, respectively, giving the number of datapoints belonging to the present state whose timestamp belongs to a particular day of week, month of the year, or hour of the day, respectively.  `dayOfWeekFreqs[0]` refers to Sunday, `monthFreqs[0]` to January, `hourFreqs[0]` to all moments in time from midnight (inclusive) to 1 AM (exclusive), etc.
