@@ -34,7 +34,7 @@ function UserProfile(): JSX.Element {
 
     const profileTabPrefix = 'profile';
 
-    function handleChange(event: ChangeEvent<Record<string, never>>, newValue: string) {
+    function handleTabChange(event: ChangeEvent<Record<string, never>>, newValue: string) {
         setTabValue(newValue);
     }
 
@@ -49,7 +49,7 @@ function UserProfile(): JSX.Element {
                     scrollButtons="auto"
                     indicatorColor="primary"
                     textColor="primary"
-                    onChange={handleChange}
+                    onChange={handleTabChange}
                     aria-label={t('my_profile')}
                     // centered
                 >

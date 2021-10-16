@@ -15,7 +15,7 @@ export interface Session {
     isSideNavExpanded: boolean;
     isPageLoading: boolean;
     modelsPerPage: Record<string, number>;
-    currentModel: Model | null;
+    currentModel: Model[];
     update: null | UpdateSession;
 }
 
@@ -40,7 +40,7 @@ export const defaultProps: Required<SessionProps> = {
     isSideNavExpanded: false,
     isPageLoading: true,
     modelsPerPage: {},
-    currentModel: null,
+    currentModel: [],
 };
 
 const SessionContext = React.createContext<Session>({

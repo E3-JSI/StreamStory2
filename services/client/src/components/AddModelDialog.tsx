@@ -68,7 +68,7 @@ function AddModelDialog({ open, title, onClose, ...other }: AddModelDialogProps)
                 <Tooltip title={t('close_dialog')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                     <IconButton
                         className={classes.closeButton}
-                        aria-label={t('close')}
+                        aria-label={t('close_dialog')}
                         edge="end"
                         onClick={handleCloseClick}
                     >

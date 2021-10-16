@@ -17,14 +17,15 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import AccessTimeIcon from '@material-ui/icons/AccessTime';
+import UpdateIcon from '@material-ui/icons/Update';
 import CancelIcon from '@material-ui/icons/Cancel';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import CollectionsBookmarkIcon from '@material-ui/icons/CollectionsBookmark';
 import DescriptionIcon from '@material-ui/icons/Description';
 import EditIcon from '@material-ui/icons/Edit';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
-import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
+import PauseIcon from '@material-ui/icons/Pause';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import PublicIcon from '@material-ui/icons/Public';
 import SaveIcon from '@material-ui/icons/Save';
 import TimelineIcon from '@material-ui/icons/Timeline';
@@ -38,12 +39,15 @@ import useSnackbar from '../hooks/useSnackbar';
 import ActionMenu from './ActionMenu';
 import LoadingButton from './LoadingButton';
 import Mark from './Mark';
+import PublicOffIcon from './icons/PublicOff';
+import UpdateDisabledIcon from './icons/UpdateDisabled';
 
 import useStyles from './ModelListItem.styles';
 
 export interface ModelListItemProps {
     model: Model;
     selected: boolean;
+    online?: boolean;
     searchTerm?: string;
     showUserColumn?: boolean;
     showDateColumn?: boolean;
@@ -68,7 +72,8 @@ export type ErrorKey = keyof FormRequestData;
 
 function ModelListItem({
     model,
-    selected,
+    selected: isSelected,
+    online: isOnline = false,
     searchTerm = '',
     showUserColumn,
     showDateColumn,
@@ -104,7 +109,7 @@ function ModelListItem({
         timeStyle: 'medium',
     });
     const isOwnModel = model.username === session.user?.email;
-    const detailsButtonTooltip = selected ? t('hide_details') : t('show_details');
+    const detailsButtonTooltip = isSelected ? t('hide_details') : t('show_details');
     const markedModelValues = {
         name: <Mark term={searchTerm}>{model.name}</Mark>,
         dataset: <Mark term={searchTerm}>{model.dataset}</Mark>,
@@ -187,7 +192,7 @@ function ModelListItem({
         <React.Fragment key={model.id}>
             <TableRow
                 className={clsx(classes.row, classes.rowMain)}
-                selected={selected}
+                selected={isSelected}
                 tabIndex={-1}
                 onClick={(event) => onItemClick(event, model.id)}
                 hover
@@ -200,7 +205,7 @@ function ModelListItem({
                         >
                             <IconButton
                                 className={clsx(classes.toggleRowButton, {
-                                    open: selected,
+                                    open: isSelected,
                                 })}
                                 size="small"
                                 aria-label={detailsButtonTooltip}
@@ -244,10 +249,7 @@ function ModelListItem({
                     </TableCell>
                 )}
                 <TableCell align="right">
-                    <Tooltip
-                        title={t('view_model')}
-                        enterDelay={muiTheme.timing.tooltipEnterDelay}
-                    >
+                    <Tooltip title={t('view_model')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                         <IconButton
                             component={RouterLink}
                             to={`/model/${model.id}`}
@@ -280,7 +282,9 @@ function ModelListItem({
                                 anchorEl={moreButtonRef.current}
                                 open={isMoreMenuOpen}
                                 model={model}
-                                modelIsPublic={model.public}
+                                online={isOnline}
+                                active={model.active}
+                                public={model.public}
                                 updateModel={updateModel}
                                 toggleMenu={toggleMoreMenu}
                                 onClose={toggleMoreMenu}
@@ -294,9 +298,14 @@ function ModelListItem({
                     )}
                 </TableCell>
             </TableRow>
-            <TableRow className={clsx(classes.row, classes.rowDetails)} selected={selected}>
+            <TableRow className={clsx(classes.row, classes.rowDetails)} selected={isSelected}>
                 <TableCell colSpan={2 + Number(!!showUserColumn) + Number(!!showDateColumn)}>
-                    <Collapse in={selected} timeout="auto" onExited={handleCollapse} unmountOnExit>
+                    <Collapse
+                        in={isSelected}
+                        timeout="auto"
+                        onExited={handleCollapse}
+                        unmountOnExit
+                    >
                         <Box className={classes.detailsContainer}>
                             <dl className={classes.details}>
                                 <div>
@@ -322,24 +331,29 @@ function ModelListItem({
                                 </div>
                                 <div>
                                     <dt>
-                                        {model.online ? (
-                                            <PlayCircleFilledIcon />
-                                        ) : (
-                                            <CollectionsBookmarkIcon />
-                                        )}
+                                        {model.online ? <UpdateIcon /> : <UpdateDisabledIcon />}
                                         {t('type')}
                                     </dt>
-                                    <dd>
-                                        {model.online ? t('online') : t('offline')}
-                                    </dd>
+                                    <dd>{model.online ? t('online') : t('offline')}</dd>
                                 </div>
-                                <div>
-                                    <dt>
-                                        <PublicIcon />
-                                        {t('public')}
-                                    </dt>
-                                    <dd>{model.public ? t('yes') : t('no')}</dd>
-                                </div>
+                                {!isOnline && (
+                                    <div>
+                                        <dt>
+                                            {model.public ? <PublicIcon /> : <PublicOffIcon />}
+                                            {t('public')}
+                                        </dt>
+                                        <dd>{model.public ? t('yes') : t('no')}</dd>
+                                    </div>
+                                )}
+                                {isOnline && (
+                                    <div>
+                                        <dt>
+                                            {model.active ? <PlayArrowIcon /> : <PauseIcon />}
+                                            {t('active')}
+                                        </dt>
+                                        <dd>{model.active ? t('yes') : t('no')}</dd>
+                                    </div>
+                                )}
                                 {(!!model.description || isOwnModel) && (
                                     <div>
                                         <dt>

@@ -185,10 +185,7 @@ function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
 
     return (
         <form>
-            <Fieldset
-                legend={t('load_dataset')}
-                gutterBottom
-            >
+            <Fieldset legend={t('load_dataset')} gutterBottom>
                 <Alert className={classes.info} severity="info">
                     <TransHtml i18nKey="upload_CSV_description" />
                 </Alert>

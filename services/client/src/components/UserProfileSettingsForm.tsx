@@ -74,11 +74,7 @@ function UserProfileSettingsForm(): JSX.Element {
                                 control={<Radio />}
                                 label={t('light')}
                             />
-                            <FormControlLabel
-                                value="dark"
-                                control={<Radio />}
-                                label={t('dark')}
-                            />
+                            <FormControlLabel value="dark" control={<Radio />} label={t('dark')} />
                             <FormControlLabel
                                 value="system"
                                 control={<Radio />}

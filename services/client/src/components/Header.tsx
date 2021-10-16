@@ -145,10 +145,7 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
                         <Logo />
                     </Link>
                 </Box>
-                <Tooltip
-                    title={t('change_theme')}
-                    enterDelay={muiTheme.timing.tooltipEnterDelay}
-                >
+                <Tooltip title={t('change_theme')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                     <IconButton
                         ref={themeButtonRef}
                         edge={isSimpleHeader ? 'end' : undefined}
