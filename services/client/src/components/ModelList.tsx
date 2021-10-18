@@ -10,6 +10,7 @@ import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import InputBase from '@material-ui/core/InputBase';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -26,6 +27,7 @@ import Skeleton from '@material-ui/lab/Skeleton';
 import AddIcon from '@material-ui/icons/Add';
 import CloseIcon from '@material-ui/icons/Close';
 import SearchIcon from '@material-ui/icons/Search';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
 import { Model } from '../types/api';
 import { DialogOnCloseEvent, DialogOnCloseReasonExt } from '../types/dialog';
@@ -63,8 +65,8 @@ export interface ModelListProps {
     searchPlaceholder: string;
     models: Model[];
     online?: boolean;
-    gutterBottom?: boolean;
     loading?: boolean;
+    gutterBottom?: boolean;
     showUserColumn?: boolean;
     showDateColumn?: boolean;
     updateModel: (model: Model, remove?: boolean) => void;
@@ -111,9 +113,9 @@ function ModelList({
     addModelDialogTitle,
     searchPlaceholder,
     models,
-    online = false,
+    online: isOnline = false,
+    loading: isLoading = false,
     gutterBottom,
-    loading = false,
     showUserColumn,
     showDateColumn,
     updateModel,
@@ -137,6 +139,8 @@ function ModelList({
 
     const isSearchActive = search !== null;
     const isScreenWidthGteSm = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'));
+    const isBuilding =
+        !!addModelDialogTitle && modelFormData !== null && modelFormData.online === isOnline;
     const filteredModels = models.filter((m) => {
         const searchRegExp = new RegExp(search || '', 'i');
         return (
@@ -339,7 +343,7 @@ function ModelList({
                                 variant="contained"
                                 size="small"
                                 startIcon={<AddIcon />}
-                                disabled={loading || modelForm.formState.isSubmitting}
+                                disabled={isLoading || modelForm.formState.isSubmitting}
                                 onClick={handleAddButtonClick}
                                 disableElevation
                             >
@@ -353,7 +357,7 @@ function ModelList({
                                     >
                                         <input
                                             type="hidden"
-                                            value={Number(online)}
+                                            value={Number(isOnline)}
                                             {...modelForm.register('online', {
                                                 setValueAs: (v) => !!parseInt(v, 10),
                                             })}
@@ -393,17 +397,17 @@ function ModelList({
                                     >
                                         <TableSortLabel
                                             active={
-                                                !loading &&
+                                                !isLoading &&
                                                 !!models.length &&
                                                 orderBy === headCell.id
                                             }
                                             direction={
-                                                (!loading &&
+                                                (!isLoading &&
                                                     (orderBy === headCell.id ? order : 'asc')) ||
                                                 undefined
                                             }
                                             onClick={createSortHandler(headCell.id)}
-                                            disabled={loading || !models.length}
+                                            disabled={isLoading || !models.length}
                                         >
                                             {headCell.label}
                                             {orderBy === headCell.id && (
@@ -421,29 +425,33 @@ function ModelList({
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {!!addModelDialogTitle && modelFormData !== null && (
+                        {isBuilding && (
                             <TableRow>
-                                <TableCell>
-                                    <Typography variant="body2">
-                                        <Skeleton />
+                                <TableCell
+                                    className={classes.modelProgressCell}
+                                    colSpan={
+                                        2 + Number(!!showUserColumn) + Number(!!showDateColumn)
+                                    }
+                                >
+                                    <Typography variant="body2" noWrap>
+                                        <ChevronRightIcon
+                                            className={classes.modelProgressIcon}
+                                            fontSize="small"
+                                            color="action"
+                                        />
+                                        {modelFormData?.name}{' '}
+                                        <Typography
+                                            component="span"
+                                            variant="caption"
+                                            color="textSecondary"
+                                        >
+                                            {t('building')}&hellip;
+                                        </Typography>
                                     </Typography>
-                                </TableCell>
-                                {showUserColumn && (
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            <Skeleton />
-                                        </Typography>
-                                    </TableCell>
-                                )}
-                                {showDateColumn && (
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            <Skeleton />
-                                        </Typography>
-                                    </TableCell>
-                                )}
-                                <TableCell>
-                                    <Skeleton variant="rect" height={30} />
+                                    <LinearProgress
+                                        className={classes.modelProgress}
+                                        color="primary"
+                                    />
                                 </TableCell>
                             </TableRow>
                         )}
@@ -455,6 +463,7 @@ function ModelList({
                                     key={model.id}
                                     model={model}
                                     selected={isRowSelected}
+                                    online={isOnline}
                                     searchTerm={search || ''}
                                     showUserColumn={showUserColumn}
                                     showDateColumn={showDateColumn}
@@ -463,7 +472,7 @@ function ModelList({
                                 />
                             );
                         })}
-                        {loading &&
+                        {isLoading &&
                             !models.length &&
                             Array.from(Array(rowsPerPage)).map((e, i) => (
                                 <TableRow key={`row-${i + 1}`}>
@@ -491,7 +500,7 @@ function ModelList({
                                     </TableCell>
                                 </TableRow>
                             ))}
-                        {!loading && emptyRows > 0 && (
+                        {!isLoading && emptyRows > 0 && (
                             <TableRow style={{ height: 43 * emptyRows }}>
                                 <TableCell
                                     colSpan={
@@ -513,7 +522,7 @@ function ModelList({
                 nextIconButtonText={t('next_page')}
                 labelRowsPerPage={`${t('rows_per_page')}:`}
                 labelDisplayedRows={({ from, to, count }) => {
-                    if (loading) {
+                    if (isLoading) {
                         return (
                             <Typography component="span" variant="body2">
                                 <Skeleton width={60} />

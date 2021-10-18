@@ -1,6 +1,7 @@
 import React from 'react';
 
 import Box from '@material-ui/core/Box';
+import Paper from '@material-ui/core/Paper';
 
 export interface TabPanelProps {
     children?: React.ReactNode;
@@ -32,8 +33,10 @@ function TabPanel({
             {...other}
         >
             {value === index && (
-                <Box px={0} py={3}>
-                    {children}
+                <Box p={2} mt={0.5} clone>
+                    <Paper elevation={0} square>
+                        {children}
+                    </Paper>
                 </Box>
             )}
         </div>

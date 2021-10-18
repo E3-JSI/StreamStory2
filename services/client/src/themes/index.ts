@@ -7,6 +7,7 @@ import { mergeDeep } from '../utils/misc';
 const theme: ThemeOptions = {
     props: {
         MuiTextField: {
+            size: 'small',
             variant: 'outlined',
         },
     },

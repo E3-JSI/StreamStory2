@@ -250,6 +250,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             defaultValue=""
                             error={!!errors.email}
                             helperText={errors.email?.message}
+                            size="medium"
                             variant="filled"
                             margin="normal"
                             // autoComplete="email"
@@ -277,6 +278,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             defaultValue=""
                             error={!!errors.password}
                             helperText={errors.password?.message}
+                            size="medium"
                             variant="filled"
                             margin="normal"
                             // autoComplete="password"
@@ -311,6 +313,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                             defaultValue=""
                             error={!!errors.password2}
                             helperText={errors.password2?.message}
+                            size="medium"
                             variant="filled"
                             margin="normal"
                             fullWidth

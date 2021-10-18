@@ -37,9 +37,10 @@ const upload = multer({ storage }).single('file');
 /**
  * Generate model response from model.
  * @param model Model.
+ * @param metadata Indicates if only metadata should be included.
  * @returns Model response object.
  */
-export function getModelResponse(model: Model, metaOnly = false): ModelResponse {
+function getModelResponse(model: Model, metadata = false): ModelResponse {
     const modelResponse = {
         id: model.id,
         username: model.username,
@@ -52,7 +53,7 @@ export function getModelResponse(model: Model, metaOnly = false): ModelResponse 
         createdAt: model.createdAt,
     };
 
-    return metaOnly
+    return metadata
         ? modelResponse
         : {
               ...modelResponse,
@@ -151,7 +152,7 @@ export async function createModel(req: Request, res: Response, next: NextFunctio
             numberOfStates,
             numberOfHistogramBuckets: 10,
         });
-
+        await new Promise((resolve) => setTimeout(resolve, 10000));
         if (modellingResponse.status === 'error') {
             res.status(400).json({
                 error: modellingResponse.errors,
@@ -241,9 +242,12 @@ export async function updateModel(req: Request, res: Response, next: NextFunctio
             return;
         }
 
+        let metadata = false;
+
         // TODO: form validation/sanitation (use: express-validation!?).
         if (req.body.description !== undefined) {
             const success = await models.updateDescription(modelId, req.body.description);
+            metadata = true;
 
             if (!success) {
                 res.status(500).json({
@@ -253,6 +257,7 @@ export async function updateModel(req: Request, res: Response, next: NextFunctio
             }
         } else if (req.body.public !== undefined) {
             const success = await models.setPublic(modelId, req.body.public);
+            metadata = true;
 
             if (!success) {
                 res.status(500).json({
@@ -260,10 +265,22 @@ export async function updateModel(req: Request, res: Response, next: NextFunctio
                 });
                 return;
             }
+        } else if (req.body.active !== undefined) {
+            const success = await models.setActive(modelId, req.body.active);
+            metadata = true;
+
+            if (!success) {
+                res.status(500).json({
+                    error: [
+                        req.body.active ? 'model_activation_failed' : 'model_deactivation_failed',
+                    ],
+                });
+                return;
+            }
         }
 
         res.status(200).json({
-            model: getModelResponse((await models.findById(modelId)) as Model),
+            model: getModelResponse((await models.findById(modelId)) as Model, metadata),
         });
     } catch (error) {
         next(error);

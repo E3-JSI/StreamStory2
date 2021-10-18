@@ -1,5 +1,7 @@
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 
+import { setColorOpacity } from '../utils/misc';
+
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
@@ -18,6 +20,8 @@ const useStyles = makeStyles((theme: Theme) =>
         },
         title: {
             flex: '1 1 100%',
+            paddingTop: theme.spacing(1),
+            paddingBottom: theme.spacing(1),
         },
         descriptionIcon: {
             marginLeft: theme.spacing(0.5),
@@ -74,6 +78,26 @@ const useStyles = makeStyles((theme: Theme) =>
             [theme.breakpoints.up('sm')]: {
                 width: 92,
             },
+        },
+        modelProgress: {
+            position: 'relative',
+            top: theme.spacing(0.25),
+            marginRight: -theme.spacing(2),
+            marginBottom: -theme.spacing(0.5),
+            marginLeft: -theme.spacing(2),
+        },
+        modelProgressCell: {
+            backgroundColor: setColorOpacity(
+                theme.palette.primary.main,
+                theme.palette.action.selectedOpacity * 2,
+            ),
+        },
+        modelProgressIcon: {
+            display: 'inline-block',
+            height: theme.spacing(3.75),
+            marginRight: theme.spacing(0.875),
+            marginLeft: -theme.spacing(0.375),
+            verticalAlign: 'middle',
         },
     }),
 );

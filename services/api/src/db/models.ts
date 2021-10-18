@@ -16,7 +16,13 @@ export interface Model {
     model?: string;
 }
 
-function getModel(row: QueryResultRow, metaOnly = false): Model {
+/**
+ * Generate model object from data row.
+ * @param row Data row.
+ * @param metadata Indicates if only metadata should be included.
+ * @returns Model object.
+ */
+function getModel(row: QueryResultRow, metadata = false): Model {
     const model = {
         id: row.id,
         userId: row.user_id,
@@ -30,7 +36,7 @@ function getModel(row: QueryResultRow, metaOnly = false): Model {
         createdAt: (row.created_at as Date).getTime(),
     };
 
-    return metaOnly
+    return metadata
         ? model
         : {
               ...model,
@@ -77,10 +83,10 @@ export async function add(
 ): Promise<number> {
     const { rowCount, rows } = await db.query(
         `
-        INSERT INTO models(user_id, name, description, dataset, online, model)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO models(user_id, name, description, dataset, online, active, public, model)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id;`,
-        [userId, name, description, dataset, online, model],
+        [userId, name, description, dataset, online, online, false, model],
     );
     return rowCount && rows[0].id;
 }

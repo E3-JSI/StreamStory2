@@ -98,14 +98,13 @@ export function extendRegRet(
           };
 }
 
-
 /**
  * Initialize `register` function based on react hook form's `register`, with
  * modified return object with `inputRef` instead of `ref`.
  * @param register React hook form's register function.
  * @returns New `register` function, addapted for MUI components with `inputRef`.
  */
- export function initMuiRegister<TFieldValues extends FieldValues>(
+export function initMuiRegister<TFieldValues extends FieldValues>(
     register: UseFormRegister<TFieldValues>,
 ) {
     return (
@@ -116,7 +115,7 @@ export function extendRegRet(
         return {
             ...other,
             // inputRef: ref,
-            inputRef: (instance) => {                
+            inputRef: (instance) => {
                 ref(instance?.node ?? instance);
             },
         };
@@ -140,7 +139,7 @@ export function initFormFieldRegister<TFieldValues extends FieldValues>(
         return {
             ...other,
             // inputRef: ref,
-            inputRef: (instance) => {                
+            inputRef: (instance) => {
                 ref(instance?.node ?? instance);
             },
         };

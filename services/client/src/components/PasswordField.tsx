@@ -57,6 +57,7 @@ function PasswordField(
         onFocus,
         placeholder,
         required = false,
+        size,
         value,
         variant,
         ...other
@@ -64,6 +65,7 @@ function PasswordField(
     const { t } = useTranslation();
     const muiTheme = useTheme();
     const [passwordVisible, setPasswordVisible] = useState(false);
+    const textFieldSize = size || muiTheme.props?.MuiTextField?.size || 'medium';
     const textFieldVariant = variant || muiTheme.props?.MuiTextField?.variant || 'standard';
 
     function handleClickShowPassword() {
@@ -104,18 +106,18 @@ function PasswordField(
                 autoFocus,
                 defaultValue,
                 fullWidth,
-                name,
-                type: passwordVisible ? 'text' : 'password',
-                value,
                 id,
+                inputProps,
                 inputRef,
+                label: inputLabel,
+                name,
+                notched: inputNotched,
                 onBlur,
                 onChange,
                 onFocus,
                 placeholder,
-                inputProps,
-                notched: inputNotched,
-                label: inputLabel,
+                type: passwordVisible ? 'text' : 'password',
+                value,
             })}
             {...InputProps}
             endAdornment={
@@ -140,16 +142,17 @@ function PasswordField(
     return (
         <FormControl
             {...filterDefinedProps({
-                component: 'div',
                 className: clsx(className, classes && classes.root),
-                variant: textFieldVariant,
+                color,
+                component: 'div',
                 disabled,
                 error,
                 fullWidth,
                 hiddenLabel,
                 ref,
                 required,
-                color,
+                size: textFieldSize,
+                variant: textFieldVariant,
             })}
             {...other}
         >
