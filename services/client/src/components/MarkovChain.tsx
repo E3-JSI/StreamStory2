@@ -111,7 +111,7 @@ const MarkovChain = ({ scales }: any) => {
 
                 console.log("##", 3)
 
-                // createMarkers(graphData, gMarkers);
+                createMarkers(graphData, gMarkers);
 
                 console.log("##", 4)
             }
