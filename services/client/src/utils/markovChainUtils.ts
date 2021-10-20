@@ -251,7 +251,9 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
             colorBlueNodeAndLinks.call(this, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).id);
         })
-        .on("mouseup", () => console.log("mouseUp"));
+    // .on("mouseup", () => {
+    //     console.log("mouseUp")
+    // });
     return enterTmp;
 }
 
@@ -318,23 +320,15 @@ export function getTransitionsFromProps(g: any, props: ITransitionProps): any {
 
 function onNodeDrag(nodesMap: any, gLinks: any) {
     return d3.drag<SVGGElement, unknown>()
-        // prevent jumping
-        // .subject(function (event: any) { // https://stackoverflow.com/a/56704849
-        //     return {
-        //         x: event.x,
-        //         y: event.y
-        //     };
-        // })
-        .subject((event: any) => ({
-            x: event.x,
-            y: event.y
-        }))
+        .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
+            return {
+                x: event.x,
+                y: event.y
+            };
+        })
         .on("drag", function (event: any, d: any) {
-            const copy = d; // FIXME: probably bug
-            // d.x = event.x
-            // d.y = event.y;
-            copy.x = event.x;
-            copy.y = event.y;
+            d.x = event.x // eslint-disable-line no-param-reassign
+            d.y = event.y; // eslint-disable-line no-param-reassign
 
             const nodeGroup = d3.select(this);
             selectNodeCircle(nodeGroup)
@@ -370,56 +364,56 @@ function drawLineWithOffset(nodesMap: any, d: any) {
     return path;
 }
 
-function colorBlueNodeAndLinks(gNodes: any, gLinks: any, gMarkers: any): void {
+function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: any): void {
     selectAllNodeGroups(gNodes).each(function (this: any) {
         selectNodeCircle(d3.select(this))
             .attr("stroke", NODE_BORDER_COLOR)
     });
-    // const nodeGroupClicked = d3.select(this);
+    const nodeGroupClicked = d3.select(this);
 
 
-    // const nodeCircle = selectNodeCircle(nodeGroupClicked);
+    const nodeCircle = selectNodeCircle(nodeGroupClicked);
 
-    // nodeCircle
-    //     .attr("stroke", NODE_SELECTED_BORDER_COLOR)
+    nodeCircle
+        .attr("stroke", NODE_SELECTED_BORDER_COLOR)
 
-    // const bbox = nodeCircle.node().getBBox()
+    const bbox = nodeCircle.node().getBBox()
 
     // console.log("bbox:")
     // console.log(bbox)
 
-    // selectAllLinkGroups(gLinks).each(function (this: any) {
-    //     const linkGroup = d3.select(this);
-    //     const linePath = selectLinkPath(linkGroup);
-    //     const lineData: any = linkGroup.data()[0];
-    //     const arrow = gMarkers.select(`#arrow_s${lineData.source}_t${lineData.target}`);
+    selectAllLinkGroups(gLinks).each(function (this: any) {
+        const linkGroup = d3.select(this);
+        const linePath = selectLinkPath(linkGroup);
+        const lineData: any = linkGroup.data()[0];
+        const arrow = gMarkers.select(`#arrow_s${lineData.source}_t${lineData.target}`);
 
-    //     const delay = 150;
+        const delay = 150;
 
-    //     if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).id) {
-    //         linePath
-    //             .attr("stroke", LINE_COLOR)
-    //             .transition()
-    //             .ease(d3.easeExpIn)
-    //             .duration(delay)
-    //             .attr("stroke", LINE_SELECTED_COLOR)
+        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).id) {
+            linePath
+                .attr("stroke", LINE_COLOR)
+                .transition()
+                .ease(d3.easeExpIn)
+                .duration(delay)
+                .attr("stroke", LINE_SELECTED_COLOR)
 
-    //         arrow
-    //             .attr("stroke", LINE_SELECTED_COLOR)
-    //             .attr("fill", LINE_SELECTED_COLOR)
-    //             .transition()
-    //             .ease(d3.easeExpIn)
-    //             .duration(delay)
-    //             .attr("stroke", LINE_SELECTED_COLOR)
+            arrow
+                .attr("stroke", LINE_SELECTED_COLOR)
+                .attr("fill", LINE_SELECTED_COLOR)
+                .transition()
+                .ease(d3.easeExpIn)
+                .duration(delay)
+                .attr("stroke", LINE_SELECTED_COLOR)
 
-    //     } else {
-    //         linePath
-    //             .attr("stroke", LINE_COLOR)
-    //         arrow
-    //             .attr("stroke", LINE_COLOR)
-    //             .attr("fill", LINE_COLOR);
-    //     }
-    // });
+        } else {
+            linePath
+                .attr("stroke", LINE_COLOR)
+            arrow
+                .attr("stroke", LINE_COLOR)
+                .attr("fill", LINE_COLOR);
+        }
+    });
 }
 
 function linkBorderWidth(d: any) {

@@ -1,7 +1,7 @@
 import { Tooltip } from "@material-ui/core";
 import * as d3 from "d3";
 import React, { useEffect, useRef, useState } from "react";
-import { createSVG, drawLinksWihNodes, getSVG, TRANSITION_PROPS, createLinearScale, createLogScale, createNodes, createLinks, createMarkers } from "../utils/markovChainUtils";
+import { createSVG, drawLinksWihNodes, getSVG, TRANSITION_PROPS, createLinearScale, createLogScale, createNodes, createLinks, createMarkers, LinkType } from "../utils/markovChainUtils";
 import { ModelVisualizationProps } from "./ModelVisualization";
 
 export interface IMarkoChainProps {
@@ -20,6 +20,7 @@ const MarkovChain = ({ scales }: any) => {
 
     const [probThreshold, setProbThreshold] = useState<number>(0);
 
+
     useEffect(() => {
         if (scales && scales.length) {
             console.log("props.scales:");
@@ -28,6 +29,7 @@ const MarkovChain = ({ scales }: any) => {
             renderMarkovChain();
         }
     }, [scales]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
     function randomInRange(min: number, max: number) {
         return Math.random() * (max - min) + min;
@@ -100,15 +102,12 @@ const MarkovChain = ({ scales }: any) => {
             if (graphData) {
                 console.log("##", 1)
                 createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
-
-                    const stateFound = currHeightData.states.find((state: any) => state.id === b);
-                    console.log("stateFound:")
-                    console.log(stateFound)
+                    const stateFound = currHeightData.states.find((state: any) => state.stateNo === b);
                     // setHistogramsData(stateFound.histograms)
                 });
                 console.log("##", 2)
 
-                // createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
+                createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
 
                 console.log("##", 3)
 
@@ -127,22 +126,6 @@ const MarkovChain = ({ scales }: any) => {
         const links: any[] = [];
 
         currHeightData.states.forEach((state: any, stateIx: number) => {
-
-            // dataClone.links = dataClone.links.map((link: any) => {
-            //     let linkType: LinkType;
-            //     const isBidirect = dataClone.links
-            //         .some((l: any) => ((link.source === l.target) && (link.target === l.source)));
-
-            //     if (link.source === link.target) {
-            //         linkType = LinkType.SELF;
-            //     } else if (isBidirect) {
-            //         linkType = LinkType.BIDIRECT;
-            //     } else {
-            //         linkType = LinkType.SINGLE;
-            //     }
-            //     return { ...link, linkType }
-            // });
-
             nodes.push({
                 id: state.stateNo,
                 ix: state.stateNo,
@@ -155,7 +138,7 @@ const MarkovChain = ({ scales }: any) => {
             })
 
             const currStateLinks = state.nextStateProbDistr.map((p: any, pIx: any) => ({
-                source: stateNoArr[pIx],
+                source: stateNoArr[stateIx],
                 target: stateNoArr[pIx],
                 p,
             }));
@@ -168,6 +151,21 @@ const MarkovChain = ({ scales }: any) => {
             nodes,
             links: links.flat(),
         }
+
+        obj.links = obj.links.map((link: any) => {
+            let linkType: LinkType;
+            const isBidirect = obj.links
+                .some((l: any) => ((link.source === l.target) && (link.target === l.source)));
+
+            if (link.source === link.target) {
+                linkType = LinkType.SELF;
+            } else if (isBidirect) {
+                linkType = LinkType.BIDIRECT;
+            } else {
+                linkType = LinkType.SINGLE;
+            }
+            return { ...link, linkType }
+        });
 
         return obj
     }
