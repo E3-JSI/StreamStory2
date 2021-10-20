@@ -1,14 +1,15 @@
-import { Tooltip } from "@material-ui/core";
+import { Box, Grid, Paper, styled, Tooltip } from "@material-ui/core";
 import * as d3 from "d3";
 import React, { useEffect, useRef, useState } from "react";
 import { createSVG, drawLinksWihNodes, getSVG, TRANSITION_PROPS, createLinearScale, createLogScale, createNodes, createLinks, createMarkers, LinkType } from "../utils/markovChainUtils";
+import Histogram from "./Histogram";
 import { ModelVisualizationProps } from "./ModelVisualization";
 
 export interface IMarkoChainProps {
     data: any[],
 }
 
-const MarkovChain = ({ scales }: any) => {
+const MarkovChain = ({ model }: ModelVisualizationProps) => {
     const defaultP = 0.1;
 
     const containerRef = useRef<HTMLDivElement>(null);
@@ -17,18 +18,20 @@ const MarkovChain = ({ scales }: any) => {
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [minSliderScale, setMinSliderScale] = useState<number>(0);
     const [maxSliderScale, setMaxSliderScale] = useState<number>(5);
-
     const [probThreshold, setProbThreshold] = useState<number>(0);
+
+    const [selectedState, setSelectedState] = useState<any>();
+
 
 
     useEffect(() => {
-        if (scales && scales.length) {
-            console.log("props.scales:");
-            console.log(scales);
+        if (model.model.scales && model.model.scales.length) {
+            console.log("model.model.scales:");
+            console.log(model.model.scales);
 
             renderMarkovChain();
         }
-    }, [scales]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [model.model.scales]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
     function randomInRange(min: number, max: number) {
@@ -39,14 +42,14 @@ const MarkovChain = ({ scales }: any) => {
         console.log("start: renderMarkovChain")
 
         setMinSliderScale(0);
-        setMaxSliderScale(scales.length - 1);
+        setMaxSliderScale(model.model.scales.length - 1);
 
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
         const margin = { top: 10, right: 10, bottom: 10, left: 10, };
         const chart = { top: 100, left: 100, };
 
-        const currHeightData: any = scales[currentScaleIx];
+        const currHeightData: any = model.model.scales[currentScaleIx];
 
         console.log("currHeightData:")
         console.log(currHeightData)
@@ -103,17 +106,16 @@ const MarkovChain = ({ scales }: any) => {
                 console.log("##", 1)
                 createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
                     const stateFound = currHeightData.states.find((state: any) => state.stateNo === b);
-                    // setHistogramsData(stateFound.histograms)
+
+                    console.log("stateFound:")
+                    console.log(stateFound)
+
+                    setSelectedState(stateFound)
                 });
-                console.log("##", 2)
 
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
 
-                console.log("##", 3)
-
                 createMarkers(graphData, gMarkers);
-
-                console.log("##", 4)
             }
         }
     }
@@ -190,8 +192,36 @@ const MarkovChain = ({ scales }: any) => {
         return rez;
     }
 
+    const Item = styled(Paper)(({ theme }) => ({
+        ...theme.typography.body2,
+        padding: theme.spacing(1),
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+    }));
+
     return (
-        <div ref={containerRef} style={{ backgroundColor: "#272b30" }} />
+
+        <>
+            <div ref={containerRef} style={{ backgroundColor: "#272b30" }} />
+
+            <Box>
+                <Grid container spacing={2}>
+
+                    {selectedState?.histograms?.map((histogram: any, i: number) =>
+                        <>
+                            <Grid item xs={6}>
+                                <Item>
+                                    <h2>{histogram?.attrName}</h2>
+                                    <Histogram histogram={histogram} totalHistogram={model?.model?.totalHistograms[i]} key={selectedState?.stateNo + Math.random()} />
+                                </Item>
+                            </Grid>
+
+                        </>
+                    )}
+
+                </Grid>
+            </Box>
+        </>
     );
 };
 

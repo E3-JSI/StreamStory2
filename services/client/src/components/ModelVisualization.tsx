@@ -27,6 +27,9 @@ function ModelVisualization({ model, ...other }: ModelVisualizationProps): JSX.E
     const muiTheme = useTheme();
     const { t } = useTranslation();
 
+    console.log("model:")
+    console.log(model)
+
     return (
         <Paper {...other}>
             <Toolbar className={classes.toolbar} variant="dense">
@@ -47,7 +50,7 @@ function ModelVisualization({ model, ...other }: ModelVisualizationProps): JSX.E
             <Divider />
             {/* Replace with Markov model */}
 
-            <MarkovChain scales={model?.model?.scales} />
+            <MarkovChain model={model} />
 
 
             <Box p={2} overflow="auto" height={600}>

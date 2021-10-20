@@ -459,7 +459,7 @@ function createPath(data: any, link: any): string {
     return path;
 }
 
-function getLinkDataWithDirectionType(nodesMap: any, link: any) {
+export function getLinkDataWithDirectionType(nodesMap: any, link: any) {
     let data = null;
     const sNodeCircle = selectNodeCircle(nodesMap[link.source]);
     const tNodeCircle = selectNodeCircle(nodesMap[link.target]);
