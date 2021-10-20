@@ -33,7 +33,7 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
         const groupedData: any[] = histogram.freqs.map((_: any, ix: number) => ({
             group: histogram.bounds[ix],
             bluePart: histogram.freqs[ix],
-            greyPart: totalHistogram.freqs[ix]
+            greyPart: totalHistogram.freqs[ix] - histogram.freqs[ix],
         }));
 
         const subgroups = ["bluePart", "greyPart"]
