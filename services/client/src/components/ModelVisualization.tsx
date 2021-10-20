@@ -16,6 +16,7 @@ import AlertPopup from './AlertPopup';
 import TransHtml from './TransHtml';
 
 import useStyles from './ModelVisualization.styles';
+import MarkovChain from './MarkovChain';
 
 export interface ModelVisualizationProps extends PaperProps {
     model: Model;
@@ -45,6 +46,10 @@ function ModelVisualization({ model, ...other }: ModelVisualizationProps): JSX.E
             </Toolbar>
             <Divider />
             {/* Replace with Markov model */}
+
+            <MarkovChain scales={model?.model?.scales} />
+
+
             <Box p={2} overflow="auto" height={600}>
                 <Typography component="pre" style={{ fontFamily: 'monospace' }}>
                     {JSON.stringify(model, null, 2)}

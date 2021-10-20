@@ -19,5 +19,5 @@ export interface Model {
     active: boolean;
     public: boolean;
     createdAt: number;
-    model?: string;
+    model: any;
 }
