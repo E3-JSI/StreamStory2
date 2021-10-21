@@ -1,37 +1,36 @@
 import { Box, Grid, Paper, styled, Tooltip } from "@material-ui/core";
 import * as d3 from "d3";
 import React, { useEffect, useRef, useState } from "react";
-import { createSVG, drawLinksWihNodes, getSVG, TRANSITION_PROPS, createLinearScale, createLogScale, createNodes, createLinks, createMarkers, LinkType } from "../utils/markovChainUtils";
-import Histogram from "./Histogram";
+import { createSVG, getSVG, TRANSITION_PROPS, createLinearScale, createNodes, createLinks, createMarkers, LinkType } from "../utils/markovChainUtils";
 import { ModelVisualizationProps } from "./ModelVisualization";
 
 export interface IMarkoChainProps {
     data: any[],
 }
 
-const MarkovChain = ({ model }: ModelVisualizationProps) => {
+const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const defaultP = 0.1;
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
-
-    const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
-    const [minSliderScale, setMinSliderScale] = useState<number>(0);
-    const [maxSliderScale, setMaxSliderScale] = useState<number>(5);
-    const [probThreshold, setProbThreshold] = useState<number>(0);
-
-    const [selectedState, setSelectedState] = useState<any>();
-
-
+    const [currentScaleIx] = useState<number>(0);
+    const [windowSize, setWindowSize] = useState<any>({
+        width: undefined,
+        height: undefined,
+    });
 
     useEffect(() => {
-        if (model.model.scales && model.model.scales.length) {
-            console.log("model.model.scales:");
-            console.log(model.model.scales);
+        window.addEventListener("resize", () => {
+            console.log("==========================================")
+            console.log("window:")
+            console.log({ width: window.innerWidth, height: window.innerHeight })
+        });
 
+
+        if (model.model.scales && model.model.scales.length) {
             renderMarkovChain();
         }
-    }, [model.model.scales]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [model.model.scales, windowSize]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
     function randomInRange(min: number, max: number) {
@@ -39,20 +38,12 @@ const MarkovChain = ({ model }: ModelVisualizationProps) => {
     }
 
     function renderMarkovChain(): void {
-        console.log("start: renderMarkovChain")
-
-        setMinSliderScale(0);
-        setMaxSliderScale(model.model.scales.length - 1);
-
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
         const margin = { top: 10, right: 10, bottom: 10, left: 10, };
         const chart = { top: 100, left: 100, };
 
         const currHeightData: any = model.model.scales[currentScaleIx];
-
-        console.log("currHeightData:")
-        console.log(currHeightData)
 
         if (currHeightData) {
 
@@ -81,7 +72,7 @@ const MarkovChain = ({ model }: ModelVisualizationProps) => {
             // const boundary = findMinMaxValues(scales); // FIXME: ds
 
 
-            const boundary = {
+            const boundary = { // FIXME: hardcoded
                 x: { min: 0, max: 300 },
                 y: { min: 0, max: 300 },
                 r: { min: 0, max: 300 },
@@ -95,26 +86,16 @@ const MarkovChain = ({ model }: ModelVisualizationProps) => {
             const r = createLinearScale([boundary.r.min, boundary.r.max], [0, xWidth / 10]);
             const color = d3.scaleOrdinal(d3.schemeTableau10);
 
-            const maxRadius = 200
+            const maxRadius = 200 // FIXME: hardcoded
             const graphData: any = createGraphData(currHeightData, maxRadius);
 
-            console.log("graphData:")
-            console.log(graphData)
-
-
             if (graphData) {
-                console.log("##", 1)
                 createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
-                    const stateFound = currHeightData.states.find((state: any) => state.stateNo === b);
-
-                    console.log("stateFound:")
-                    console.log(stateFound)
-
-                    setSelectedState(stateFound)
+                    const selectedState = currHeightData.states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
+                    onStateSelected(selectedState);
                 });
 
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
-
                 createMarkers(graphData, gMarkers);
             }
         }
@@ -192,35 +173,12 @@ const MarkovChain = ({ model }: ModelVisualizationProps) => {
         return rez;
     }
 
-    const Item = styled(Paper)(({ theme }) => ({
-        ...theme.typography.body2,
-        padding: theme.spacing(1),
-        textAlign: 'center',
-        color: theme.palette.text.secondary,
-    }));
+
 
     return (
 
         <>
             <div ref={containerRef} style={{ backgroundColor: "#272b30" }} />
-
-            <Box>
-                <Grid container spacing={2}>
-
-                    {selectedState?.histograms?.map((histogram: any, i: number) =>
-                        <>
-                            <Grid item xs={6}>
-                                <Item>
-                                    <h2>{histogram?.attrName}</h2>
-                                    <Histogram histogram={histogram} totalHistogram={model?.model?.totalHistograms[i]} key={selectedState?.stateNo + Math.random()} />
-                                </Item>
-                            </Grid>
-
-                        </>
-                    )}
-
-                </Grid>
-            </Box>
         </>
     );
 };

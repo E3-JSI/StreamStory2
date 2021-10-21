@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { useTranslation } from 'react-i18next';
+import { styled } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
@@ -14,14 +15,23 @@ import { Model } from '../types/api';
 import LoadingButton from './LoadingButton';
 
 import useStyles from './StateDetails.styles';
+import Histogram from './Histogram';
 
 export interface StateDetailsProps extends PaperProps {
     model?: Model;
+    selectedState?: any;
 }
 
-function StateDetails({ /* model, */ ...other }: StateDetailsProps): JSX.Element {
+function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
+
+    const Item = styled(Paper)(({ theme }) => ({
+        ...theme.typography.body2,
+        padding: theme.spacing(1),
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+    }));
 
     return (
         <Paper {...other}>
@@ -71,7 +81,7 @@ function StateDetails({ /* model, */ ...other }: StateDetailsProps): JSX.Element
                                 variant="contained"
                                 size="small"
                                 color="primary"
-                                // loading={isSubmitting}
+                                // loading={isSubmitting}s
                                 // disabled={!isDirty}
                                 disabled
                                 startIcon={<SaveIcon />}
@@ -84,6 +94,25 @@ function StateDetails({ /* model, */ ...other }: StateDetailsProps): JSX.Element
                 <Typography className={classes.attributesTitle} component="h3">
                     {t('attributes')}
                 </Typography>
+
+                <Box>
+                    <Grid container spacing={2}>
+
+                        {selectedState?.histograms?.map((histogram: any, i: number) =>
+                            <>
+                                <Grid item xs={6}>
+                                    <Item>
+                                        <h2>{histogram?.attrName}</h2>
+                                        <Histogram histogram={histogram} totalHistogram={model?.model?.totalHistograms[i]} key={selectedState?.stateNo + Math.random()} />
+                                    </Item>
+                                </Grid>
+
+                            </>
+                        )}
+
+                    </Grid>
+                </Box>
+
             </Box>
         </Paper>
     );

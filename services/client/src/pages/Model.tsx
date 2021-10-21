@@ -32,6 +32,7 @@ function Model(): JSX.Element {
     const [{ currentModel }, setSession] = useSession();
     const model = currentModel.find((m) => m.id === Number(id));
     const [isLoading, setIsLoading] = useState(!model);
+    const [selectedState, setSelectedState] = useState<any>();
 
     useMountEffect(() => {
         async function getModel() {
@@ -86,7 +87,7 @@ function Model(): JSX.Element {
                     <Grid item xs={12} lg={8}>
                         <Grid item container direction="column" spacing={2}>
                             <Grid item>
-                                <ModelVisualization model={model} />
+                                <ModelVisualization model={model} onStateSelected={setSelectedState} />
                             </Grid>
                             <Grid item>
                                 <StateVisualization model={model} />
@@ -94,7 +95,7 @@ function Model(): JSX.Element {
                         </Grid>
                     </Grid>
                     <Grid item xs={12} lg={4}>
-                        <StateDetails className={classes.details} model={model} />
+                        <StateDetails className={classes.details} model={model} selectedState={selectedState} />
                     </Grid>
                 </Grid>
             )}

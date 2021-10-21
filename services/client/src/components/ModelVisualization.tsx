@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
@@ -20,15 +19,13 @@ import MarkovChain from './MarkovChain';
 
 export interface ModelVisualizationProps extends PaperProps {
     model: Model;
+    onStateSelected?: any;
 }
 
-function ModelVisualization({ model, ...other }: ModelVisualizationProps): JSX.Element {
+function ModelVisualization({ model, onStateSelected, ...other }: ModelVisualizationProps): JSX.Element {
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t } = useTranslation();
-
-    // console.log("model:")
-    // console.log(model)
 
     return (
         <Paper {...other}>
@@ -50,7 +47,7 @@ function ModelVisualization({ model, ...other }: ModelVisualizationProps): JSX.E
             <Divider />
             {/* Replace with Markov model */}
 
-            <MarkovChain model={model} />
+            <MarkovChain model={model} onStateSelected={onStateSelected} />
 
 
             <Box p={2} overflow="auto" height={600}>

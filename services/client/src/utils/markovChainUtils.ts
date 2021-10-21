@@ -194,12 +194,7 @@ export function formatLinkP(p: number) {
 export function createNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, x: any, y: any, r: any, color: any,
     transitionProps: ITransitionProps, onNodeClickCallBack: any) {
 
-    console.log("start: createNodes")
-
     const { tEnter } = getTransitionsFromProps(gNodes, transitionProps);
-
-    console.log("data.nodes:")
-    console.log(data.nodes)
 
     selectAllNodeGroups(gNodes)
         .data(data.nodes, (d: any) => `node_${d.id}`)
@@ -215,10 +210,6 @@ export function createNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, 
 
 function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: any, y: any, r: any, color: any, tEnter: any,
     onNodeClickCallBack: any) {
-
-
-    console.log("start: nodeEnter")
-
 
     const enterTmp = selection
         .append("g")
