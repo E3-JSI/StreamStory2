@@ -14,19 +14,30 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
     useEffect(() => {
 
         if (histogram && (histogram.attrName !== 'Time')) {
+            const boundsFn = (data: any) => data.bounds
+            const freqFn = (data: any) => data.freqs
+            const totalFreqFn = () => totalHistogram.freqs;
 
+            renderHistogram(boundsFn, freqFn, totalFreqFn);
+
+        } else if (histogram.attrName === 'Time') {
+            console.log("===== time ==============")
             console.log("histogram:")
             console.log(histogram)
             console.log("totalHistogram:")
             console.log(totalHistogram)
             console.log("\n")
 
-            renderHistogram();
+            const boundsFn = () => Array.from(Array(totalHistogram.dayOfWeekFreqs.length), (_, i) => i)
+            const freqFn = (data: any) => data.dayOfWeekFreqs
+            const totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
+
+            renderHistogram(boundsFn, freqFn, totalFreqFn);
         }
     }, [histogram, totalHistogram]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
-    function renderHistogram() {
+    function renderHistogram(boundsFn: any, freqFn: any, totalFreqFn: any) {
 
         const margin = { top: 10, right: 30, bottom: 20, left: 50 }
         const width = 460 - margin.left - margin.right;
@@ -42,14 +53,14 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
         const subgroups = ["bluePart", "greyPart"]
 
-        const groups: any = histogram.bounds; // histogram.keys when categorical variable
+        const groups: any = boundsFn(histogram); // histogram.keys when categorical variable
 
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']) // 1st-blue, 2nd-grey
 
-        const groupedData: any[] = histogram.freqs.map((_: any, ix: number) => ({
-            group: histogram.bounds[ix],
-            bluePart: histogram.freqs[ix],
-            greyPart: totalHistogram.freqs[ix] - histogram.freqs[ix],
+        const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => ({
+            group: boundsFn(histogram)[ix],
+            bluePart: freqFn(histogram)[ix],
+            greyPart: totalFreqFn()[ix] - freqFn(histogram)[ix],
         }));
 
         const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);

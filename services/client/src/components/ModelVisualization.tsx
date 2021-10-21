@@ -27,8 +27,8 @@ function ModelVisualization({ model, ...other }: ModelVisualizationProps): JSX.E
     const muiTheme = useTheme();
     const { t } = useTranslation();
 
-    console.log("model:")
-    console.log(model)
+    // console.log("model:")
+    // console.log(model)
 
     return (
         <Paper {...other}>
