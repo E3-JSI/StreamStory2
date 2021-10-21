@@ -16,11 +16,13 @@ export function createHistogram(stackedData: any, gBars: any, x: any, y: any, co
         .join("rect")
         .attr("x", (d: any) => scale(x, d.data.group))
         .attr("width", x.bandwidth())
+
         // .attr("y", (d: any) => y(0))
         // .attr("height", 0)
         // .transition()
         // .ease(d3.easeSin)
         // .duration(750)
+
         .attr("y", (d: any) => scale(y, d[1]))
         .attr("height", (d: any) => scale(y, d[0]) - scale(y, d[1]))
 
