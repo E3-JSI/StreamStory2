@@ -41,6 +41,19 @@ export function scale(s: any, value: any) {
     return s(value);
 }
 
+export function createMatrix(g: any, width: number, height: number, chart: any) {
+    return g
+        .append("g")
+        .attr("class", "matrix")
+        .attr("width", width - chart.left)
+        .attr("height", height - chart.top)
+        .attr("transform", `translate(${chart.left}, ${chart.top})`);
+}
+
+export function getMatrix(svg: any) {
+    return svg.select("g.matrix");
+}
+
 export function calculate(deepth: number, maxDeepth: number, cIx: any, cluster: any, numOfClustersInDeepth: any, radius: number) {
 
     const clusterClone = JSON.parse(JSON.stringify(cluster));

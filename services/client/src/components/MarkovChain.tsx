@@ -1,8 +1,9 @@
 import { Box, Grid, Paper, styled, Tooltip } from "@material-ui/core";
 import * as d3 from "d3";
 import React, { useEffect, useRef, useState } from "react";
-import { createSVG, getSVG, TRANSITION_PROPS, createLinearScale, createNodes, createLinks, createMarkers, LinkType } from "../utils/markovChainUtils";
+import { createSVG, getSVG, TRANSITION_PROPS, createLinearScale, createNodes, createLinks, createMarkers, LinkType, createMatrix, getMatrix } from "../utils/markovChainUtils";
 import { ModelVisualizationProps } from "./ModelVisualization";
+import { createSlider } from "../utils/sliderUtils";
 
 export interface IMarkoChainProps {
     data: any[],
@@ -40,8 +41,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     function renderMarkovChain(): void {
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
-        const margin = { top: 10, right: 10, bottom: 10, left: 10, };
-        const chart = { top: 100, left: 100, };
+        const margin = { top: 20, right: 20, bottom: 20, left: 20, };
+        const chart = { top: 50, left: 50 };
 
         const currHeightData: any = model.model.scales[currentScaleIx];
 
@@ -51,23 +52,41 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const yWidth = height - chart.top - margin.top - margin.bottom;
 
             let graph = null;
+            let matrix = null;
             let gNodes = null;
             let gLinks = null;
             let gMarkers = null;
+            let gSlider = null;
 
             console.log(`initialized = ${initialized} `);
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin);
-                gLinks = graph.append("g").attr("class", "links");
-                gNodes = graph.append("g").attr("class", "nodes");
-                gMarkers = graph.append("g").attr("class", "markers");
+
+                matrix = createMatrix(graph, width, height, chart);
+
+                matrix.append("rect")
+                    .attr("width", xWidth)
+                    .attr("height", yWidth)
+                    .style("fill", "#1a6048")
+                    .style("opacity", "0.1")
+                    .style("stroke-width", "1")
+                    .style("stroke", "white");
+
+                gLinks = matrix.append("g").attr("class", "links");
+                gNodes = matrix.append("g").attr("class", "nodes");
+                gMarkers = matrix.append("g").attr("class", "markers");
+                gSlider = matrix.append("g").attr("class", "slider");
                 setInitialized(true);
             } else {
                 graph = getSVG(containerRef, width, height, margin);
-                gLinks = graph.select("g.links");
-                gNodes = graph.select("g.nodes");
-                gMarkers = graph.select("g.markers");
+
+                matrix = getMatrix(graph)
+
+                gLinks = matrix.select("g.links");
+                gNodes = matrix.select("g.nodes");
+                gMarkers = matrix.select("g.markers");
+                gSlider = matrix.select("g.slider");
             }
             // const boundary = findMinMaxValues(scales); // FIXME: ds
 
@@ -94,6 +113,14 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     const selectedState = currHeightData.states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
                     onStateSelected(selectedState);
                 });
+
+                const xSlider = d3.scaleTime()
+                    .domain([new Date("2004-11-01"), new Date("2017-04-01")])
+                    .range([0, xWidth])
+                    .clamp(true);
+
+                createSlider(gSlider, xSlider, margin);
+
 
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
                 createMarkers(graphData, gMarkers);
