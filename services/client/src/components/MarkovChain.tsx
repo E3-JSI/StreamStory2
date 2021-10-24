@@ -128,18 +128,18 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
                 // createSlider(gSliderProb, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
 
-                let prevIx = -1;
+                if (!initialized) {
+                    let prevIx = -1;
+                    createSlider(gSliderScale, xSliderScale, formatInt, (val: number) => {
+                        const valFloor = Math.floor(val);
 
-                createSlider(gSliderScale, xSliderScale, formatInt, (val: number) => {
-                    const valFloor = Math.floor(val);
-
-                    if (valFloor !== prevIx) {
-                        console.log(valFloor)
-                        setCurrentScaleIx(valFloor)
-                        prevIx = valFloor;
-                    }
-                });
-
+                        if (valFloor !== prevIx) {
+                            console.log(valFloor)
+                            setCurrentScaleIx(valFloor)
+                            prevIx = valFloor;
+                        }
+                    });
+                }
 
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
                 createMarkers(graphData, gMarkers);
