@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
 
-export function createSlider(gSlider: any, x: any, yWidth: number, vertical: boolean, showTicks: boolean, showCurrVal: boolean, format: any, onSliderValChange: any) {
+export function createSlider(gSlider: any, x: any, yWidth: number, currVal: any, vertical: boolean, showTicks: boolean, showCurrVal: boolean, format: any, onSliderValChange: any) {
 
     const slider = gSlider
         .attr("transform", `translate(${10}, ${yWidth})${vertical ? 'rotate(-90)' : ''}`);
@@ -29,7 +29,6 @@ export function createSlider(gSlider: any, x: any, yWidth: number, vertical: boo
         .style("stroke-width", "50px")
         .style("stroke", "transparent")
         .style("cursor", "crosshair")
-
         .call(d3.drag()
             .on("start", function (this: any) { return d3.select(this).interrupt() })
             .on("drag", (event: any) => update(x.invert(event.x)))
@@ -66,6 +65,8 @@ export function createSlider(gSlider: any, x: any, yWidth: number, vertical: boo
         .attr("text-anchor", "middle")
         .text(showCurrVal ? x.domain()[0] : "")
         .attr("transform", `translate(${0}, -25)`)
+
+    update(currVal)
 
     function update(h: any) {
         onSliderValChange(h);

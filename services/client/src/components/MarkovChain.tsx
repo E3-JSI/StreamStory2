@@ -21,8 +21,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         height: undefined,
     });
 
-    const [pThreshold, setPThreshold] = useState<number>(0.1);
-    const [sliderProbPrecision] = useState<number>(3);
+    const [pThreshold, setPThreshold] = useState<number>(0.2);
+    const [sliderProbPrecision] = useState<number>(2);
 
     useEffect(() => {
         window.addEventListener("resize", () => {
@@ -128,11 +128,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
 
                 if (!initialized) {
-                    createSlider(gSliderProb, xSliderProb, yWidth, false, true, true, format2Decimals, (p: number) => setPThreshold(p));
+                    createSlider(gSliderProb, xSliderProb, yWidth, pThreshold, false, true, true, format2Decimals, (p: number) => setPThreshold(p));
 
 
                     let prevIx = -1;
-                    createSlider(gSliderScale, ySliderScale, yWidth, true, false, false, formatInt, (val: number) => {
+                    createSlider(gSliderScale, ySliderScale, yWidth, currScaleIx, true, false, false, formatInt, (val: number) => {
                         const valFloor = Math.floor(val);
 
                         if (valFloor !== prevIx) {
