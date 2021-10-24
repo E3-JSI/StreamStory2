@@ -44,7 +44,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const margin = { top: 20, right: 20, bottom: 20, left: 20, };
         const chart = { top: 50, left: 50 };
 
-        const data = createGraphData(model.model.scales, maxRadius);
+        const data = createGraphData(model.model.scales);
 
         if (model.model.scales[currentScaleIx]) {
 
@@ -131,7 +131,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }
 
-    function createGraphData(scales: any, maxRadius: number) {
+    function createGraphData(scales: any) {
         const dict: any = {}
 
         return scales.map((scale: any) => {
