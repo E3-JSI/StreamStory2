@@ -1,10 +1,10 @@
 import * as d3 from "d3";
 
 
-export function createSlider(gSlider: any, x: any, format: any, onSliderValChange: any) {
+export function createSlider(gSlider: any, x: any, yWidth: number, vertical: boolean, showTicks: boolean, showCurrVal: boolean, format: any, onSliderValChange: any) {
 
     const slider = gSlider
-        .attr("transform", `translate(${10}, ${0})`);
+        .attr("transform", `translate(${10}, ${yWidth})${vertical ? 'rotate(-90)' : ''}`);
 
     slider.append("line")
         .attr("class", "track")
@@ -47,7 +47,8 @@ export function createSlider(gSlider: any, x: any, format: any, onSliderValChang
         .attr("x", x)
         .attr("y", 10)
         .attr("text-anchor", "middle")
-        .text((d: any) => format(d));
+        .text((d: any) => showTicks ? format(d) : "");
+
 
     const handle = slider.insert("circle", ".track-overlay")
         .attr("class", "handle")
@@ -63,7 +64,7 @@ export function createSlider(gSlider: any, x: any, format: any, onSliderValChang
         .attr("class", "label")
         .style("fill", "white")
         .attr("text-anchor", "middle")
-        .text(x.domain()[0])
+        .text(showCurrVal ? x.domain()[0] : "")
         .attr("transform", `translate(${0}, -25)`)
 
     function update(h: any) {
@@ -71,7 +72,7 @@ export function createSlider(gSlider: any, x: any, format: any, onSliderValChang
         handle.attr("cx", x(h));
         label
             .attr("x", x(h))
-            .text(format(h))
+            .text(showCurrVal ? format(h) : "")
     }
 }
 

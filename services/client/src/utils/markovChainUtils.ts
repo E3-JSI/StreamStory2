@@ -264,6 +264,8 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
 function nodeUpdate(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: any, y: any, r: any, tEnter: any) {
     const enterTmp = selectNodeGroup(selection)
 
+    console.log("nodeUpdate")
+
     selectNodeCircle(selection)
         .attr("cx", (d: any) => scale(x, d.x))
         .attr("cy", (d: any) => scale(y, d.y))

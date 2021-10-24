@@ -109,7 +109,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const r = createLinearScale([boundary.r.min, boundary.r.max], [0, xWidth / 10]);
             const color = d3.scaleOrdinal(d3.schemeTableau10);
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
-            const xSliderScale = createLinearScale([0, model.model.scales.length], [0, xWidth]).clamp(true);
+            const ySliderScale = createLinearScale([0, model.model.scales.length], [yWidth, 0]).clamp(true);
 
             const format2Decimals = d3.format(`.${sliderProbPrecision}f`);
             const formatInt = d3.format(".0f");
@@ -126,11 +126,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     onStateSelected(selectedState);
                 });
 
-                // createSlider(gSliderProb, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
 
                 if (!initialized) {
+                    createSlider(gSliderProb, xSliderProb, yWidth, false, true, true, format2Decimals, (p: number) => setPThreshold(p));
+
+
                     let prevIx = -1;
-                    createSlider(gSliderScale, xSliderScale, formatInt, (val: number) => {
+                    createSlider(gSliderScale, ySliderScale, yWidth, true, false, false, formatInt, (val: number) => {
                         const valFloor = Math.floor(val);
 
                         if (valFloor !== prevIx) {
