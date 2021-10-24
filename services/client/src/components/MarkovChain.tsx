@@ -13,7 +13,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
-    const [currentScaleIx] = useState<number>(0);
+    const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [maxRadius] = useState<number>(130);
     const [currScaleIx] = useState<number>(0);
     const [windowSize, setWindowSize] = useState<any>({
@@ -35,11 +35,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         if (model.model.scales && model.model.scales.length) {
             renderMarkovChain();
         }
-    }, [model.model.scales, windowSize, pThreshold]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [model.model.scales, windowSize, pThreshold, currentScaleIx]) // eslint-disable-line react-hooks/exhaustive-deps
 
     function renderMarkovChain(): void {
 
         console.log("start: renderMarkovChain")
+
+        console.log(model.model.scales)
 
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
@@ -110,6 +112,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const xSliderScale = createLinearScale([0, model.model.scales.length], [0, xWidth]).clamp(true);
 
             const format2Decimals = d3.format(`.${sliderProbPrecision}f`);
+            const formatInt = d3.format(".0f");
 
             const graphData = data[currentScaleIx]
 
@@ -123,9 +126,19 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     onStateSelected(selectedState);
                 });
 
-                createSlider(gSliderProb, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
+                // createSlider(gSliderProb, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
 
-                // createSlider(gSlider, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
+                let prevIx = -1;
+
+                createSlider(gSliderScale, xSliderScale, formatInt, (val: number) => {
+                    const valFloor = Math.floor(val);
+
+                    if (valFloor !== prevIx) {
+                        console.log(valFloor)
+                        setCurrentScaleIx(valFloor)
+                        prevIx = valFloor;
+                    }
+                });
 
 
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
