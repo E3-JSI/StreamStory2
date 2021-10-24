@@ -15,12 +15,14 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx] = useState<number>(0);
     const [maxRadius] = useState<number>(130);
+    const [currScaleIx] = useState<number>(0);
     const [windowSize, setWindowSize] = useState<any>({
         width: undefined,
         height: undefined,
     });
 
     const [pThreshold, setPThreshold] = useState<number>(0.1);
+    const [sliderProbPrecision] = useState<number>(3);
 
     useEffect(() => {
         window.addEventListener("resize", () => {
@@ -104,6 +106,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
             const r = createLinearScale([boundary.r.min, boundary.r.max], [0, xWidth / 10]);
             const color = d3.scaleOrdinal(d3.schemeTableau10);
+            const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
+            const xSliderScale = createLinearScale([0, model.model.scales.length], [0, xWidth]).clamp(true);
+
+            const format2Decimals = d3.format(`.${sliderProbPrecision}f`);
 
             const graphData = data[currentScaleIx]
 
@@ -111,20 +117,17 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             console.log(graphData)
 
             if (graphData) {
+                // FIXME: when moved to if init, duplicate colors should not be the issue
                 createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
                     const selectedState = model.model.scales[currentScaleIx].states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
                     onStateSelected(selectedState);
                 });
 
-                const xSliderProb = d3.scaleLinear()
-                    .domain([0, 1])
-                    .range([0, xWidth])
-                    .clamp(true);
+                createSlider(gSliderProb, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
 
-                const precision = 3; // FIXME: moev to other var
-                const format2Decimals = d3.format(`.${precision}f`);
+                // createSlider(gSlider, xSliderProb, format2Decimals, (p: number) => setPThreshold(p));
 
-                createSlider(gSliderProb, xSliderProb, precision, margin, format2Decimals, (p: number) => setPThreshold(p));
+
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
                 createMarkers(graphData, gMarkers);
             }
