@@ -1,10 +1,7 @@
 import * as d3 from "d3";
 
 
-export function createSlider(gSlider: any, x: any, margin: any) {
-
-    const formatDateIntoYear = d3.timeFormat("%Y");
-    const formatDate = d3.timeFormat("%b %Y");
+export function createSlider(gSlider: any, x: any, precision: number, format: any, margin: any, onSliderValChange: any) {
 
     const slider = gSlider
         .attr("transform", `translate(${10}, ${0})`);
@@ -41,7 +38,6 @@ export function createSlider(gSlider: any, x: any, margin: any) {
     slider.insert("g", ".track-overlay")
         .attr("class", "ticks")
         .style("font-size", "10px")
-        // .attr("transform", "translate(0," + 18 + ")")
         .attr("transform", `translate(${0},${18})`)
         .selectAll("text")
         .data(x.ticks(10))
@@ -51,7 +47,7 @@ export function createSlider(gSlider: any, x: any, margin: any) {
         .attr("x", x)
         .attr("y", 10)
         .attr("text-anchor", "middle")
-        .text((d: any) => formatDateIntoYear(d));
+        .text((d: any) => format(d));
 
     const handle = slider.insert("circle", ".track-overlay")
         .attr("class", "handle")
@@ -60,7 +56,6 @@ export function createSlider(gSlider: any, x: any, margin: any) {
         .style("stroke", "#000")
         .style("stroke-opacity", "0.5")
         .style("stroke-width", "1.25px")
-
         .attr("r", 9);
 
     const label = slider
@@ -68,15 +63,15 @@ export function createSlider(gSlider: any, x: any, margin: any) {
         .attr("class", "label")
         .style("fill", "white")
         .attr("text-anchor", "middle")
-        .text(formatDate(x.domain()[0]))
-        // .attr("transform", "translate(0," + (-25) + ")")
+        .text(x.domain()[0])
         .attr("transform", `translate(${0}, -25)`)
 
     function update(h: any) {
+        onSliderValChange(h);
         handle.attr("cx", x(h));
         label
             .attr("x", x(h))
-            .text(formatDate(h));
+            .text(format(h))
     }
 }
 
