@@ -10,11 +10,11 @@ export interface IMarkoChainProps {
 }
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
-    const defaultP = 0.1;
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx] = useState<number>(0);
+    const [maxRadius] = useState<number>(130);
     const [windowSize, setWindowSize] = useState<any>({
         width: undefined,
         height: undefined,
@@ -35,29 +35,18 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }, [model.model.scales, windowSize, pThreshold]) // eslint-disable-line react-hooks/exhaustive-deps
 
-
-    function randomInRange(min: number, max: number) {
-        return Math.random() * (max - min) + min;
-    }
-
     function renderMarkovChain(): void {
+
+        console.log("start: renderMarkovChain")
+
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
         const margin = { top: 20, right: 20, bottom: 20, left: 20, };
         const chart = { top: 50, left: 50 };
 
-        console.log("model.model.scales:")
-        console.log(model.model.scales)
+        const data = createGraphData(model.model.scales, maxRadius);
 
-        const maxRadius = 130
-        const data = createGraphData2(model.model.scales, maxRadius);
-
-        console.log("data:")
-        console.log(data)
-
-        const currHeightData: any = model.model.scales[currentScaleIx]; // FIXME: need to be removed
-
-        if (currHeightData) {
+        if (model.model.scales[currentScaleIx]) {
 
             const xWidth = width - chart.left - margin.left - margin.right;
             const yWidth = height - chart.top - margin.top - margin.bottom;
@@ -67,7 +56,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gNodes = null;
             let gLinks = null;
             let gMarkers = null;
-            let gSlider = null;
+            let gSliderProb = null;
+            let gSliderScale = null;
 
             console.log(`initialized = ${initialized} `);
 
@@ -87,7 +77,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gLinks = matrix.append("g").attr("class", "links");
                 gNodes = matrix.append("g").attr("class", "nodes");
                 gMarkers = matrix.append("g").attr("class", "markers");
-                gSlider = matrix.append("g").attr("class", "slider");
+                gSliderProb = matrix.append("g").attr("class", "slider_prob");
+                gSliderScale = matrix.append("g").attr("class", "slider_scale");
                 setInitialized(true);
             } else {
                 graph = getSVG(containerRef, width, height, margin);
@@ -97,19 +88,17 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gLinks = matrix.select("g.links");
                 gNodes = matrix.select("g.nodes");
                 gMarkers = matrix.select("g.markers");
-                gSlider = matrix.select("g.slider");
+                gSliderProb = matrix.select("g.slider_prob");
+                gSliderScale = matrix.select("g.slider_scale");
             }
-            // const boundary = findMinMaxValues(scales); // FIXME: ds
 
+            // const boundary = findMinMaxValues(scales); // FIXME: ds
 
             const boundary = { // FIXME: hardcoded
                 x: { min: 0, max: 300 },
                 y: { min: 0, max: 300 },
                 r: { min: 0, max: 300 },
             }
-
-            console.log("boundary:")
-            console.log(boundary)
 
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
@@ -123,42 +112,30 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             if (graphData) {
                 createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
-                    const selectedState = currHeightData.states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
+                    const selectedState = model.model.scales[currentScaleIx].states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
                     onStateSelected(selectedState);
                 });
 
-                const xSlider = d3.scaleLinear()
+                const xSliderProb = d3.scaleLinear()
                     .domain([0, 1])
                     .range([0, xWidth])
                     .clamp(true);
 
-                const precision = 3;
-
-                // const formatDateIntoYear = d3.timeFormat("%Y");
-                // const formatDate = d3.timeFormat("%b %Y");
+                const precision = 3; // FIXME: moev to other var
                 const format2Decimals = d3.format(`.${precision}f`);
 
-
-                createSlider(gSlider, xSlider, precision, format2Decimals, margin, (p: number) => {
-                    console.log("on val change, p=", p)
-
-                    setPThreshold(p);
-                });
-
-
+                createSlider(gSliderProb, xSliderProb, precision, margin, format2Decimals, (p: number) => setPThreshold(p));
                 createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
                 createMarkers(graphData, gMarkers);
             }
         }
     }
 
-    function createGraphData2(scales: any, maxRadius: number) {
-
+    function createGraphData(scales: any, maxRadius: number) {
         const dict: any = {}
 
         return scales.map((scale: any) => {
             const stateNoArr: any[] = scale.states.map((state: any) => state.stateNo)
-
             const nodes: any[] = [];
             const links: any[] = [];
 
@@ -202,13 +179,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     }));
 
                 links.push(currStateLinks)
-
-            })
-
-            const obj = {
-                nodes,
-                links: links.flat(),
-            }
+            });
+            const obj = { nodes, links: links.flat() };
 
             obj.links = obj.links.map((link: any) => {
                 let linkType: LinkType;
@@ -224,63 +196,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 }
                 return { ...link, linkType }
             });
-
             return obj
-
         });
-
-    }
-
-    function createGraphData(currHeightData: any, maxRadius: number) {
-
-        const stateNoArr: any[] = currHeightData.states.map((state: any) => state.stateNo)
-
-        const nodes: any[] = [];
-        const links: any[] = [];
-
-        currHeightData.states.forEach((state: any, stateIx: number) => {
-            nodes.push({
-                id: state.stateNo,
-                ix: state.stateNo,
-                x: randomInRange(0, 300),
-                y: randomInRange(0, 300),
-                r: maxRadius * randomInRange(0.1, 1),
-                name: state.suggestedLabel ? state.suggestedLabel.label : state.stateNo,
-                label: state.suggestedLabel ? state.suggestedLabel.label : state.stateNo,
-                stationaryProbability: state.stationaryProbability,
-            })
-
-            const currStateLinks = state.nextStateProbDistr.map((p: any, pIx: any) => ({
-                source: stateNoArr[stateIx],
-                target: stateNoArr[pIx],
-                p,
-            }));
-
-            links.push(currStateLinks)
-
-        })
-
-        const obj = {
-            nodes,
-            links: links.flat(),
-        }
-
-        obj.links = obj.links.map((link: any) => {
-            let linkType: LinkType;
-            const isBidirect = obj.links
-                .some((l: any) => ((link.source === l.target) && (link.target === l.source)));
-
-            if (link.source === link.target) {
-                linkType = LinkType.SELF;
-            } else if (isBidirect) {
-                linkType = LinkType.BIDIRECT;
-            } else {
-                linkType = LinkType.SINGLE;
-            }
-            return { ...link, linkType }
-        });
-
-        return obj
     }
 
     function findMinMaxValues(dataset: any[]) {
@@ -302,8 +219,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         });
         return rez;
     }
-
-
 
     return (
 

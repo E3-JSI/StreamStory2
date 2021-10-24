@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
 
-export function createSlider(gSlider: any, x: any, precision: number, format: any, margin: any, onSliderValChange: any) {
+export function createSlider(gSlider: any, x: any, precision: number, margin: any, format: any, onSliderValChange: any) {
 
     const slider = gSlider
         .attr("transform", `translate(${10}, ${0})`);
