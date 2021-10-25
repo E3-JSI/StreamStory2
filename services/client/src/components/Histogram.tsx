@@ -14,26 +14,21 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
         if (histogram && totalHistogram) {
 
-            if ((histogram.attrName !== 'Time')) {
-                const boundsFn = (data: any) => data.bounds
-                const freqFn = (data: any) => data.freqs
-                const totalFreqFn = () => totalHistogram.freqs;
-                renderHistogram(boundsFn, freqFn, totalFreqFn);
-            }
-            else if (histogram.attrName === 'Time') {
-                // console.log("===== time ==============")
-                // console.log("histogram:")
-                // console.log(histogram)
-                // console.log("totalHistogram:")
-                // console.log(totalHistogram)
-                // console.log("\n")
-
+            if ((histogram.attrName.toLowerCase() === 'time') || (histogram.attrName.toLowerCase() === 'timestamp')) {
                 const boundsFn = () => Array.from(Array(totalHistogram.dayOfWeekFreqs.length), (_, i) => i)
                 const freqFn = (data: any) => data.dayOfWeekFreqs
                 const totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
 
                 renderHistogram(boundsFn, freqFn, totalFreqFn);
             }
+
+            else {
+                const boundsFn = (data: any) => data.bounds
+                const freqFn = (data: any) => data.freqs
+                const totalFreqFn = () => totalHistogram.freqs;
+                renderHistogram(boundsFn, freqFn, totalFreqFn);
+            }
+
         }
 
     }, [histogram, totalHistogram, windowSize]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -59,6 +54,8 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']) // 1st-blue, 2nd-grey
 
+        console.log("HISTOGRAM=", histogram, " freqFn(histogram)=", freqFn(histogram))
+
         const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => ({
             group: boundsFn(histogram)[ix],
             bluePart: freqFn(histogram)[ix],
@@ -83,8 +80,8 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
         const y = d3.scaleLinear()
             .domain([0, 60])
             .range([height, 0]);
-        svg.append("g")
-            .call(d3.axisLeft(y).ticks(3));
+        // svg.append("g")
+        //     .call(d3.axisLeft(y).ticks(3));
 
 
         svg.append("g")

@@ -157,15 +157,21 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const nodes: any[] = [];
             const links: any[] = [];
 
+            console.log("==========================================")
             scale.states.forEach((state: any, i: number) => {
+
                 let x = -1;
                 let y = -1;
 
                 if (scale.areTheseInitialStates) {
+                    console.log("if")
                     const currAngle = (360 / scale.states.length) * i;
                     x = (maxRadius * Math.sin(Math.PI * 2 * currAngle / 360) + maxRadius);
                     y = (maxRadius * Math.cos(Math.PI * 2 * currAngle / 360) + maxRadius);
-                } else if (state.childStates && state.childStates.length) {
+                    dict[state.stateNo] = { x, y }
+
+                } else if (!scale.areTheseInitialStates && !dict[state.stateNo]) {
+                    console.log("else if")
                     let xSum = 0;
                     let ySum = 0;
                     state.childStates.forEach((stateNo: number) => {
@@ -174,8 +180,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     });
                     x = xSum / state.childStates.length;
                     y = ySum / state.childStates.length;
+
+                    dict[state.stateNo] = { x, y }
+                } else {
+                    // console.log("else, dict[stateNo]=", dict[state.stateNo])
+                    console.log("else, stateNo=", state.stateNo)
                 }
-                dict[state.stateNo] = { x, y }
 
                 nodes.push({
                     id: state.stateNo,
@@ -198,6 +208,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
                 links.push(currStateLinks)
             });
+
+            console.log("dict=", dict)
+
             const obj = { nodes, links: links.flat() };
 
             obj.links = obj.links.map((link: any) => {
