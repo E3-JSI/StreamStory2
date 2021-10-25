@@ -54,42 +54,6 @@ export function getMatrix(svg: any) {
     return svg.select("g.matrix");
 }
 
-export function calculate(deepth: number, maxDeepth: number, cIx: any, cluster: any, numOfClustersInDeepth: any, radius: number) {
-
-    const clusterClone = JSON.parse(JSON.stringify(cluster));
-
-
-    if ((deepth === maxDeepth) || (!clusterClone.hasChildren())) {
-        const currAngle = (360 / numOfClustersInDeepth(deepth)) * cIx;
-        clusterClone.x = (radius * Math.sin(Math.PI * 2 * currAngle / 360) + radius);
-        clusterClone.y = (radius * Math.cos(Math.PI * 2 * currAngle / 360) + radius);
-        clusterClone.radius = radius;
-    } else if (clusterClone.hasChildren()) {
-        let xSum = 0.0;
-        let ySum = 0.0;
-        let nonNullChildren = 0;
-
-        clusterClone.getChildClusters().forEach((childCluster: any) => {
-            if (childCluster != null) {
-                xSum += childCluster.x;
-                ySum += childCluster.y;
-                nonNullChildren += 1;
-            }
-        });
-        clusterClone.x = xSum / nonNullChildren;
-        clusterClone.y = ySum / nonNullChildren;
-        clusterClone.radius = radius;
-    }
-    return clusterClone;
-}
-
-export function drawLinksWihNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, x: any, y: any, r: any, color: any,
-    transitionProps: ITransitionProps, onNodeClickCallBack: any) {
-    createNodes(data, gNodes, gLinks, gMarkers, x, y, r, color, transitionProps, onNodeClickCallBack);
-    createLinks(data, gNodes, gLinks, transitionProps);
-    createMarkers(data, gMarkers);
-}
-
 export function createSVG(container: React.MutableRefObject<any>, width: number, height: number, margin: any) {
     return d3
         .select(container.current)
