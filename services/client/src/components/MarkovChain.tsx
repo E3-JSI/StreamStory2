@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import React, { useEffect, useRef, useState } from "react";
-import { createSVG, getSVG, TRANSITION_PROPS, createLinearScale, createNodes, createLinks, createMarkers, LinkType, createMatrix, getMatrix } from "../utils/markovChainUtils";
+import { createSVG, getSVG, TRANSITION_PROPS, createLinearScale, createNodes, createLinks, createMarkers, LinkType, createMatrix, getMatrix, createPowScale } from "../utils/markovChainUtils";
 import { ModelVisualizationProps } from "./ModelVisualization";
 import { createSlider } from "../utils/sliderUtils";
 
@@ -89,7 +89,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             }
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
-            const r = createLinearScale([boundary.r.min, boundary.r.max], [0, xWidth / 10]);
+            const r = createPowScale([boundary.r.min, boundary.r.max], [0, yWidth]);
             const color = d3.scaleOrdinal(d3.schemeTableau10);
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
             const ySliderScale = createLinearScale([0, model.model.scales.length], [yWidth, 0]).clamp(true);
@@ -129,67 +129,102 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }
 
+    function dictKey(state: any) {
+        return `${state.suggestedLabel.label}`;
+    }
+
     function createGraphData(scales: any) {
         const dict: any = {}
+        const dictId: any = {};
+
+        let stateId = 0;
+
+        scales.forEach((scale: any) => {
+            scale.states.forEach((state: any) => {
+                const key = dictKey(state);
+
+                if (!dictId[key]) {
+                    dictId[key] = stateId
+                    stateId += 1;
+                }
+            });
+        });
+
+        console.log("dictId:")
+        console.log(dictId)
 
         return scales.map((scale: any, scaleIx: number) => {
-            const stateNoArr: any[] = scale.states.map((state: any) => state.stateNo)
             const nodes: any[] = [];
             const links: any[] = [];
 
-            console.log(`======    #${scaleIx}    ========================`)
+
+            console.log(`======    #${scaleIx},  nStates=${scale.states.length}    ========================`)
 
             scale.states.forEach((state: any, i: number) => {
+
                 let x = -1;
                 let y = -1;
 
-                console.log(`stateNo #${state.stateNo} ${(dict[state.stateNo] == null) ? "not" : ""} in dict=${JSON.stringify(dict[state.stateNo])}`)
+                const currStateId = dictId[dictKey(state)];
+
+                // console.log(`currStateId #${currStateId} ${(dict[currStateId] == null) ? "not" : ""} in dict=${JSON.stringify(dict[currStateId])}`)
 
                 if (scale.areTheseInitialStates) {
                     const currAngle = (360 / scale.states.length) * i;
                     x = (maxRadius * Math.sin(Math.PI * 2 * currAngle / 360) + maxRadius);
                     y = (maxRadius * Math.cos(Math.PI * 2 * currAngle / 360) + maxRadius);
-                    dict[state.stateNo] = { x, y }
-                } else if (!scale.areTheseInitialStates && !dict[state.stateNo]) {
+                    dict[currStateId] = { x, y }
+                } else if (!scale.areTheseInitialStates && !dict[currStateId]) {
                     let xSum = 0;
                     let ySum = 0;
                     state.childStates.forEach((stateNo: number) => {
-                        xSum += dict[stateNo].x;
-                        ySum += dict[stateNo].y;
+                        const childState = scales[scaleIx - 1].states.find((el: any) => el.stateNo === stateNo);
+                        const childStateId = dictId[dictKey(childState)];
+
+                        xSum += dict[childStateId].x;
+                        ySum += dict[childStateId].y;
                     });
                     x = xSum / state.childStates.length;
                     y = ySum / state.childStates.length;
-                    dict[state.stateNo] = { x, y }
+                    dict[currStateId] = { x, y }
                 }
-                nodes.push(stateToNode(state, dict));
-                links.push(createStateLinks(state, i, stateNoArr));
+                nodes.push(stateToNode(state, dictId, dict));
+                links.push(createStateLinks(state, scale, dictId));
+
+
+
             });
             const linksFlatten = links.flat();
             const obj = { nodes, links: linksFlatten.map((link: any) => createlinkWithLinkType(link, linksFlatten)) };
+            console.log(dict)
             console.log("\n")
             return obj
         });
     }
 
-    function createStateLinks(state: any, ix: number, stateNoArr: any[]) {
+    function createStateLinks(state: any, scale: any, dictId: any) {
+        const sourceId = dictId[dictKey(state)]
+
         return state.nextStateProbDistr
-            .filter((p: number) => p >= pThreshold)
-            .map((p: number, pIx: number) => ({
-                source: stateNoArr[ix],
-                target: stateNoArr[pIx],
+            .filter((p: number) => (p >= pThreshold))
+            .map((p: number, i: number) => ({
+                source: sourceId,
+                target: dictId[dictKey(scale.states[i])],
                 p,
             }));
     }
 
-    function stateToNode(state: any, dict: any) {
+    function stateToNode(state: any, dictId: any, dict: any) {
+        const stateId = dictId[dictKey(state)];
+
+        console.log("r=", maxRadius * state.stationaryProbability)
+
         return {
-            id: state.stateNo,
-            ix: state.stateNo,
-            x: dict[state.stateNo].x,
-            y: dict[state.stateNo].y,
-            r: maxRadius,
-            name: state.suggestedLabel ? state.suggestedLabel.label : state.stateNo,
-            label: state.suggestedLabel ? state.suggestedLabel.label : state.stateNo,
+            id: stateId,
+            x: dict[stateId].x,
+            y: dict[stateId].y,
+            r: maxRadius * state.stationaryProbability,
+            label: state.suggestedLabel ? state.suggestedLabel.label : stateId,
             stationaryProbability: state.stationaryProbability,
         }
     }

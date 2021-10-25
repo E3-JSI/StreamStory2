@@ -208,7 +208,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
         .attr("dy", (d: any) => scale(y, d.y))
         .style("fill", "white")
         .attr("text-anchor", "middle")
-        .text((d: any) => d.name ? d.name : d.autoName);
+        .text((d: any) => d.label ? d.label : "");
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr("opacity", 1))
@@ -514,6 +514,10 @@ export function createOrdinalScale(domain: string[], range: number[]) {
 
 export function createLogScale(domain: number[], range: number[]) {
     return d3.scaleLog().domain(domain).range(range);
+}
+
+export function createPowScale(domain: number[], range: number[]) {
+    return d3.scalePow().domain(domain).range(range);
 }
 
 export function xAxis(g: any, height: number, xScale: any) {
