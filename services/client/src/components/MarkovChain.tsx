@@ -15,30 +15,42 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [maxRadius] = useState<number>(130);
     const [currScaleIx] = useState<number>(0);
+    const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
 
-    const [pThreshold, setPThreshold] = useState<number>(0.2);
+    const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
 
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
-            renderMarkovChain();
-        }
-    }, [model.model.scales, windowSize, pThreshold, currentScaleIx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    function renderMarkovChain(): void {
+            console.log("model.model.scales:")
+            console.log(model.model.scales)
+
+            const dictId = createDictId(model.model.scales);
+            const statesDict = createStatesDict(model.model.scales, dictId);
+
+            const graphData = createGraphData(model.model.scales, statesDict, dictId);
+            setData(graphData)
+
+            renderMarkovChain(graphData[currentScaleIx]);
+        }
+    }, [model.model.scales]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (model.model.scales && model.model.scales.length && data && data.length) {
+            const graphData = data[currentScaleIx]
+            renderMarkovChain(graphData);
+        }
+    }, [windowSize, pThreshold, currentScaleIx]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    function renderMarkovChain(graphData: any): void {
         console.log("start: renderMarkovChain")
-        console.log(model.model.scales)
 
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
         const margin = { top: 20, right: 20, bottom: 20, left: 20, };
         const chart = { top: 50, left: 50 };
-
-        const data = createGraphData(model.model.scales);
-
-        console.log("graphData:")
-        console.log(data)
 
         if (model.model.scales[currentScaleIx]) {
             const xWidth = width - chart.left - margin.left - margin.right;
@@ -89,15 +101,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             }
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
-            const r = createPowScale([boundary.r.min, boundary.r.max], [0, yWidth]);
+            const r = createLinearScale([boundary.r.min, boundary.r.max], [0, yWidth]);
             const color = d3.scaleOrdinal(d3.schemeTableau10);
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
             const ySliderScale = createLinearScale([0, model.model.scales.length], [yWidth, 0]).clamp(true);
 
             const format2Decimals = d3.format(`.${sliderProbPrecision}f`);
             const formatInt = d3.format(".0f");
-
-            const graphData = data[currentScaleIx]
 
             console.log("graphData:")
             console.log(graphData)
@@ -129,120 +139,116 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }
 
-    function dictKey(state: any) {
-        return `${state.suggestedLabel.label}`;
+    function uniqueId(state: any, scaleIx: number) {
+        return `uid=${state.suggestedLabel.label}_s=${scaleIx}`;
     }
 
-    function createGraphData(scales: any) {
-        const dict: any = {}
-        const dictId: any = {};
-
+    function createDictId(scales: any) {
+        const dict: any = {};
         let stateId = 0;
 
-        scales.forEach((scale: any) => {
+        scales.forEach((scale: any, scaleIx: number) => {
             scale.states.forEach((state: any) => {
-                const key = dictKey(state);
+                const key = uniqueId(state, scaleIx);
 
-                if (!dictId[key]) {
-                    dictId[key] = stateId
+                if (!dict[key]) {
+                    dict[key] = stateId
                     stateId += 1;
                 }
             });
         });
+        return dict;
+    }
 
-        console.log("dictId:")
-        console.log(dictId)
+    function createStatesDict(scales: any, dictId: any) {
+        const statesDict: any = {};
 
-        return scales.map((scale: any, scaleIx: number) => {
-            const nodes: any[] = [];
-            const links: any[] = [];
-
-
-            console.log(`======    #${scaleIx},  nStates=${scale.states.length}    ========================`)
-
+        scales.forEach((scale: any, scaleIx: number) => {
             scale.states.forEach((state: any, i: number) => {
-
                 let x = -1;
                 let y = -1;
-
-                const currStateId = dictId[dictKey(state)];
-
-                // console.log(`currStateId #${currStateId} ${(dict[currStateId] == null) ? "not" : ""} in dict=${JSON.stringify(dict[currStateId])}`)
+                const key = uniqueId(state, scaleIx);
+                const currStateId = dictId[key];
 
                 if (scale.areTheseInitialStates) {
                     const currAngle = (360 / scale.states.length) * i;
                     x = (maxRadius * Math.sin(Math.PI * 2 * currAngle / 360) + maxRadius);
                     y = (maxRadius * Math.cos(Math.PI * 2 * currAngle / 360) + maxRadius);
-                    dict[currStateId] = { x, y }
-                } else if (!scale.areTheseInitialStates && !dict[currStateId]) {
+                } else if (!scale.areTheseInitialStates && !statesDict[currStateId]) {
                     let xSum = 0;
                     let ySum = 0;
                     state.childStates.forEach((stateNo: number) => {
                         const childState = scales[scaleIx - 1].states.find((el: any) => el.stateNo === stateNo);
-                        const childStateId = dictId[dictKey(childState)];
+                        const childKey = uniqueId(childState, scaleIx - 1)
 
-                        xSum += dict[childStateId].x;
-                        ySum += dict[childStateId].y;
+                        // console.log("childKey=", childKey, "statesDict[childStateId]=", statesDict[childKey], ", statesDict=", statesDict)
+
+                        xSum += statesDict[childKey].x;
+                        ySum += statesDict[childKey].y;
                     });
                     x = xSum / state.childStates.length;
                     y = ySum / state.childStates.length;
-                    dict[currStateId] = { x, y }
                 }
-                nodes.push(stateToNode(state, dictId, dict));
-                links.push(createStateLinks(state, scale, dictId));
 
+                const stateId = dictId[uniqueId(scale.states[i], scaleIx)];
 
-
+                const obj = {
+                    id: stateId,
+                    x,
+                    y,
+                    r: maxRadius * state.stationaryProbability,
+                    label: state.suggestedLabel ? `${stateId}_${state.suggestedLabel.label}` : stateId,
+                    stationaryProbability: state.stationaryProbability,
+                }
+                statesDict[key] = obj
             });
-            const linksFlatten = links.flat();
-            const obj = { nodes, links: linksFlatten.map((link: any) => createlinkWithLinkType(link, linksFlatten)) };
-            console.log(dict)
-            console.log("\n")
-            return obj
+        });
+        return statesDict;
+    }
+
+    function createGraphData(scales: any, stateDict: any, dictId: any) {
+        return scales.map((scale: any, scaleIx: number) => {
+            const links: any[] = [];
+            const nodes: any[] = []
+
+            scale.states.forEach((state: any, stateIx: number) => {
+                links.push(createStateLinks(stateIx, state, scaleIx, scale, dictId));
+                nodes.push(stateDict[uniqueId(state, scaleIx)])
+            });
+            return { nodes, links: links.flat() }
         });
     }
 
-    function createStateLinks(state: any, scale: any, dictId: any) {
-        const sourceId = dictId[dictKey(state)]
+    function createStateLinks(stateIx: number, state: any, scaleIx: number, scale: any, dictId: any) {
+        const sourceId = dictId[uniqueId(state, scaleIx)]
 
         return state.nextStateProbDistr
-            .filter((p: number) => (p >= pThreshold))
-            .map((p: number, i: number) => ({
-                source: sourceId,
-                target: dictId[dictKey(scale.states[i])],
-                p,
-            }));
+            .filter(isValidProb)
+            .map((p: number, i: number) => {
+                let linkType = null;
+                const stateFound = scale.states.find((s: any) => isValidProb(s.nextStateProbDistr[stateIx]));
+
+                if (stateFound == null) {
+                    linkType = LinkType.SINGLE;
+                } else if (stateFound.stateNo === state.stateNo) {
+                    linkType = LinkType.SELF;
+                } else {
+                    linkType = LinkType.BIDIRECT;
+                }
+                return {
+                    source: sourceId,
+                    target: dictId[uniqueId(scale.states[i], scaleIx)],
+                    linkType,
+                    p,
+                }
+            });
     }
 
-    function stateToNode(state: any, dictId: any, dict: any) {
-        const stateId = dictId[dictKey(state)];
-
-        console.log("r=", maxRadius * state.stationaryProbability)
-
-        return {
-            id: stateId,
-            x: dict[stateId].x,
-            y: dict[stateId].y,
-            r: maxRadius * state.stationaryProbability,
-            label: state.suggestedLabel ? state.suggestedLabel.label : stateId,
-            stationaryProbability: state.stationaryProbability,
-        }
+    function isValidProb(p: number) {
+        return ((p > 0) && (p >= pThreshold));
     }
 
-    function createlinkWithLinkType(link: any, links: any[]) {
-        let linkType: LinkType;
-        const isBidirect = links
-            .some((l: any) => ((link.source === l.target) && (link.target === l.source)));
 
-        if (link.source === link.target) {
-            linkType = LinkType.SELF;
-        } else if (isBidirect) {
-            linkType = LinkType.BIDIRECT;
-        } else {
-            linkType = LinkType.SINGLE;
-        }
-        return { ...link, linkType }
-    }
 
     function findMinMaxValues(dataset: any[]) {
         const rez = {
