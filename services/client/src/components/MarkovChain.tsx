@@ -109,9 +109,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const format2Decimals = d3.format(`.${sliderProbPrecision}f`);
             const formatInt = d3.format(".0f");
 
-            console.log("graphData:")
-            console.log(graphData)
-
             if (graphData) {
                 // FIXME: when moved to if init, duplicate colors should not be the issue
                 createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
@@ -127,7 +124,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                         const valFloor = Math.floor(val);
 
                         if (valFloor !== prevIx) {
-                            console.log(valFloor)
                             setCurrentScaleIx(valFloor)
                             prevIx = valFloor;
                         }
@@ -197,7 +193,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     x,
                     y,
                     r: maxRadius * state.stationaryProbability,
-                    label: state.suggestedLabel ? `${stateId}_${state.suggestedLabel.label}` : stateId,
+                    name: state.suggestedLabel ? `${stateId}_${state.suggestedLabel.label}` : stateId,
+                    label: state.suggestedLabel.label,
                     stationaryProbability: state.stationaryProbability,
                 }
                 statesDict[key] = obj
