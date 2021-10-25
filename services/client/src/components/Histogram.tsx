@@ -54,7 +54,7 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']) // 1st-blue, 2nd-grey
 
-        console.log("HISTOGRAM=", histogram, " freqFn(histogram)=", freqFn(histogram))
+        // console.log("HISTOGRAM=", histogram, " freqFn(histogram)=", freqFn(histogram))
 
         const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => ({
             group: boundsFn(histogram)[ix],

@@ -50,6 +50,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
         const data = createGraphData(model.model.scales);
 
+        console.log("graphData:")
+        console.log(data)
+
         if (model.model.scales[currentScaleIx]) {
 
             const xWidth = width - chart.left - margin.left - margin.right;
@@ -152,26 +155,26 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     function createGraphData(scales: any) {
         const dict: any = {}
 
-        return scales.map((scale: any) => {
+        return scales.map((scale: any, scaleIx: number) => {
             const stateNoArr: any[] = scale.states.map((state: any) => state.stateNo)
             const nodes: any[] = [];
             const links: any[] = [];
 
-            console.log("==========================================")
-            scale.states.forEach((state: any, i: number) => {
+            console.log(`======    #${scaleIx}    ========================`)
 
+            scale.states.forEach((state: any, i: number) => {
                 let x = -1;
                 let y = -1;
 
+                console.log(`stateNo #${state.stateNo} ${(dict[state.stateNo] == null) ? "not" : ""} in dict=${JSON.stringify(dict[state.stateNo])}`)
+
                 if (scale.areTheseInitialStates) {
-                    console.log("if")
                     const currAngle = (360 / scale.states.length) * i;
                     x = (maxRadius * Math.sin(Math.PI * 2 * currAngle / 360) + maxRadius);
                     y = (maxRadius * Math.cos(Math.PI * 2 * currAngle / 360) + maxRadius);
                     dict[state.stateNo] = { x, y }
 
                 } else if (!scale.areTheseInitialStates && !dict[state.stateNo]) {
-                    console.log("else if")
                     let xSum = 0;
                     let ySum = 0;
                     state.childStates.forEach((stateNo: number) => {
@@ -180,13 +183,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     });
                     x = xSum / state.childStates.length;
                     y = ySum / state.childStates.length;
-
                     dict[state.stateNo] = { x, y }
-                } else {
-                    // console.log("else, dict[stateNo]=", dict[state.stateNo])
-                    console.log("else, stateNo=", state.stateNo)
                 }
-
                 nodes.push({
                     id: state.stateNo,
                     ix: state.stateNo,
@@ -209,26 +207,26 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 links.push(currStateLinks)
             });
 
-            console.log("dict=", dict)
-
-            const obj = { nodes, links: links.flat() };
-
-            obj.links = obj.links.map((link: any) => {
-                let linkType: LinkType;
-                const isBidirect = obj.links
-                    .some((l: any) => ((link.source === l.target) && (link.target === l.source)));
-
-                if (link.source === link.target) {
-                    linkType = LinkType.SELF;
-                } else if (isBidirect) {
-                    linkType = LinkType.BIDIRECT;
-                } else {
-                    linkType = LinkType.SINGLE;
-                }
-                return { ...link, linkType }
-            });
+            const linksFlatten = links.flat();
+            const obj = { nodes, links: linksFlatten.map((link: any) => linkWithLinkType(link, linksFlatten)) };
+            console.log("\n")
             return obj
         });
+    }
+
+    function linkWithLinkType(link: any, links: any[]) {
+        let linkType: LinkType;
+        const isBidirect = links
+            .some((l: any) => ((link.source === l.target) && (link.target === l.source)));
+
+        if (link.source === link.target) {
+            linkType = LinkType.SELF;
+        } else if (isBidirect) {
+            linkType = LinkType.BIDIRECT;
+        } else {
+            linkType = LinkType.SINGLE;
+        }
+        return { ...link, linkType }
     }
 
     function findMinMaxValues(dataset: any[]) {
