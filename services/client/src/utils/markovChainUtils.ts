@@ -183,6 +183,8 @@ export function createNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, 
                 return exit;
             }
         )
+
+    selectAllNodeGroups(gNodes)
         .sort((a: any, b: any) => d3.descending(a.r, b.r));
 }
 
@@ -200,6 +202,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
         .attr("cy", (d: any) => scale(y, d.y))
         .attr("r", (d: any) => scale(r, d.r))
         .attr("fill", (d: any, i: any) => color(i))
+        .attr("opacity", 0.8)
         .attr("stroke", NODE_BORDER_COLOR)
         .attr("stroke-width", (d: any) => circleBorderWidth(d))
 
@@ -234,7 +237,8 @@ function nodeUpdate(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: 
     selectNodeCircle(selection)
         .attr("cx", (d: any) => scale(x, d.x))
         .attr("cy", (d: any) => scale(y, d.y))
-        .attr("r", (d: any) => scale(r, d.r));
+        .attr("r", (d: any) => scale(r, d.r))
+        .attr("opacity", 0.8)
 
     selectNodeTitle(selection)
         .attr("x", (d: any) => scale(x, d.x))
