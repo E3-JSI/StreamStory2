@@ -11,6 +11,7 @@ export interface IMarkoChainProps {
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const [debug] = useState<boolean>(true);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [maxRadius] = useState<number>(130);
@@ -52,7 +53,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const margin = { top: 20, right: 20, bottom: 20, left: 20, };
         const chart = { top: 50, left: 50 };
 
-        if (model.model.scales[currentScaleIx]) {
+        if (graphData && model.model.scales[currentScaleIx]) {
             const xWidth = width - chart.left - margin.left - margin.right;
             const yWidth = height - chart.top - margin.top - margin.bottom;
 
@@ -136,7 +137,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     }
 
     function uniqueId(state: any, scaleIx: number) {
-        return `uid=${state.suggestedLabel.label}_s=${scaleIx}`;
+        return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
     }
 
     function createDictId(scales: any) {
@@ -188,13 +189,20 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
                 const stateId = dictId[uniqueId(scale.states[i], scaleIx)];
 
+                let label = "";
+
+                if (debug) {
+                    label = `${stateId}_${state.suggestedLabel.label}_${state.stationaryProbability.toFixed(4)}`
+                } else {
+                    label = state.suggestedLabel.label
+                }
+
                 const obj = {
                     id: stateId,
                     x,
                     y,
                     r: maxRadius * state.stationaryProbability,
-                    name: state.suggestedLabel ? `${stateId}_${state.suggestedLabel.label}` : stateId,
-                    label: state.suggestedLabel.label,
+                    label,
                     stationaryProbability: state.stationaryProbability,
                 }
                 statesDict[key] = obj

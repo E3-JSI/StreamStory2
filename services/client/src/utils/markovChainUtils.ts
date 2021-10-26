@@ -174,7 +174,7 @@ export function createNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, 
     const { tEnter } = getTransitionsFromProps(gNodes, transitionProps);
 
     selectAllNodeGroups(gNodes)
-        .data(data.nodes, (d: any) => `node_${d.label}`)
+        .data(data.nodes, (d: any) => `node_${d.id}`)
         .join(
             (enter: any) => nodeEnter(enter, gNodes, gLinks, gMarkers, x, y, r, color, tEnter, onNodeClickCallBack),
             (update: any) => nodeUpdate(update, gNodes, gLinks, gMarkers, x, y, r, tEnter),
@@ -208,7 +208,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
         .attr("dy", (d: any) => scale(y, d.y))
         .style("fill", "white")
         .attr("text-anchor", "middle")
-        .text((d: any) => d.name ? d.name : "");
+        .text((d: any) => d.label ? d.label : "");
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr("opacity", 1))
