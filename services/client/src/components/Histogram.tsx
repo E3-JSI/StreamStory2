@@ -60,7 +60,10 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             group: boundsFn(histogram)[ix],
             bluePart: freqFn(histogram)[ix],
             greyPart: totalFreqFn()[ix] - freqFn(histogram)[ix],
+            total: totalFreqFn()[ix], // FIXME: debug only
         }));
+
+        console.log("groupedData=", groupedData)
 
         const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);
 
@@ -73,16 +76,20 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             .call(
                 d3
                     .axisBottom(x)
-                    .tickValues(x.domain().filter((d, i) => !(i % 3)))
+                    // .tickValues(x.domain().filter((d, i) => !(i % 3)))
                     .tickSizeOuter(0)
             )
 
-        const y = d3.scaleLinear()
-            .domain([0, 60])
-            .range([height, 0]);
-        // svg.append("g")
-        //     .call(d3.axisLeft(y).ticks(3));
+        const totalArr: any[] = totalFreqFn().length ? totalFreqFn() : [];
+        const maxCurr: number = d3.max(totalArr);
 
+        console.log("maxCurr=", maxCurr)
+
+        const y = d3.scaleLinear()
+            .domain([0, maxCurr])
+            .range([height, 0]);
+        svg.append("g")
+            .call(d3.axisLeft(y)/** .ticks(3) */);
 
         svg.append("g")
             .selectAll("g")

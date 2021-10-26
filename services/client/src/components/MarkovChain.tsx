@@ -11,7 +11,7 @@ export interface IMarkoChainProps {
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
-    const [debug] = useState<boolean>(true);
+    const [debug] = useState<boolean>(false);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [maxRadius] = useState<number>(130);
@@ -24,6 +24,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
+
+            console.log("model.model.totalHistograms:")
+            console.log(model.model.totalHistograms)
 
             console.log("model.model.scales:")
             console.log(model.model.scales)
@@ -45,7 +48,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }, [windowSize, pThreshold, currentScaleIx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    function renderMarkovChain(graphData: any): void {
+    function renderMarkovChain(graphData: any): void {  
         console.log("start: renderMarkovChain")
 
         const width = containerRef?.current?.offsetWidth || 150;
@@ -160,6 +163,29 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     function createStatesDict(scales: any, dictId: any) {
         const statesDict: any = {};
 
+        const labelSet = new Set();
+
+        scales.forEach((scale: any, scaleIx: number) => {
+            scale.states.forEach((state: any, i: number) => {
+                labelSet.add(state.suggestedLabel.label)
+            })
+        })
+
+        const labelsArr: any[] = Array.from(labelSet)
+
+        // console.log("labelSet=", labelSet)
+        // console.log("labelsArr=", labelsArr)
+
+
+        const colorRange: any[] = ["red", "white", "green"];
+
+        const color = d3.scaleOrdinal()
+            .domain(labelsArr)
+            .range(colorRange);
+
+        // premešaj po nekem algoritmu, da bojo čim manj podobne in da nebojo imele sosednih barv
+        // pridobitev barve: color(state.suggestedLabel.label)
+
         scales.forEach((scale: any, scaleIx: number) => {
             scale.states.forEach((state: any, i: number) => {
                 let x = -1;
@@ -198,6 +224,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     label = state.suggestedLabel.label
                 }
 
+                // colorDict[state.suggestedLabel.label] = ""
+
                 const obj = {
                     id: stateId,
                     x,
@@ -206,6 +234,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     r: maxRadius * state.stationaryProbability,
                     label,
                     stationaryProbability: state.stationaryProbability,
+                    color: color(state.suggestedLabel.label),
                 }
                 statesDict[key] = obj
             });

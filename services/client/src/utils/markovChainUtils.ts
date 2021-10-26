@@ -201,7 +201,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
         .attr("cx", (d: any) => scale(x, d.x))
         .attr("cy", (d: any) => scale(y, d.y))
         .attr("r", (d: any) => scale(r, d.r))
-        .attr("fill", (d: any, i: any) => color(i))
+        .attr("fill", (d: any, i: any) => d.color)
         .attr("opacity", 0.8)
         .attr("stroke", NODE_BORDER_COLOR)
         .attr("stroke-width", (d: any) => circleBorderWidth(d))
