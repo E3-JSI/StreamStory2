@@ -182,7 +182,8 @@ export function createNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, 
                 exit.remove();
                 return exit;
             }
-        );
+        )
+        .sort((a: any, b: any) => d3.descending(a.r, b.r));
 }
 
 function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: any, y: any, r: any, color: any, tEnter: any,

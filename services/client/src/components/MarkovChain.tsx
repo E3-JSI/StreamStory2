@@ -192,7 +192,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 let label = "";
 
                 if (debug) {
-                    label = `${stateId}_${state.suggestedLabel.label}_${state.stationaryProbability.toFixed(4)}`
+                    // label = `${stateId}_${state.suggestedLabel.label}_${state.stationaryProbability.toFixed(4)}`
+                    label = `${state.suggestedLabel.label}_${state.stationaryProbability.toFixed(4)}`
                 } else {
                     label = state.suggestedLabel.label
                 }
