@@ -201,6 +201,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     id: stateId,
                     x,
                     y,
+                    stateNo: state.stateNo,
                     r: maxRadius * state.stationaryProbability,
                     label,
                     stationaryProbability: state.stationaryProbability,

@@ -217,7 +217,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
         })
         .on("click", function (this: any, event: any) {
             colorBlueNodeAndLinks.call(this, gNodes, gLinks, gMarkers);
-            onNodeClickCallBack(event, (d3.select(this).data()[0] as any).id);
+            onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
     // .on("mouseup", () => {
     //     console.log("mouseUp")
