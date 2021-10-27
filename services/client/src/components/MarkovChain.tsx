@@ -50,6 +50,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     function renderMarkovChain(graphData: any): void {
         console.log("start: renderMarkovChain")
 
+        const boundary = findMinMaxValues(graphData);
+
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
         const margin = { top: 20, right: 20, bottom: 20, left: 20, };
@@ -67,9 +69,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gSliderProb = null;
             let gSliderScale = null;
 
-            console.log(`initialized = ${initialized} `);
 
             if (!initialized) {
+                console.log(`initialized = ${initialized} `);
+
                 graph = createSVG(containerRef, width, height, margin);
                 matrix = createMatrix(graph, width, height, chart);
                 matrix.append("rect")
@@ -95,8 +98,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gSliderProb = matrix.select("g.slider_prob");
                 gSliderScale = matrix.select("g.slider_scale");
             }
-
-            const boundary = findMinMaxValues(graphData); // FIXME: ds
 
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
@@ -276,8 +277,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         return ((p > 0) && (p >= pThreshold));
     }
 
-
-
     function findMinMaxValues(currData: any) {
         const rez = {
             x: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
@@ -292,6 +291,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             rez.r.min = Math.min(rez.r.min, el.r);
             rez.r.max = Math.max(rez.r.max, el.r);
         });
+        rez.x.min -= rez.r.max;
+        rez.y.min -= rez.r.max;
+        rez.x.max += rez.r.max;
+        rez.y.max += rez.r.max;
         return rez
     }
 
