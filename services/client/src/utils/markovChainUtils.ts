@@ -24,8 +24,6 @@ export const TRANSITION_PROPS: ITransitionProps = {
     } as ITransition
 } as ITransitionProps;
 
-
-
 export interface ITransitionProps {
     tEnter: ITransition;
     tUpdate: ITransition;
@@ -41,17 +39,17 @@ export function scale(s: any, value: any) {
     return s(value);
 }
 
-export function createMatrix(g: any, width: number, height: number, chart: any) {
+export function createGraphContainer(g: any, width: number, height: number, chart: any) {
     return g
         .append("g")
-        .attr("class", "matrix")
+        .attr("class", "graphContainer")
         .attr("width", width - chart.left)
         .attr("height", height - chart.top)
         .attr("transform", `translate(${chart.left}, ${chart.top})`);
 }
 
-export function getMatrix(svg: any) {
-    return svg.select("g.matrix");
+export function getGraphContainer(svg: any) {
+    return svg.select("g.graphContainer");
 }
 
 export function createSVG(container: React.MutableRefObject<any>, width: number, height: number, margin: any) {
@@ -339,17 +337,8 @@ function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: an
             .attr("stroke", NODE_BORDER_COLOR)
     });
     const nodeGroupClicked = d3.select(this);
-
-
     const nodeCircle = selectNodeCircle(nodeGroupClicked);
-
-    nodeCircle
-        .attr("stroke", NODE_SELECTED_BORDER_COLOR)
-
-    const bbox = nodeCircle.node().getBBox()
-
-    // console.log("bbox:")
-    // console.log(bbox)
+    nodeCircle.attr("stroke", NODE_SELECTED_BORDER_COLOR)
 
     selectAllLinkGroups(gLinks).each(function (this: any) {
         const linkGroup = d3.select(this);
@@ -385,14 +374,8 @@ function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: an
     });
 }
 
-function linkBorderWidth(d: any) {
-    console.log(d)
-    return 5 * d.p + 0.1;
-}
-
-
 function circleBorderWidth(d: any) {
-    return 5
+    return 5 // FIXME: hardcoded
 }
 
 function createPath(data: any, link: any): string {
@@ -475,26 +458,6 @@ export function selectNodeTitle(selection: any) {
     return selection.select(".node_title");
 }
 
-export function findMinMaxValues(dataLevels: any[]) {
-    const rez = {
-        x: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
-        y: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
-        r: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER }
-    }
-
-    dataLevels.forEach((level: any) => {
-        level.nodes.forEach((node: any) => {
-            rez.x.min = Math.min(rez.x.min, node.x)
-            rez.x.max = Math.max(rez.x.max, node.x)
-            rez.y.min = Math.min(rez.y.min, node.y)
-            rez.y.max = Math.max(rez.y.max, node.y)
-            rez.r.min = Math.min(rez.r.min, node.radius)
-            rez.r.max = Math.max(rez.r.max, node.radius)
-        });
-    });
-    return rez;
-}
-
 export function createBandScale(domain: string[], range: number[], padding: number) {
     return d3
         .scaleBand()
@@ -537,4 +500,161 @@ export function yAxis(g: any, yScale: any, yLabel: string) {
                 .attr("font-weight", "bold")
                 .text(yLabel)
         );
+}
+
+export function isValidProb(p: number, pThreshold: number) {
+    return ((p > 0) && (p >= pThreshold));
+}
+
+export function findMinMaxValues(currData: any) {
+    const rez = {
+        x: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
+        y: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
+        r: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
+    }
+    currData.map((el: any) => el.nodes).flat().forEach((el: any) => {
+        rez.x.min = Math.min(rez.x.min, el.x);
+        rez.x.max = Math.max(rez.x.max, el.x);
+        rez.y.min = Math.min(rez.y.min, el.y);
+        rez.y.max = Math.max(rez.y.max, el.y);
+        rez.r.min = Math.min(rez.r.min, el.r);
+        rez.r.max = Math.max(rez.r.max, el.r);
+    });
+    rez.x.min -= rez.r.max;
+    rez.y.min -= rez.r.max;
+    rez.x.max += rez.r.max;
+    rez.y.max += rez.r.max;
+    return rez
+}
+
+export function uniqueId(state: any) {
+    return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
+}
+
+export function createDictId(scales: any) {
+    const dict: any = {};
+    let stateId = 0;
+
+    scales.forEach((sc: any) => {
+        sc.states.forEach((state: any) => {
+            const key = uniqueId(state);
+
+            if (!dict[key]) {
+                dict[key] = stateId;
+                stateId += 1;
+            }
+        });
+    });
+    return dict;
+}
+
+export function createStatesDict(scales: any, dictId: any, maxRadius: number, debug: boolean) {
+    const statesDict: any = {};
+    const labelSet = new Set();
+
+    scales.forEach((sc: any) => {
+        sc.states.forEach((state: any) => {
+            labelSet.add(state.suggestedLabel.label)
+        })
+    });
+
+    const labelsArr: any[] = Array.from(labelSet)
+    const colorRange: any[] = ["red", "white", "green"]; // FIXME: hardcoded
+
+    const color = d3.scaleOrdinal()
+        .domain(labelsArr)
+        .range(colorRange);
+
+    // pridobitev barve: color(state.suggestedLabel.label)
+
+    scales.forEach((sc: any, scaleIx: number) => {
+        sc.states.forEach((state: any, i: number) => {
+            let x = -1;
+            let y = -1;
+            const key = uniqueId(state);
+            const currStateId = dictId[key];
+
+            if (sc.areTheseInitialStates) {
+                const currAngle = (360 / sc.states.length) * i;
+                x = (maxRadius * Math.sin(Math.PI * 2 * currAngle / 360) + maxRadius);
+                y = (maxRadius * Math.cos(Math.PI * 2 * currAngle / 360) + maxRadius);
+            } else if (!sc.areTheseInitialStates && !statesDict[currStateId]) {
+                let xSum = 0;
+                let ySum = 0;
+                state.childStates.forEach((stateNo: number) => {
+                    const childState = scales[scaleIx - 1].states.find((el: any) => el.stateNo === stateNo);
+                    const childKey = uniqueId(childState)
+
+                    xSum += statesDict[childKey].x;
+                    ySum += statesDict[childKey].y;
+                });
+                x = xSum / state.childStates.length;
+                y = ySum / state.childStates.length;
+            }
+
+            const stateId = dictId[uniqueId(sc.states[i])];
+
+            let label = "";
+
+            if (debug) {
+                label = `${state.suggestedLabel.label}_${state.stationaryProbability.toFixed(4)}`;
+            } else {
+                label = state.suggestedLabel.label;
+            }
+
+            // colorDict[state.suggestedLabel.label] = ""
+
+            const obj = {
+                id: stateId,
+                x,
+                y,
+                stateNo: state.stateNo,
+                r: maxRadius * state.stationaryProbability,
+                childStates: state.childStates,
+                label,
+                stationaryProbability: state.stationaryProbability,
+                color: color(state.suggestedLabel.label),
+            }
+            statesDict[key] = obj;
+        });
+    });
+    return statesDict;
+}
+
+export function createStateLinks(stateIx: number, state: any, sc: any, dictId: any, pThreshold: number) {
+    const sourceId = dictId[uniqueId(state)];
+
+    return state.nextStateProbDistr
+        .filter((p: number) => isValidProb(p, pThreshold))
+        .map((p: number, i: number) => {
+            let linkType = null;
+            const stateFound = sc.states.find((s: any) => isValidProb(s.nextStateProbDistr[stateIx], pThreshold));
+
+            if (stateFound == null) {
+                linkType = LinkType.SINGLE;
+            } else if (stateFound.stateNo === state.stateNo) {
+                linkType = LinkType.SELF;
+            } else {
+                linkType = LinkType.BIDIRECT;
+            }
+            return {
+                source: sourceId,
+                target: dictId[uniqueId(sc.states[i])],
+                linkType,
+                p,
+            }
+        });
+}
+
+export function createGraphData(scales: any, stateDict: any, dictId: any, pThreshold: number) {
+    return scales.map((sc: any) => {
+        const links: any[] = [];
+        const nodes: any[] = [];
+
+        sc.states.forEach((state: any, stateIx: number) => {
+            links.push(createStateLinks(stateIx, state, sc, dictId, pThreshold));
+            nodes.push(stateDict[uniqueId(state)]);
+        });
+        return { nodes, links: links.flat() }
+    });
 }
