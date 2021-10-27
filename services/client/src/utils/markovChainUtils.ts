@@ -114,10 +114,8 @@ export function createLinks(data: any, gNodes: any, gLinks: any, transitionProps
 
                 selectLinkPath(tmp)
                     .attr("d", (d: any) => drawLineWithOffset(createNodesMap(gNodes), d))
-                tmp
-                    .call(
-                        (entr: any) => entr.transition(entr).attr("opacity", 1)
-                    )
+
+                tmp.call((entr: any) => entr.transition(entr).attr("opacity", 1))
                 return tmp;
             },
             (update: any) => {
@@ -186,6 +184,16 @@ export function createNodes(data: any, gNodes: any, gLinks: any, gMarkers: any, 
 
     selectAllNodeGroups(gNodes)
         .sort((a: any, b: any) => d3.descending(a.r, b.r));
+
+
+    selectAllNodeGroups(gNodes)
+        .on("click", function (this: any, event: any) {
+            colorBlueNodeAndLinks.call(this, gNodes, gLinks, gMarkers);
+            onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
+        })
+        .call(function (this: any) {
+            onNodeDrag.call(this, createNodesMap(gNodes), gLinks)
+        })
 }
 
 function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: any, y: any, r: any, color: any, tEnter: any,
@@ -219,13 +227,6 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: a
         .call(function (this: any) {
             onNodeDrag.call(this, createNodesMap(gNodes), gLinks)
         })
-        .on("click", function (this: any, event: any) {
-            colorBlueNodeAndLinks.call(this, gNodes, gLinks, gMarkers);
-            onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
-        })
-    // .on("mouseup", () => {
-    //     console.log("mouseUp")
-    // });
     return enterTmp;
 }
 
@@ -244,14 +245,6 @@ function nodeUpdate(selection: any, gNodes: any, gLinks: any, gMarkers: any, x: 
         .attr("x", (d: any) => scale(x, d.x))
         .attr("dy", (d: any) => scale(y, d.y));
 
-    enterTmp
-        .call((enter: any) => enter.transition(tEnter).attr("opacity", 1))
-        .call(function (this: any) {
-            onNodeDrag.call(this, createNodesMap(gNodes), gLinks)
-        })
-        .on("click", function (this: any) {
-            colorBlueNodeAndLinks.call(this, gNodes, gLinks, gMarkers)
-        });
     return enterTmp;
 }
 
@@ -294,6 +287,7 @@ export function getTransitionsFromProps(g: any, props: ITransitionProps): any {
 }
 
 function onNodeDrag(nodesMap: any, gLinks: any) {
+    console.log("start: onNodeDrag")
     return d3.drag<SVGGElement, unknown>()
         .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
             return {
