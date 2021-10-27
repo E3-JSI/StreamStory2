@@ -49,17 +49,16 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function renderMarkovChain(graphData: any): void {
         console.log("start: renderMarkovChain")
-
         const boundary = findMinMaxValues(graphData);
-
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 700;
-        const margin = { top: 20, right: 20, bottom: 20, left: 20, };
-        const chart = { top: 50, left: 50 };
+        const margin = { top: 5, right: 5, bottom: 10, left: 10, };
+        const chart = { top: 2, left: 2 };
+
+        const xWidth = width - chart.left - margin.left - margin.right;
+        const yWidth = height - chart.top - margin.top - margin.bottom;
 
         if (graphData && model.model.scales[currentScaleIx]) {
-            const xWidth = width - chart.left - margin.left - margin.right;
-            const yWidth = height - chart.top - margin.top - margin.bottom;
 
             let graph = null;
             let matrix = null;
@@ -68,7 +67,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gMarkers = null;
             let gSliderProb = null;
             let gSliderScale = null;
-
 
             if (!initialized) {
                 console.log(`initialized = ${initialized} `);
