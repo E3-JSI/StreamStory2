@@ -37,18 +37,17 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const graphData = createGraphData(model.model.scales, statesDict, dictId);
             setData(graphData)
 
-            renderMarkovChain(graphData[currentScaleIx]);
+            renderMarkovChain(graphData);
         }
     }, [model.model.scales]) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        if (model.model.scales && model.model.scales.length && data && data.length) {
-            const graphData = data[currentScaleIx]
-            renderMarkovChain(graphData);
+        if ((pThreshold >= 0) && (currentScaleIx >= 0) && model.model.scales && model.model.scales.length && data && data.length) {
+            renderMarkovChain(data);
         }
     }, [windowSize, pThreshold, currentScaleIx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    function renderMarkovChain(graphData: any): void {  
+    function renderMarkovChain(graphData: any): void {
         console.log("start: renderMarkovChain")
 
         const width = containerRef?.current?.offsetWidth || 150;
@@ -97,15 +96,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gSliderScale = matrix.select("g.slider_scale");
             }
 
-            // const boundary = findMinMaxValues(scales); // FIXME: ds
-            const boundary = { // FIXME: hardcoded
-                x: { min: 0, max: 300 },
-                y: { min: 0, max: 300 },
-                r: { min: 0, max: 300 },
-            }
+            const boundary = findMinMaxValues(graphData); // FIXME: ds
+
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
-            const r = createLinearScale([boundary.r.min, boundary.r.max], [0, yWidth]);
+            const r = createLinearScale([boundary.r.min, boundary.r.max], [yWidth / 20, yWidth / 5]);
             const color = d3.scaleOrdinal(d3.schemeTableau10);
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
             const ySliderScale = createLinearScale([0, model.model.scales.length], [yWidth, 0]).clamp(true);
@@ -113,29 +108,26 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const format2Decimals = d3.format(`.${sliderProbPrecision}f`);
             const formatInt = d3.format(".0f");
 
-            if (graphData) {
-                // FIXME: when moved to if init, duplicate colors should not be the issue
-                createNodes(graphData, gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
-                    const selectedState = model.model.scales[currentScaleIx].states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
-                    onStateSelected(selectedState);
+            createNodes(graphData[currentScaleIx], gNodes, gLinks, gMarkers, x, y, r, color, TRANSITION_PROPS, (a: any, b: any) => {
+                const selectedState = model.model.scales[currentScaleIx].states.find((state: any) => state.stateNo === b); // eslint-disable-line no-param-reassign
+                onStateSelected(selectedState);
+            });
+
+            if (!initialized) {
+                createSlider(gSliderProb, xSliderProb, yWidth, pThreshold, false, true, true, format2Decimals, (p: number) => setPThreshold(p));
+
+                let prevIx = -1;
+                createSlider(gSliderScale, ySliderScale, yWidth, currScaleIx, true, false, false, formatInt, (val: number) => {
+                    const valFloor = Math.floor(val);
+
+                    if (valFloor !== prevIx) {
+                        setCurrentScaleIx(valFloor)
+                        prevIx = valFloor;
+                    }
                 });
-
-                if (!initialized) {
-                    createSlider(gSliderProb, xSliderProb, yWidth, pThreshold, false, true, true, format2Decimals, (p: number) => setPThreshold(p));
-
-                    let prevIx = -1;
-                    createSlider(gSliderScale, ySliderScale, yWidth, currScaleIx, true, false, false, formatInt, (val: number) => {
-                        const valFloor = Math.floor(val);
-
-                        if (valFloor !== prevIx) {
-                            setCurrentScaleIx(valFloor)
-                            prevIx = valFloor;
-                        }
-                    });
-                }
-                createLinks(graphData, gNodes, gLinks, TRANSITION_PROPS);
-                createMarkers(graphData, gMarkers);
             }
+            createLinks(graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
+            createMarkers(graphData[currentScaleIx], gMarkers);
         }
     }
 
@@ -286,24 +278,21 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
 
 
-    function findMinMaxValues(dataset: any[]) {
+    function findMinMaxValues(currData: any) {
         const rez = {
             x: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
             y: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
             r: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER }
         }
-
-        dataset.forEach((height: any) => {
-            height.states.forEach((state: any) => {
-                rez.x.min = Math.min(rez.x.min, state.x);
-                rez.x.max = Math.max(rez.x.max, state.x);
-                rez.y.min = Math.min(rez.y.min, state.y);
-                rez.y.max = Math.max(rez.y.max, state.y);
-                rez.r.min = Math.min(rez.r.min, state.radius * state.stationaryProbability);
-                rez.r.max = Math.max(rez.r.max, state.radius * state.stationaryProbability);
-            });
+        currData.map((el: any) => el.nodes).flat().forEach((el: any) => {
+            rez.x.min = Math.min(rez.x.min, el.x);
+            rez.x.max = Math.max(rez.x.max, el.x);
+            rez.y.min = Math.min(rez.y.min, el.y);
+            rez.y.max = Math.max(rez.y.max, el.y);
+            rez.r.min = Math.min(rez.r.min, el.r);
+            rez.r.max = Math.max(rez.r.max, el.r);
         });
-        return rez;
+        return rez
     }
 
     return (
