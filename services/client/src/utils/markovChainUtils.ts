@@ -287,7 +287,7 @@ export function getTransitionsFromProps(g: any, props: ITransitionProps): any {
 }
 
 function onNodeDrag(nodesMap: any, gLinks: any) {
-    console.log("start: onNodeDrag")
+    // console.log("start: onNodeDrag")
     return d3.drag<SVGGElement, unknown>()
         .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
             return {

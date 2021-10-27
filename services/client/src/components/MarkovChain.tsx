@@ -22,6 +22,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
 
+    const [dictIdTmp, setDictIdTmp] = useState<number>();
+    const [statesDictTmp, setStatesDictTmp] = useState<number>();
+
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
 
@@ -32,7 +35,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             console.log(model.model.scales)
 
             const dictId = createDictId(model.model.scales);
+            setDictIdTmp(dictId)
+
             const statesDict = createStatesDict(model.model.scales, dictId);
+            setStatesDictTmp(statesDict)
 
             const graphData = createGraphData(model.model.scales, statesDict, dictId);
             setData(graphData)
@@ -43,6 +49,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     useEffect(() => {
         if ((pThreshold >= 0) && (currentScaleIx >= 0) && model.model.scales && model.model.scales.length && data && data.length) {
+
+            const graphData = createGraphData(model.model.scales, statesDictTmp, dictIdTmp);
+            setData(graphData)
+
             renderMarkovChain(data);
         }
     }, [windowSize, pThreshold, currentScaleIx]) // eslint-disable-line react-hooks/exhaustive-deps
