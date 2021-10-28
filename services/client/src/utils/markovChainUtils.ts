@@ -184,29 +184,25 @@ export function createNodes(
     x: any,
     y: any,
     r: any,
-    color: any,
     transitionProps: ITransitionProps,
     onNodeClickCallBack: any,
 ) {
     const { tEnter } = getTransitionsFromProps(gNodes, transitionProps);
 
     selectAllNodeGroups(gNodes)
-        .data(data.nodes, (d: any) => `node_${d.id}`)
+        .data(data.states, (d: any) => `node_${d.id}`)
         .join(
             (enter: any) =>
                 nodeEnter(
                     enter,
                     gNodes,
                     gLinks,
-                    gMarkers,
                     x,
                     y,
                     r,
-                    color,
-                    tEnter,
-                    onNodeClickCallBack,
+                    tEnter
                 ),
-            (update: any) => nodeUpdate(update, gNodes, gLinks, gMarkers, x, y, r, tEnter),
+            (update: any) => nodeUpdate(update, x, y, r),
             (exit: any) => {
                 exit.remove();
                 return exit;
@@ -229,13 +225,10 @@ function nodeEnter(
     selection: any,
     gNodes: any,
     gLinks: any,
-    gMarkers: any,
     x: any,
     y: any,
     r: any,
-    color: any,
     tEnter: any,
-    onNodeClickCallBack: any,
 ) {
     const enterTmp = selection.append('g').attr('class', 'node_group').attr('opacity', 0);
     enterTmp
@@ -256,7 +249,7 @@ function nodeEnter(
         .attr('dy', (d: any) => scale(y, d.y))
         .style('fill', 'white')
         .attr('text-anchor', 'middle')
-        .text((d: any) => (d.label ? d.label : ''));
+        .text((d: any) => ((d.suggestedLabel && d.suggestedLabel.label) ? d.suggestedLabel.label : ''));
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
@@ -268,13 +261,9 @@ function nodeEnter(
 
 function nodeUpdate(
     selection: any,
-    gNodes: any,
-    gLinks: any,
-    gMarkers: any,
     x: any,
     y: any,
     r: any,
-    tEnter: any,
 ) {
     const enterTmp = selectNodeGroup(selection);
 
@@ -547,14 +536,13 @@ export function isValidProb(p: number, pThreshold: number) {
     return p > 0 && p >= pThreshold;
 }
 
-export function findMinMaxValues(currData: any) {
+export function findMinMaxValues(scales: any) {
     const rez = {
         x: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
         y: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
         r: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
     };
-    currData
-        .map((el: any) => el.nodes)
+    scales.map((sc: any) => sc.states)
         .flat()
         .forEach((el: any) => {
             rez.x.min = Math.min(rez.x.min, el.x);
@@ -613,6 +601,7 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
         sc.states.forEach((state: any, i: number) => {
             state.x = -1; // eslint-disable-line no-param-reassign
             state.y = -1; // eslint-disable-line no-param-reassign
+            state.r = maxRadius * state.stationaryProbability; // eslint-disable-line no-param-reassign
             const key = uniqueId(state);
             const currStateId = dictId[key];
 
@@ -643,21 +632,8 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
             } else {
                 label = state.suggestedLabel.label;
             }
-
             // colorDict[state.suggestedLabel.label] = ""
-
-            const obj = {
-                id: stateId,
-                x: state.x,
-                y: state.y,
-                stateNo: state.stateNo,
-                r: maxRadius * state.stationaryProbability,
-                childStates: state.childStates,
-                label,
-                stationaryProbability: state.stationaryProbability,
-                color: color(state.suggestedLabel.label),
-            };
-            statesDict[key] = obj;
+            statesDict[key] = state;
         });
     });
     return statesDict;
@@ -699,12 +675,20 @@ export function createStateLinks(
 export function createGraphData(scales: any, stateDict: any, dictId: any, pThreshold: number) {
     return scales.map((sc: any) => {
         const links: any[] = [];
-        const nodes: any[] = [];
+        const states: any[] = [];
 
         sc.states.forEach((state: any, stateIx: number) => {
             links.push(createStateLinks(stateIx, state, sc, dictId, pThreshold));
-            nodes.push(stateDict[uniqueId(state)]);
+            states.push(stateDict[uniqueId(state)]);
         });
-        return { nodes, links: links.flat() };
+
+        return {
+            states: states.map((s: any, i: number) => {
+                const stateClone = JSON.parse(JSON.stringify(s));
+                stateClone.id = dictId[uniqueId(sc.states[i])];
+                stateClone.color = "blue";
+                return stateClone;
+            }), links: links.flat()
+        };
     });
 }

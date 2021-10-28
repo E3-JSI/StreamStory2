@@ -62,13 +62,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const degOffset = 0;
             const scaleIx = 0;
 
-            console.log('start: recursion');
+            // console.log('start: recursion');
 
-            const recursionRez = recursion(root, degOffset, scaleIx, model.model.scales);
+            // const recursionRez = recursion(root, degOffset, scaleIx, model.model.scales);
 
-            console.log('end: recursion');
+            // console.log('end: recursion');
 
-            console.log('recursionRez=', recursionRez);
+            // console.log('recursionRez=', recursionRez);
 
             renderMarkovChain(graphData);
         }
@@ -96,7 +96,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function renderMarkovChain(graphData: any): void {
         console.log('start: renderMarkovChain');
-        const boundary = findMinMaxValues(graphData);
+        const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
         const margin = { top: 5, right: 5, bottom: 10, left: 10 }; // FIXME: hardcoded
@@ -164,7 +164,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 x,
                 y,
                 r,
-                color,
                 TRANSITION_PROPS,
                 (a: any, b: any) => {
                     const selectedState = model.model.scales[currentScaleIx].states.find(
@@ -209,53 +208,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             createLinks(graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
             createMarkers(graphData[currentScaleIx], gMarkers);
         }
-    }
-
-    function recursion(currState: any, degOffset: number, scaleIx: number, scales: any) {
-        if (currState == null) {
-            console.log('... if currState == null');
-            return null;
-        }
-        if (!currState.childStates || currState.childStates.length === 0) {
-            // console.log('... if !currState.childStates || currState.childStates.length == 0');
-
-            // console.log('currState=', currState);
-
-            const a = 360 * currState.stationaryProbability;
-            const angleMiddle = degOffset + a / 2;
-
-            return {
-                degOffset: degOffset + a,
-                node: { middle: angleMiddle, w: currState.stationaryProbability },
-            };
-        }
-        if (currState.childStates && currState.childStates.length > 0) {
-            // console.log('... if currState.childStates && currState.childStates.length');
-            let curDegOffset = degOffset;
-            let ix = 0;
-            let sum = 0;
-            let w = 0;
-
-            // console.log('scaleIx=', scaleIx, ', scales=', scales);
-
-            const childStates = scales[scaleIx].states;
-
-            while (ix < childStates.length) {
-                const childRecRez: any = recursion(
-                    childStates[ix],
-                    curDegOffset,
-                    scaleIx + 1,
-                    scales,
-                );
-                curDegOffset = childRecRez.degOffset;
-                sum += childRecRez.node.w * childRecRez.node.middle;
-                w += childRecRez.node.w;
-                ix += 1;
-            }
-            return { degOffset: curDegOffset, node: { w, middle: sum / w } };
-        }
-        console.log("null :'(");
-        return null;
     }
 
     return (
