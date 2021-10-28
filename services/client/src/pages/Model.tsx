@@ -87,7 +87,10 @@ function Model(): JSX.Element {
                     <Grid item xs={12} lg={8}>
                         <Grid item container direction="column" spacing={2}>
                             <Grid item>
-                                <ModelVisualization model={model} onStateSelected={setSelectedState} />
+                                <ModelVisualization
+                                    model={model}
+                                    onStateSelected={setSelectedState}
+                                />
                             </Grid>
                             <Grid item>
                                 <StateVisualization model={model} />
@@ -95,7 +98,11 @@ function Model(): JSX.Element {
                         </Grid>
                     </Grid>
                     <Grid item xs={12} lg={4}>
-                        <StateDetails className={classes.details} model={model} selectedState={selectedState} />
+                        <StateDetails
+                            className={classes.details}
+                            model={model}
+                            selectedState={selectedState}
+                        />
                     </Grid>
                 </Grid>
             )}

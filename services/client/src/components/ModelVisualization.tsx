@@ -22,7 +22,11 @@ export interface ModelVisualizationProps extends PaperProps {
     onStateSelected?: any;
 }
 
-function ModelVisualization({ model, onStateSelected, ...other }: ModelVisualizationProps): JSX.Element {
+function ModelVisualization({
+    model,
+    onStateSelected,
+    ...other
+}: ModelVisualizationProps): JSX.Element {
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t } = useTranslation();
@@ -48,7 +52,6 @@ function ModelVisualization({ model, onStateSelected, ...other }: ModelVisualiza
             {/* Replace with Markov model */}
 
             <MarkovChain model={model} onStateSelected={onStateSelected} />
-
 
             <Box p={2} overflow="auto" height={600}>
                 <Typography component="pre" style={{ fontFamily: 'monospace' }}>

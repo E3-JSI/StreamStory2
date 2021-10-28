@@ -97,22 +97,22 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
 
                 <Box>
                     <Grid container spacing={2}>
-
-                        {selectedState?.histograms?.map((histogram: any, i: number) =>
+                        {selectedState?.histograms?.map((histogram: any, i: number) => (
                             <>
                                 <Grid item xs={6}>
                                     <Item>
                                         <h2>{histogram?.attrName}</h2>
-                                        <Histogram histogram={histogram} totalHistogram={model?.model?.totalHistograms[i]} key={selectedState?.stateNo + Math.random()} />
+                                        <Histogram
+                                            histogram={histogram}
+                                            totalHistogram={model?.model?.totalHistograms[i]}
+                                            key={selectedState?.stateNo + Math.random()}
+                                        />
                                     </Item>
                                 </Grid>
-
                             </>
-                        )}
-
+                        ))}
                     </Grid>
                 </Box>
-
             </Box>
         </Paper>
     );
