@@ -583,18 +583,8 @@ export function createDictId(scales: any) {
 export function createStatesDict(scales: any, dictId: any, maxRadius: number, debug: boolean) {
     const statesDict: any = {};
     const labelSet = new Set();
-
-    scales.forEach((sc: any) => {
-        sc.states.forEach((state: any) => {
-            labelSet.add(state.suggestedLabel.label);
-        });
-    });
-
+    scales.flatMap((sc: any) => sc.states).forEach((state: any) => labelSet.add(state.suggestedLabel.label))
     const labelsArr: any[] = Array.from(labelSet);
-    const colorRange: any[] = ['red', 'white', 'green']; // FIXME: hardcoded
-
-    const color = d3.scaleOrdinal().domain(labelsArr).range(colorRange);
-
     // pridobitev barve: color(state.suggestedLabel.label)
 
     scales.forEach((sc: any, scaleIx: number) => {
@@ -622,16 +612,6 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
                 state.x = xSum / state.childStates.length; // eslint-disable-line no-param-reassign
                 state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
             }
-
-            const stateId = dictId[uniqueId(sc.states[i])];
-
-            let label = '';
-
-            if (debug) {
-                label = `${state.suggestedLabel.label}_${state.stationaryProbability.toFixed(4)}`;
-            } else {
-                label = state.suggestedLabel.label;
-            }
             // colorDict[state.suggestedLabel.label] = ""
             statesDict[key] = state;
         });
@@ -646,15 +626,11 @@ export function createStateLinks(
     dictId: any,
     pThreshold: number,
 ) {
-    const sourceId = dictId[uniqueId(state)];
-
     return state.nextStateProbDistr
         .filter((p: number) => isValidProb(p, pThreshold))
         .map((p: number, i: number) => {
             let linkType = null;
-            const stateFound = sc.states.find((s: any) =>
-                isValidProb(s.nextStateProbDistr[stateIx], pThreshold),
-            );
+            const stateFound = sc.states.find((s: any) => isValidProb(s.nextStateProbDistr[stateIx], pThreshold));
 
             if (stateFound == null) {
                 linkType = LinkType.SINGLE;
@@ -664,7 +640,7 @@ export function createStateLinks(
                 linkType = LinkType.BIDIRECT;
             }
             return {
-                source: sourceId,
+                source: dictId[uniqueId(state)],
                 target: dictId[uniqueId(sc.states[i])],
                 linkType,
                 p,
