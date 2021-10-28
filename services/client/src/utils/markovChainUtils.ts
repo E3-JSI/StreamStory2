@@ -332,8 +332,7 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
     // console.log("start: onNodeDrag")
     return d3
         .drag<SVGGElement, unknown>()
-        .subject(function (event: any) {
-            // eslint-disable-line prefer-arrow-callback
+        .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
             return {
                 x: event.x,
                 y: event.y,
@@ -612,29 +611,27 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
 
     scales.forEach((sc: any, scaleIx: number) => {
         sc.states.forEach((state: any, i: number) => {
-            let x = -1;
-            let y = -1;
+            state.x = -1; // eslint-disable-line no-param-reassign
+            state.y = -1; // eslint-disable-line no-param-reassign
             const key = uniqueId(state);
             const currStateId = dictId[key];
 
             if (sc.areTheseInitialStates) {
                 const currAngle = (360 / sc.states.length) * i;
-                x = maxRadius * Math.sin((Math.PI * 2 * currAngle) / 360) + maxRadius;
-                y = maxRadius * Math.cos((Math.PI * 2 * currAngle) / 360) + maxRadius;
+                state.x = maxRadius * Math.sin((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
+                state.y = maxRadius * Math.cos((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
             } else if (!sc.areTheseInitialStates && !statesDict[currStateId]) {
                 let xSum = 0;
                 let ySum = 0;
                 state.childStates.forEach((stateNo: number) => {
-                    const childState = scales[scaleIx - 1].states.find(
-                        (el: any) => el.stateNo === stateNo,
-                    );
+                    const childState = scales[scaleIx - 1].states.find((el: any) => el.stateNo === stateNo);
                     const childKey = uniqueId(childState);
 
                     xSum += statesDict[childKey].x;
                     ySum += statesDict[childKey].y;
                 });
-                x = xSum / state.childStates.length;
-                y = ySum / state.childStates.length;
+                state.x = xSum / state.childStates.length; // eslint-disable-line no-param-reassign
+                state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
             }
 
             const stateId = dictId[uniqueId(sc.states[i])];
@@ -651,8 +648,8 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
 
             const obj = {
                 id: stateId,
-                x,
-                y,
+                x: state.x,
+                y: state.y,
                 stateNo: state.stateNo,
                 r: maxRadius * state.stationaryProbability,
                 childStates: state.childStates,

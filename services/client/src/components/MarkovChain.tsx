@@ -52,7 +52,23 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const graphData = createGraphData(model.model.scales, statesDict, dictId, pThreshold);
             setData(graphData);
 
-            calcColors(graphData);
+            const root = {
+                stateNo: -1,
+                childStates: model.model.scales[0].states.map((state: any) => state.stateNo),
+            };
+
+            console.log('root=', root);
+
+            const degOffset = 0;
+            const scaleIx = 0;
+
+            console.log('start: recursion');
+
+            const recursionRez = recursion(root, degOffset, scaleIx, model.model.scales);
+
+            console.log('end: recursion');
+
+            console.log('recursionRez=', recursionRez);
 
             renderMarkovChain(graphData);
         }
@@ -195,23 +211,16 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }
 
-    function calcColors(graphData: any) {
-        console.log('start: calcColors');
-
-        const queue: any[] = [];
-
-        while (queue.length > 0) {
-            console.log('asdasdss');
-        }
-
-        console.log('end: calcColors');
-    }
-
-    function recursion(currState: any, degOffset: number, stateIx: number, graphData: any) {
+    function recursion(currState: any, degOffset: number, scaleIx: number, scales: any) {
         if (currState == null) {
+            console.log('... if currState == null');
             return null;
         }
         if (!currState.childStates || currState.childStates.length === 0) {
+            // console.log('... if !currState.childStates || currState.childStates.length == 0');
+
+            // console.log('currState=', currState);
+
             const a = 360 * currState.stationaryProbability;
             const angleMiddle = degOffset + a / 2;
 
@@ -221,18 +230,22 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             };
         }
         if (currState.childStates && currState.childStates.length > 0) {
+            // console.log('... if currState.childStates && currState.childStates.length');
             let curDegOffset = degOffset;
             let ix = 0;
             let sum = 0;
             let w = 0;
-            const childStates = graphData[stateIx];
+
+            // console.log('scaleIx=', scaleIx, ', scales=', scales);
+
+            const childStates = scales[scaleIx].states;
 
             while (ix < childStates.length) {
                 const childRecRez: any = recursion(
                     childStates[ix],
                     curDegOffset,
-                    stateIx + 1,
-                    graphData,
+                    scaleIx + 1,
+                    scales,
                 );
                 curDegOffset = childRecRez.degOffset;
                 sum += childRecRez.node.w * childRecRez.node.middle;
@@ -241,6 +254,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             }
             return { degOffset: curDegOffset, node: { w, middle: sum / w } };
         }
+        console.log("null :'(");
         return null;
     }
 
