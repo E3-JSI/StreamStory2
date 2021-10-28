@@ -8,14 +8,9 @@ import {
     createNodes,
     createLinks,
     createMarkers,
-    LinkType,
     createGraphContainer,
     getGraphContainer,
-    createPowScale,
     findMinMaxValues,
-    isValidProb,
-    uniqueId,
-    createStateLinks,
     createDictId,
     createStatesDict,
     createGraphData,
@@ -32,10 +27,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [currScaleIx] = useState<number>(0);
     const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
-
     const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
-
     const [dictIdTmp, setDictIdTmp] = useState<number>();
     const [statesDictTmp, setStatesDictTmp] = useState<number>();
 
@@ -146,7 +139,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 [boundary.r.min, boundary.r.max],
                 [yWidth / 20, yWidth / 5],
             );
-            const color = d3.scaleOrdinal(d3.schemeTableau10);
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
             const ySliderScale = createLinearScale(
                 [0, model.model.scales.length],
@@ -165,12 +157,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 y,
                 r,
                 TRANSITION_PROPS,
-                (a: any, b: any) => {
-                    const selectedState = model.model.scales[currentScaleIx].states.find(
-                        (state: any) => state.stateNo === b,
-                    );
-                    onStateSelected(selectedState);
-                },
+                handleOnStateSelected,
             );
             if (!initialized) {
                 createSlider(
@@ -182,10 +169,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     true,
                     true,
                     format2Decimals,
-                    (p: number) => setPThreshold(p),
+                    handleOnProbChanged,
                 );
 
-                let prevIx = -1;
                 createSlider(
                     gSliderScale,
                     ySliderScale,
@@ -195,19 +181,28 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     false,
                     false,
                     formatInt,
-                    (val: number) => {
-                        const valFloor = Math.floor(val);
-
-                        if (valFloor !== prevIx) {
-                            setCurrentScaleIx(valFloor);
-                            prevIx = valFloor;
-                        }
-                    },
+                    handleOnScaleChanged,
                 );
             }
             createLinks(graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
             createMarkers(graphData[currentScaleIx], gMarkers);
         }
+    }
+
+    function handleOnStateSelected(event: any, stateNo: number) {
+        const selectedState = model.model.scales[currentScaleIx].states.find(
+            (state: any) => state.stateNo === stateNo,
+        );
+        onStateSelected(selectedState);
+    }
+
+    function handleOnProbChanged(p: number) {
+        setPThreshold(p);
+    }
+
+    function handleOnScaleChanged(val: number) {
+        setCurrentScaleIx(Math.floor(val));
+        onStateSelected(null);
     }
 
     return (

@@ -192,16 +192,7 @@ export function createNodes(
     selectAllNodeGroups(gNodes)
         .data(data.states, (d: any) => `node_${d.id}`)
         .join(
-            (enter: any) =>
-                nodeEnter(
-                    enter,
-                    gNodes,
-                    gLinks,
-                    x,
-                    y,
-                    r,
-                    tEnter
-                ),
+            (enter: any) => nodeEnter(enter, gNodes, gLinks, x, y, r, tEnter),
             (update: any) => nodeUpdate(update, x, y, r),
             (exit: any) => {
                 exit.remove();
@@ -221,15 +212,7 @@ export function createNodes(
         });
 }
 
-function nodeEnter(
-    selection: any,
-    gNodes: any,
-    gLinks: any,
-    x: any,
-    y: any,
-    r: any,
-    tEnter: any,
-) {
+function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: any, tEnter: any) {
     const enterTmp = selection.append('g').attr('class', 'node_group').attr('opacity', 0);
     enterTmp
         .append('circle')
@@ -249,7 +232,9 @@ function nodeEnter(
         .attr('dy', (d: any) => scale(y, d.y))
         .style('fill', 'white')
         .attr('text-anchor', 'middle')
-        .text((d: any) => ((d.suggestedLabel && d.suggestedLabel.label) ? d.suggestedLabel.label : ''));
+        .text((d: any) =>
+            d.suggestedLabel && d.suggestedLabel.label ? d.suggestedLabel.label : '',
+        );
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
@@ -259,12 +244,7 @@ function nodeEnter(
     return enterTmp;
 }
 
-function nodeUpdate(
-    selection: any,
-    x: any,
-    y: any,
-    r: any,
-) {
+function nodeUpdate(selection: any, x: any, y: any, r: any) {
     const enterTmp = selectNodeGroup(selection);
 
     // console.log("nodeUpdate")
@@ -542,7 +522,8 @@ export function findMinMaxValues(scales: any) {
         y: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
         r: { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER },
     };
-    scales.map((sc: any) => sc.states)
+    scales
+        .map((sc: any) => sc.states)
         .flat()
         .forEach((el: any) => {
             rez.x.min = Math.min(rez.x.min, el.x);
@@ -583,7 +564,9 @@ export function createDictId(scales: any) {
 export function createStatesDict(scales: any, dictId: any, maxRadius: number, debug: boolean) {
     const statesDict: any = {};
     const labelSet = new Set();
-    scales.flatMap((sc: any) => sc.states).forEach((state: any) => labelSet.add(state.suggestedLabel.label))
+    scales
+        .flatMap((sc: any) => sc.states)
+        .forEach((state: any) => labelSet.add(state.suggestedLabel.label));
     const labelsArr: any[] = Array.from(labelSet);
     // pridobitev barve: color(state.suggestedLabel.label)
 
@@ -603,7 +586,9 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
                 let xSum = 0;
                 let ySum = 0;
                 state.childStates.forEach((stateNo: number) => {
-                    const childState = scales[scaleIx - 1].states.find((el: any) => el.stateNo === stateNo);
+                    const childState = scales[scaleIx - 1].states.find(
+                        (el: any) => el.stateNo === stateNo,
+                    );
                     const childKey = uniqueId(childState);
 
                     xSum += statesDict[childKey].x;
@@ -630,7 +615,9 @@ export function createStateLinks(
         .filter((p: number) => isValidProb(p, pThreshold))
         .map((p: number, i: number) => {
             let linkType = null;
-            const stateFound = sc.states.find((s: any) => isValidProb(s.nextStateProbDistr[stateIx], pThreshold));
+            const stateFound = sc.states.find((s: any) =>
+                isValidProb(s.nextStateProbDistr[stateIx], pThreshold),
+            );
 
             if (stateFound == null) {
                 linkType = LinkType.SINGLE;
@@ -662,9 +649,10 @@ export function createGraphData(scales: any, stateDict: any, dictId: any, pThres
             states: states.map((s: any, i: number) => {
                 const stateClone = JSON.parse(JSON.stringify(s));
                 stateClone.id = dictId[uniqueId(sc.states[i])];
-                stateClone.color = "blue";
+                stateClone.color = 'blue';
                 return stateClone;
-            }), links: links.flat()
+            }),
+            links: links.flat(),
         };
     });
 }
