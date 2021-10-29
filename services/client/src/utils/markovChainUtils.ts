@@ -2,11 +2,6 @@ import React from 'react';
 import * as d3 from 'd3';
 import { easeLinear, easeQuad } from 'd3';
 
-const LINE_COLOR = '#a0a0a0';
-const NODE_BORDER_COLOR = '#a0a0a0';
-const LINE_COLOR_SELECTED = '#337ab7';
-const NODE_BORDER_COLOR_SELECTED = '#337ab7';
-
 export enum LinkType {
     BIDIRECT = 'bidirect',
     SELF = 'self',
@@ -98,6 +93,7 @@ export function createNodesMap(gNodes: any) {
 }
 
 export function createLinks(
+    theme: any,
     data: any,
     gNodes: any,
     gLinks: any,
@@ -119,7 +115,7 @@ export function createLinks(
                 tmp.append('path')
                     .attr('class', 'link_path')
                     .attr('id', (d: any, i: number) => `path_s${d.source}t${d.target}`)
-                    .attr('stroke', LINE_COLOR)
+                    .attr('stroke', theme.link.default.stroke)
                     .attr('stroke-width', (d: any) => Math.log(5 * d.p))
                     .attr('fill', 'none')
                     .attr('marker-end', (d: any) => `url(#arrow_s${d.source}_t${d.target})`);
@@ -177,6 +173,7 @@ export function formatLinkP(p: number) {
 }
 
 export function createNodes(
+    theme: any,
     data: any,
     gNodes: any,
     gLinks: any,
@@ -204,7 +201,7 @@ export function createNodes(
 
     selectAllNodeGroups(gNodes)
         .on('click', function (this: any, event: any) {
-            colorBlueNodeAndLinks.call(this, gNodes, gLinks, gMarkers);
+            colorBlueNodeAndLinks.call(this, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
         .call(function (this: any) {
@@ -261,7 +258,7 @@ function nodeUpdate(selection: any, x: any, y: any, r: any) {
     return enterTmp;
 }
 
-export function createMarkers(data: any, gMarkers: any) {
+export function createMarkers(theme: any, data: any, gMarkers: any) {
     const markers = gMarkers
         .append('svg:defs')
         .selectAll('marker')
@@ -278,8 +275,8 @@ export function createMarkers(data: any, gMarkers: any) {
                     .attr('markerWidth', 8)
                     .attr('markerHeight', 8)
                     .attr('orient', 'auto')
-                    .attr('stroke', LINE_COLOR)
-                    .attr('fill', LINE_COLOR),
+                    .attr('stroke', theme.marker.default.stroke)
+                    .attr('fill', theme.marker.default.fill),
             (update: any) => update,
             (exit: any) => exit.remove(),
         );
@@ -339,13 +336,13 @@ function drawLineWithOffset(nodesMap: any, d: any) {
     return path;
 }
 
-function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: any): void {
+function colorBlueNodeAndLinks(this: any, theme: any, gNodes: any, gLinks: any, gMarkers: any): void {
     selectAllNodeGroups(gNodes).each(function (this: any) {
         selectNodeCircle(d3.select(this)).attr('stroke', 'none');
     });
     const nodeGroupClicked = d3.select(this);
     selectNodeCircle(nodeGroupClicked)
-        .attr('stroke', NODE_BORDER_COLOR_SELECTED)
+        .attr('stroke', theme.state.selected.stroke)
         .attr('stroke-width', 5)
 
     selectAllLinkGroups(gLinks).each(function (this: any) {
@@ -358,22 +355,22 @@ function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: an
 
         if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).id) {
             linePath
-                .attr('stroke', LINE_COLOR)
+                .attr('stroke', theme.link.default.stroke)
                 .transition()
                 .ease(d3.easeExpIn)
                 .duration(delay)
-                .attr('stroke', LINE_COLOR_SELECTED);
+                .attr('stroke', theme.link.selected.stroke);
 
             arrow
-                .attr('stroke', LINE_COLOR_SELECTED)
-                .attr('fill', LINE_COLOR_SELECTED)
+                .attr('stroke', theme.marker.selected.stroke)
+                .attr('fill', theme.marker.selected.fill)
                 .transition()
                 .ease(d3.easeExpIn)
                 .duration(delay)
-                .attr('stroke', LINE_COLOR_SELECTED);
+                .attr('stroke', theme.marker.selected.fill);
         } else {
-            linePath.attr('stroke', LINE_COLOR);
-            arrow.attr('stroke', LINE_COLOR).attr('fill', LINE_COLOR);
+            linePath.attr('stroke', theme.link.default.stroke);
+            arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
         }
     });
 }

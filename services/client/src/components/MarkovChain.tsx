@@ -32,6 +32,37 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [sliderProbPrecision] = useState<number>(2);
     const [dictIdTmp, setDictIdTmp] = useState<number>();
     const [statesDictTmp, setStatesDictTmp] = useState<number>();
+    const [theme, setTheme] = useState<any>();
+
+    const darkTheme = {
+        backgroundColor: '#272b30',
+        state: {
+            default: {
+                stroke: '#a0a0a0',
+            },
+            selected: {
+                stroke: '#337ab7',
+            },
+        },
+        link: {
+            default: {
+                stroke: '#a0a0a0',
+            },
+            selected: {
+                stroke: '#337ab7',
+            },
+        },
+        marker: {
+            default: {
+                stroke: '#a0a0a0',
+                fill: '#a0a0a0',
+            },
+            selected: {
+                stroke: '#337ab7',
+                fill: '#337ab7',
+            },
+        },
+    };
 
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
@@ -46,6 +77,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             const graphData = createGraphData(model.model.scales, statesDict, dictId, pThreshold);
             setData(graphData);
+
+            setTheme(darkTheme);
 
             renderMarkovChain(graphData);
         }
@@ -93,14 +126,14 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin);
                 graphContainer = createGraphContainer(graph, width, height, chart);
-                graphContainer
-                    .append('rect')
-                    .attr('width', xWidth)
-                    .attr('height', yWidth)
-                    .style('fill', '#1a6048')
-                    .style('opacity', '0.1')
-                    .style('stroke-width', '1')
-                    .style('stroke', 'white');
+                // graphContainer
+                //     .append('rect')
+                //     .attr('width', xWidth)
+                //     .attr('height', yWidth)
+                //     .style('fill', '#1a6048')
+                //     .style('opacity', '0.1')
+                //     .style('stroke-width', '1')
+                //     .style('stroke', 'white');
 
                 gLinks = graphContainer.append('g').attr('class', 'links');
                 gNodes = graphContainer.append('g').attr('class', 'nodes');
@@ -133,6 +166,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const formatInt = d3.format('.0f'); // FIXME: move to another file
 
             createNodes(
+                theme,
                 graphData[currentScaleIx],
                 gNodes,
                 gLinks,
@@ -168,8 +202,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     handleOnScaleChanged,
                 );
             }
-            createLinks(graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
-            createMarkers(graphData[currentScaleIx], gMarkers);
+            createLinks(darkTheme, graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
+            createMarkers(darkTheme, graphData[currentScaleIx], gMarkers);
         }
     }
 
@@ -191,7 +225,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
-            <div ref={containerRef} style={{ backgroundColor: '#272b30' }} />
+            <div ref={containerRef} style={{ backgroundColor: theme?.backgroundColor }} />
         </>
     );
 };
