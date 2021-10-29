@@ -63,15 +63,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             data &&
             data.length
         ) {
-            addColorsToScaleStates(model.model.scales);
-
             const graphData = createGraphData(
                 model.model.scales,
                 statesDictTmp,
                 dictIdTmp,
                 pThreshold,
             );
-
             setData(graphData);
             renderMarkovChain(data);
         }
