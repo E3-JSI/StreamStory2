@@ -14,8 +14,6 @@ import {
     createDictId,
     createStatesDict,
     createGraphData,
-    scale,
-    uniqueId,
     pseudoUniqueId,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
@@ -39,6 +37,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         if (model.model.scales && model.model.scales.length) {
             console.log('model.model.scales=', model.model.scales);
 
+            addColorsToScaleStates(model.model.scales);
             const dictId = createDictId(model.model.scales);
             setDictIdTmp(dictId);
 
@@ -50,8 +49,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             const degOffset = 0;
             const scaleIx = 0;
-
-            createColorDict(model.model.scales);
 
             renderMarkovChain(graphData);
         }
@@ -66,14 +63,14 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             data &&
             data.length
         ) {
+            addColorsToScaleStates(model.model.scales);
+
             const graphData = createGraphData(
                 model.model.scales,
                 statesDictTmp,
                 dictIdTmp,
                 pThreshold,
             );
-
-            createColorDict(model.model.scales);
 
             setData(graphData);
             renderMarkovChain(data);
@@ -182,16 +179,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }
 
-    // state.childStates.forEach((stateNo: number) => {
-    //     const childState = scales[scaleIx - 1].states.find(
-    //         (el: any) => el.stateNo === stateNo,
-    //     );
-    //     const childKey = uniqueId(childState);
-
-    //     xSum += statesDict[childKey].x;
-    //     ySum += statesDict[childKey].y;
-    // });
-
     function findChildStates(state: any, prevScale: any) {
         return state.childStates.map((stateNo: number) => {
             const a = 1;
@@ -199,7 +186,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         });
     }
 
-    function createColorDict(scales: any) {
+    function addColorsToScaleStates(scales: any) {
         const initialScaleStates = scales[0].states;
         const dict: any = {};
         let degOffset = 0;
