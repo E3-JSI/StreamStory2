@@ -221,8 +221,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: 
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any, i: any) => d.color)
-        .attr('opacity', 1)
-        .attr('stroke', NODE_BORDER_COLOR)
+        .attr('opacity', (d: any) => d.opacity || 1)
         .attr('stroke-width', (d: any) => circleBorderWidth(d));
 
     enterTmp
@@ -253,7 +252,7 @@ function nodeUpdate(selection: any, x: any, y: any, r: any) {
         .attr('cx', (d: any) => scale(x, d.x))
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
-        .attr('opacity', 0.8);
+        .attr('opacity', (d: any) => d.opacity || 1);
 
     selectNodeTitle(selection)
         .attr('x', (d: any) => scale(x, d.x))
@@ -653,7 +652,7 @@ export function createGraphData(scales: any, stateDict: any, dictId: any, pThres
             states: states.map((s: any, i: number) => {
                 const stateClone = JSON.parse(JSON.stringify(s));
                 stateClone.id = dictId[uniqueId(sc.states[i])];
-                // stateClone.color = 'blue';
+                stateClone.opacity = 0.9;
                 return stateClone;
             }),
             links: links.flat(),
