@@ -66,7 +66,7 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
         const maxCurr: number = d3.max(totalArr);
 
         const y = d3.scaleLinear().domain([0, maxCurr]).range([height, 0]);
-        svg.append('g').call(d3.axisLeft(y) /** .ticks(3) */);
+        // svg.append('g').call(d3.axisLeft(y) /** .ticks(3) */);
 
         svg.append('g')
             .selectAll('g')
