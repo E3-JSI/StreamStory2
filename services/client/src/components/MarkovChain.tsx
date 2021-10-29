@@ -14,7 +14,7 @@ import {
     createDictId,
     createStatesDict,
     createGraphData,
-    pseudoUniqueId,
+    addColorsToScaleStates,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -46,9 +46,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             const graphData = createGraphData(model.model.scales, statesDict, dictId, pThreshold);
             setData(graphData);
-
-            const degOffset = 0;
-            const scaleIx = 0;
 
             renderMarkovChain(graphData);
         }
@@ -174,94 +171,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             createLinks(graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
             createMarkers(graphData[currentScaleIx], gMarkers);
         }
-    }
-
-    function findChildStates(state: any, prevScale: any) {
-        return state.childStates.map((stateNo: number) => {
-            const a = 1;
-            return prevScale.states.find((el: any) => el.stateNo === stateNo);
-        });
-    }
-
-    function addColorsToScaleStates(scales: any) {
-        const initialScaleStates = scales[0].states;
-        const dict: any = {};
-        let degOffset = 0;
-
-        scales.forEach((sc: any, scaleIx: any) => {
-            if (scaleIx > 0) {
-                console.log(`====== ${scaleIx}`);
-                sc.states.forEach((state: any) => {
-                    if (scaleIx === 1) {
-                        const childStates = initialScaleStates.filter((initState: any) =>
-                            state.childStates.includes(initState.stateNo),
-                        );
-                        childStates.forEach((childState: any) => {
-                            const angle = 360 * childState.stationaryProbability;
-                            const angleMiddle = degOffset + angle / 2;
-
-                            dict[pseudoUniqueId(childState)] = {
-                                middle: angleMiddle,
-                                w: childState.stationaryProbability,
-                            };
-
-                            degOffset += angle;
-                            console.log(dict[pseudoUniqueId(childState)]);
-
-                            const curr = dict[pseudoUniqueId(childState)]; // FIXME: remove curr
-
-                            state.color = generateColor(curr.middle, scaleIx, scales.length); // eslint-disable-line no-param-reassign
-                            console.log('state=', state);
-                        });
-                    } else {
-                        const childStates = findChildStates(state, scales[scaleIx - 1]);
-
-                        childStates.forEach((childState: any) => {
-                            let w = 0;
-                            let ix = 0;
-                            let sum = 0;
-
-                            const objCurr = dict[pseudoUniqueId(childState)];
-
-                            if (objCurr) {
-                                sum += objCurr.w * objCurr.middle;
-                                w += objCurr.w;
-                                ix += 1;
-
-                                dict[pseudoUniqueId(state)] = {
-                                    middle: sum / w,
-                                    w,
-                                };
-                                state.color = generateColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
-                            } else {
-                                console.log(
-                                    'problem!!',
-                                    'state=',
-                                    state,
-                                    'childState=',
-                                    childState,
-                                    'pseudoUniqueId(childState)=',
-                                    pseudoUniqueId(childState),
-                                    'dict[pseudoUniqueId(childState)]=',
-                                    dict[pseudoUniqueId(childState)],
-                                );
-                            }
-                        });
-                    }
-                });
-            }
-
-            console.log('\n');
-        });
-        return dict;
-    }
-
-    function generateColor(middle: number, scaleIx: number, nScales: number) {
-        const xMin = 20;
-        const xMax = 70;
-        const percent = (scaleIx + 1) / nScales;
-        const saturation = percent * (xMax - xMin) + xMin;
-        return `hsl(${middle},${saturation}%, 50%)`;
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
