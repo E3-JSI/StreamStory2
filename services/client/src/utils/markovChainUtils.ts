@@ -3,9 +3,9 @@ import * as d3 from 'd3';
 import { easeLinear, easeQuad } from 'd3';
 
 const LINE_COLOR = '#a0a0a0';
-const NODE_BORDER_COLOR = LINE_COLOR;
-const LINE_SELECTED_COLOR = '#337ab7';
-const NODE_SELECTED_BORDER_COLOR = LINE_SELECTED_COLOR;
+const NODE_BORDER_COLOR = '#a0a0a0';
+const LINE_COLOR_SELECTED = '#337ab7';
+const NODE_BORDER_COLOR_SELECTED = '#337ab7';
 
 export enum LinkType {
     BIDIRECT = 'bidirect',
@@ -222,7 +222,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: 
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any, i: any) => d.color)
         .attr('opacity', (d: any) => d.opacity || 1)
-        .attr('stroke-width', (d: any) => circleBorderWidth(d));
+    // .attr('stroke-width', (d: any) => circleBorderWidth(d));
 
     enterTmp
         .append('text')
@@ -341,11 +341,12 @@ function drawLineWithOffset(nodesMap: any, d: any) {
 
 function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: any): void {
     selectAllNodeGroups(gNodes).each(function (this: any) {
-        selectNodeCircle(d3.select(this)).attr('stroke', NODE_BORDER_COLOR);
+        selectNodeCircle(d3.select(this)).attr('stroke', 'none');
     });
     const nodeGroupClicked = d3.select(this);
-    const nodeCircle = selectNodeCircle(nodeGroupClicked);
-    nodeCircle.attr('stroke', NODE_SELECTED_BORDER_COLOR);
+    selectNodeCircle(nodeGroupClicked)
+        .attr('stroke', NODE_BORDER_COLOR_SELECTED)
+        .attr('stroke-width', 5)
 
     selectAllLinkGroups(gLinks).each(function (this: any) {
         const linkGroup = d3.select(this);
@@ -361,15 +362,15 @@ function colorBlueNodeAndLinks(this: any, gNodes: any, gLinks: any, gMarkers: an
                 .transition()
                 .ease(d3.easeExpIn)
                 .duration(delay)
-                .attr('stroke', LINE_SELECTED_COLOR);
+                .attr('stroke', LINE_COLOR_SELECTED);
 
             arrow
-                .attr('stroke', LINE_SELECTED_COLOR)
-                .attr('fill', LINE_SELECTED_COLOR)
+                .attr('stroke', LINE_COLOR_SELECTED)
+                .attr('fill', LINE_COLOR_SELECTED)
                 .transition()
                 .ease(d3.easeExpIn)
                 .duration(delay)
-                .attr('stroke', LINE_SELECTED_COLOR);
+                .attr('stroke', LINE_COLOR_SELECTED);
         } else {
             linePath.attr('stroke', LINE_COLOR);
             arrow.attr('stroke', LINE_COLOR).attr('fill', LINE_COLOR);
