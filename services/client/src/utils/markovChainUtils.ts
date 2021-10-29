@@ -649,7 +649,7 @@ export function createGraphData(scales: any, stateDict: any, dictId: any, pThres
             states: states.map((s: any, i: number) => {
                 const stateClone = JSON.parse(JSON.stringify(s));
                 stateClone.id = dictId[uniqueId(sc.states[i])];
-                stateClone.color = 'blue';
+                // stateClone.color = 'blue';
                 return stateClone;
             }),
             links: links.flat(),

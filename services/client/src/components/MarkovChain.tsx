@@ -14,6 +14,8 @@ import {
     createDictId,
     createStatesDict,
     createGraphData,
+    scale,
+    uniqueId,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -45,23 +47,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const graphData = createGraphData(model.model.scales, statesDict, dictId, pThreshold);
             setData(graphData);
 
-            const root = {
-                stateNo: -1,
-                childStates: model.model.scales[0].states.map((state: any) => state.stateNo),
-            };
-
-            console.log('root=', root);
-
             const degOffset = 0;
             const scaleIx = 0;
 
-            // console.log('start: recursion');
-
-            // const recursionRez = recursion(root, degOffset, scaleIx, model.model.scales);
-
-            // console.log('end: recursion');
-
-            // console.log('recursionRez=', recursionRez);
+            createColorDict(model.model.scales);
 
             renderMarkovChain(graphData);
         }
@@ -187,6 +176,162 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             createLinks(graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
             createMarkers(graphData[currentScaleIx], gMarkers);
         }
+    }
+
+    // state.childStates.forEach((stateNo: number) => {
+    //     const childState = scales[scaleIx - 1].states.find(
+    //         (el: any) => el.stateNo === stateNo,
+    //     );
+    //     const childKey = uniqueId(childState);
+
+    //     xSum += statesDict[childKey].x;
+    //     ySum += statesDict[childKey].y;
+    // });
+
+    function findChildStates(state: any, prevScale: any) {
+        return state.childStates.map((stateNo: number) => {
+            const a = 1;
+            return prevScale.states.find((el: any) => el.stateNo === stateNo);
+        });
+    }
+
+    function createColorDict(scales: any) {
+        const initialScaleStates = scales[0].states;
+        const dict: any = {};
+        let degOffset = 0;
+
+        scales.forEach((sc: any, scaleIx: any) => {
+            if (scaleIx > 0) {
+                console.log(`====== ${scaleIx}`);
+                sc.states.forEach((state: any) => {
+                    if (scaleIx === 1) {
+                        const childStates = initialScaleStates.filter((initState: any) =>
+                            state.childStates.includes(initState.stateNo),
+                        );
+                        childStates.forEach((childState: any) => {
+                            const angle = 360 * childState.stationaryProbability;
+                            const angleMiddle = degOffset + angle / 2;
+
+                            dict[uniqueId(childState)] = {
+                                middle: angleMiddle,
+                                w: childState.stationaryProbability,
+                            };
+
+                            degOffset += angle;
+                            console.log(dict[uniqueId(childState)]);
+
+                            const curr = dict[uniqueId(childState)]; // FIXME: remove curr
+
+                            state.color = printInColor(curr.middle, scaleIx, scales.length); // eslint-disable-line no-param-reassign
+                        });
+                    } else {
+                        const childStates = findChildStates(state, scales[scaleIx - 1]);
+
+                        childStates.forEach((childState: any) => {
+                            let w = 0;
+                            let ix = 0;
+                            let sum = 0;
+
+                            const objCurr = dict[uniqueId(childState)];
+
+                            if (objCurr) {
+                                sum += objCurr.w * objCurr.middle;
+                                w += objCurr.w;
+                                ix += 1;
+
+                                dict[uniqueId(state)] = {
+                                    middle: sum / w,
+                                    w,
+                                };
+                                console.log(dict[uniqueId(state)]);
+                                state.color = printInColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
+                            } else {
+                                console.log('problem!!');
+                            }
+                        });
+                    }
+                });
+            }
+
+            console.log('\n');
+        });
+        return dict;
+    }
+
+    function recursion(state: any, degOffset: number, scaleIx: number, scales: any[], dict: any) {
+        if (state == null) {
+            console.log('... if state == null');
+            return null;
+        }
+        if ((state && !state.childStates) || state.childStates.length === 0) {
+            console.log('... if !state.childStates || state.childStates.length == 0');
+
+            const a = 360 * state.stationaryProbability;
+            const angleMiddle = degOffset + a / 2;
+
+            const obj = {
+                scaleIx,
+                degOffset: degOffset + a,
+                node: { middle: angleMiddle, w: state.stationaryProbability },
+            };
+            return obj;
+        }
+        if (state && state.childStates && state.childStates.length > 0) {
+            console.log('... if state.childStates && state.childStates.length');
+            let curDegOffset = degOffset;
+            let ix = 0;
+            let sum = 0;
+            let w = 0;
+
+            console.log('scaleIx=', scaleIx, ', scales=', scales);
+
+            console.log('state=', state);
+
+            const childStates = state.childStates.map((stateNo: number) => {
+                const a = 1;
+                console.log('scaleIx=', scaleIx, ', scales[scaleIx - 1]=', scales[scaleIx - 1]);
+                return scales[scaleIx - 1].states.find((el: any) => el.stateNo === stateNo);
+            });
+
+            let maxScaleIx = -1;
+
+            while (ix < childStates.length) {
+                const childRecRez: any = recursion(
+                    childStates[ix],
+                    curDegOffset,
+                    scaleIx + 1,
+                    scales,
+                    dict,
+                );
+                curDegOffset = childRecRez.degOffset;
+                sum += childRecRez.node.w * childRecRez.node.middle;
+                w += childRecRez.node.w;
+                ix += 1;
+                maxScaleIx = Math.max(maxScaleIx, childRecRez.scaleIx);
+            }
+
+            const obj = {
+                scaleIx: maxScaleIx,
+                degOffset: curDegOffset,
+                node: { w, middle: sum / w },
+            };
+
+            return obj;
+        }
+        console.log("null :'(");
+        return null;
+    }
+
+    function printInColor(middle: number, scaleIx: number, nScales: number) {
+        const xMin = 20;
+        const xMax = 70;
+        const percent = (scaleIx + 1) / nScales;
+        const saturation = percent * (xMax - xMin) + xMin;
+        // console.log(`saturation=${saturation.toFixed(2)}, scaleIx=${scaleIx}`);
+        // console.log('middle=%c %.2f', `color: hsl(${middle},${saturation}%, 50%)`, middle);
+        // console.log('\n');
+
+        return `hsl(${middle},${saturation}%, 50%)`;
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
