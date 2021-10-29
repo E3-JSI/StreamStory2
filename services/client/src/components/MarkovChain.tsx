@@ -16,6 +16,7 @@ import {
     createGraphData,
     scale,
     uniqueId,
+    pseudoUniqueId,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -71,6 +72,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 dictIdTmp,
                 pThreshold,
             );
+
+            createColorDict(model.model.scales);
+
             setData(graphData);
             renderMarkovChain(data);
         }
@@ -212,17 +216,18 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                             const angle = 360 * childState.stationaryProbability;
                             const angleMiddle = degOffset + angle / 2;
 
-                            dict[uniqueId(childState)] = {
+                            dict[pseudoUniqueId(childState)] = {
                                 middle: angleMiddle,
                                 w: childState.stationaryProbability,
                             };
 
                             degOffset += angle;
-                            console.log(dict[uniqueId(childState)]);
+                            console.log(dict[pseudoUniqueId(childState)]);
 
-                            const curr = dict[uniqueId(childState)]; // FIXME: remove curr
+                            const curr = dict[pseudoUniqueId(childState)]; // FIXME: remove curr
 
                             state.color = printInColor(curr.middle, scaleIx, scales.length); // eslint-disable-line no-param-reassign
+                            console.log('state=', state);
                         });
                     } else {
                         const childStates = findChildStates(state, scales[scaleIx - 1]);
@@ -232,21 +237,31 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                             let ix = 0;
                             let sum = 0;
 
-                            const objCurr = dict[uniqueId(childState)];
+                            const objCurr = dict[pseudoUniqueId(childState)];
 
                             if (objCurr) {
                                 sum += objCurr.w * objCurr.middle;
                                 w += objCurr.w;
                                 ix += 1;
 
-                                dict[uniqueId(state)] = {
+                                dict[pseudoUniqueId(state)] = {
                                     middle: sum / w,
                                     w,
                                 };
-                                console.log(dict[uniqueId(state)]);
+                                // console.log(dict[pseudoUniqueId(state)]);
                                 state.color = printInColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
                             } else {
-                                console.log('problem!!');
+                                console.log(
+                                    'problem!!',
+                                    'state=',
+                                    state,
+                                    'childState=',
+                                    childState,
+                                    'pseudoUniqueId(childState)=',
+                                    pseudoUniqueId(childState),
+                                    'dict[pseudoUniqueId(childState)]=',
+                                    dict[pseudoUniqueId(childState)],
+                                );
                             }
                         });
                     }

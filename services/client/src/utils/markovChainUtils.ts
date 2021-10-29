@@ -221,7 +221,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: 
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any, i: any) => d.color)
-        .attr('opacity', 0.8)
+        .attr('opacity', 1)
         .attr('stroke', NODE_BORDER_COLOR)
         .attr('stroke-width', (d: any) => circleBorderWidth(d));
 
@@ -542,6 +542,10 @@ export function findMinMaxValues(scales: any) {
 
 export function uniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
+}
+
+export function pseudoUniqueId(state: any) {
+    return `uid=${state.suggestedLabel.label}`;
 }
 
 export function createDictId(scales: any) {
