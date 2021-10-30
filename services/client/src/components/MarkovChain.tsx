@@ -39,9 +39,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         state: {
             default: {
                 stroke: '#a0a0a0',
+                opacity: 0.9,
             },
             selected: {
                 stroke: '#337ab7',
+                opacity: 0.9,
             },
         },
         link: {

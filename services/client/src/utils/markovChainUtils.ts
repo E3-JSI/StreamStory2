@@ -172,7 +172,7 @@ export function createNodes(
     selectAllNodeGroups(gNodes)
         .data(data.states, (d: any) => `node_${d.id}`)
         .join(
-            (enter: any) => nodeEnter(enter, gNodes, gLinks, x, y, r, tEnter),
+            (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter),
             (update: any) => nodeUpdate(update, x, y, r),
             (exit: any) => {
                 exit.remove();
@@ -207,11 +207,13 @@ function mousemove(event: any, d: any, div: any) {
             <div>
                 <table>
                     <tr>
+                        <th>stateNo</th>
                         <th>nMembers</th>
                         <th>x,y</th>
                         <th>Label</th>
                     </tr>
                     <tr>
+                        <th>${d.stateNo}</td>
                         <th>${d.nMembers}</td>
                         <td>[${event.pageX}, ${event.pageY}]</td>
                         <td>${d.suggestedLabel.label}</td>
@@ -223,7 +225,7 @@ function mousemove(event: any, d: any, div: any) {
         .style("top", `${(event.pageY - 12)} px`);
 }
 
-function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: any, tEnter: any) {
+function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
     const enterTmp = selection.append('g').attr('class', 'node_group').attr('opacity', 0);
     enterTmp
         .append('circle')
@@ -232,8 +234,7 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: 
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any, i: any) => d.color)
-        .attr('opacity', (d: any) => d.opacity || 1)
-    // .attr('stroke-width', (d: any) => circleBorderWidth(d));
+        .attr('opacity', theme.state.default.opacity)
 
     enterTmp
         .append('text')
@@ -651,7 +652,6 @@ export function createGraphData(scales: any, stateDict: any, dictId: any, pThres
             states: states.map((s: any, i: number) => {
                 const stateClone = JSON.parse(JSON.stringify(s));
                 stateClone.id = dictId[uniqueId(sc.states[i])];
-                stateClone.opacity = 0.9;
                 return stateClone;
             }),
             links: links.flat(),
@@ -681,12 +681,13 @@ export function addColorsToScaleStates(scales: any) {
                             w: childState.stationaryProbability,
                         };
                         degOffset += angle;
-                        console.log(dict[pseudoUniqueId(childState)]);
 
                         const curr = dict[pseudoUniqueId(childState)]; // FIXME: remove curr
 
                         state.color = generateColor(curr.middle, scaleIx, scales.length); // eslint-disable-line no-param-reassign
                         console.log('state=', state);
+                        console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                        console.log("\n")
                     });
                 } else {
                     const childStates = findChildStates(state, scales[scaleIx - 1]);
