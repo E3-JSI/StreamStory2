@@ -611,8 +611,7 @@ export function createStateLinks(
     dictId: any,
     pThreshold: number,
 ) {
-
-    const arr: any[] = []
+    const stateLinks: any[] = []
 
     for (let i = 0; i < state.nextStateProbDistr.length; i++) {
         const p = state.nextStateProbDistr[i];
@@ -632,14 +631,10 @@ export function createStateLinks(
             }
 
             const obj = { source: sourceId, target: targetId, linkType, p, }
-            arr.push(obj);
+            stateLinks.push(obj);
         }
     }
-
-    // console.log("arr=", arr)
-
-    return arr;
-
+    return stateLinks;
 }
 
 export function createGraphData(scales: any, stateDict: any, dictId: any, pThreshold: number) {
@@ -685,7 +680,6 @@ export function addColorsToScaleStates(scales: any) {
                             middle: angleMiddle,
                             w: childState.stationaryProbability,
                         };
-
                         degOffset += angle;
                         console.log(dict[pseudoUniqueId(childState)]);
 
@@ -714,18 +708,6 @@ export function addColorsToScaleStates(scales: any) {
                                 w,
                             };
                             state.color = generateColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
-                        } else {
-                            console.log(
-                                'problem!!',
-                                'state=',
-                                state,
-                                'childState=',
-                                childState,
-                                'pseudoUniqueId(childState)=',
-                                pseudoUniqueId(childState),
-                                'dict[pseudoUniqueId(childState)]=',
-                                dict[pseudoUniqueId(childState)],
-                            );
                         }
                     });
                 }
