@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     createSVG,
     getSVG,
-    TRANSITION_PROPS,
     createLinearScale,
     createNodes,
     createLinks,
@@ -18,6 +17,7 @@ import {
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
+import { TRANSITION_PROPS } from '../types/charts';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const containerRef = useRef<HTMLDivElement>(null);

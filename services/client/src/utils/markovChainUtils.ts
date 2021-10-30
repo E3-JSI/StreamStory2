@@ -1,34 +1,7 @@
 import React from 'react';
 import * as d3 from 'd3';
 import { easeLinear, easeQuad } from 'd3';
-
-export enum LinkType {
-    BIDIRECT = 'bidirect',
-    SELF = 'self',
-    SINGLE = 'single',
-}
-
-export const TRANSITION_PROPS: ITransitionProps = {
-    tEnter: {
-        duration: 300,
-        ease: easeLinear,
-    } as ITransition,
-    tExit: {
-        duration: 150,
-        ease: easeQuad,
-    } as ITransition,
-} as ITransitionProps;
-
-export interface ITransitionProps {
-    tEnter: ITransition;
-    tUpdate: ITransition;
-    tExit: ITransition;
-}
-
-export interface ITransition {
-    duration: number;
-    ease: any;
-}
+import { ITransitionProps, LinkType } from '../types/charts';
 
 export function scale(s: any, value: any) {
     return s(value);
@@ -332,7 +305,6 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
     return d3
         .drag<SVGGElement, unknown>()
         .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
-            console.log("start: subject(function (event: any)")
             return {
                 x: event.x,
                 y: event.y,
@@ -408,10 +380,6 @@ function colorBlueNodeAndLinks(this: any, theme: any, gNodes: any, gLinks: any, 
             arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
         }
     });
-}
-
-function circleBorderWidth(d: any) {
-    return 5; // FIXME: hardcoded
 }
 
 function createPath(data: any, link: any): string {
@@ -643,28 +611,35 @@ export function createStateLinks(
     dictId: any,
     pThreshold: number,
 ) {
-    return state.nextStateProbDistr
-        .filter((p: number) => isValidProb(p, pThreshold))
-        .map((p: number, i: number) => {
-            let linkType = null;
-            const stateFound = sc.states.find((s: any) =>
-                isValidProb(s.nextStateProbDistr[stateIx], pThreshold),
-            );
 
-            if (stateFound == null) {
-                linkType = LinkType.SINGLE;
-            } else if (stateFound.stateNo === state.stateNo) {
+    const arr: any[] = []
+
+    for (let i = 0; i < state.nextStateProbDistr.length; i++) {
+        const p = state.nextStateProbDistr[i];
+
+        if (isValidProb(p, pThreshold)) {
+            const sourceId = dictId[uniqueId(state)];
+            const targetId = dictId[uniqueId(sc.states[i])];
+
+            let linkType = null;
+
+            if (sourceId === targetId) {
                 linkType = LinkType.SELF;
-            } else {
+            } else if (sc.states[i].nextStateProbDistr[stateIx] > 0) {
                 linkType = LinkType.BIDIRECT;
+            } else {
+                linkType = LinkType.SINGLE;
             }
-            return {
-                source: dictId[uniqueId(state)],
-                target: dictId[uniqueId(sc.states[i])],
-                linkType,
-                p,
-            };
-        });
+
+            const obj = { source: sourceId, target: targetId, linkType, p, }
+            arr.push(obj);
+        }
+    }
+
+    // console.log("arr=", arr)
+
+    return arr;
+
 }
 
 export function createGraphData(scales: any, stateDict: any, dictId: any, pThreshold: number) {
