@@ -625,7 +625,7 @@ export function createStateLinks(
 
             if (sourceId === targetId) {
                 linkType = LinkType.SELF;
-            } else if (sc.states[i].nextStateProbDistr[stateIx] > 0) {
+            } else if (isValidProb(sc.states[i].nextStateProbDistr[stateIx], pThreshold)) {
                 linkType = LinkType.BIDIRECT;
             } else {
                 linkType = LinkType.SINGLE;
