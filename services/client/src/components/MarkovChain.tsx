@@ -208,11 +208,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
-        console.log('start: handleOnStateSelected');
         const selectedState = model.model.scales[currentScaleIx].states.find(
             (state: any) => state.stateNo === stateNo,
         );
-        console.log('selectedState=', selectedState);
         onStateSelected(selectedState);
     }
 
