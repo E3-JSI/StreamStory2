@@ -62,6 +62,18 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 fill: '#337ab7',
             },
         },
+        slider: {
+            default: {
+                trackStrokeWidth: '8px',
+                trackInsetStrokeWidth: '2px',
+                opacity: 0.1,
+            },
+            mouseOver: {
+                trackStrokeWidth: '10px',
+                trackInsetStrokeWidth: '8px',
+                opacity: 0.4,
+            },
+        },
     };
 
     useEffect(() => {
@@ -179,6 +191,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             );
             if (!initialized) {
                 createSlider(
+                    darkTheme, // FIXME: another variable
                     gSliderProb,
                     xSliderProb,
                     yWidth,
@@ -191,6 +204,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 );
 
                 createSlider(
+                    darkTheme, // FIXME: another variable
                     gSliderScale,
                     ySliderScale,
                     yWidth,

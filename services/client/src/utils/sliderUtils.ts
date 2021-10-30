@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 
 export function createSlider(
+    theme: any,
     gSlider: any,
     x: any,
     yWidth: number,
@@ -20,11 +21,9 @@ export function createSlider(
         .append('line')
         .attr('class', 'track')
         .style('stroke-linecap', 'round')
-
         .style('stroke', '#000')
-        .style('stroke-opacity', '0.3')
-        .style('stroke-width', '10px')
-
+        .style('stroke-opacity', theme.slider.default.opacity)
+        .style('stroke-width', theme.slider.default.trackStrokeWidth)
         .attr('x1', x.range()[0])
         .attr('x2', x.range()[1])
         .select(function (this: any) {
@@ -33,7 +32,7 @@ export function createSlider(
         .attr('class', 'track-inset')
         .style('stroke-linecap', 'round')
         .style('stroke', '#dcdcdc')
-        .style('stroke-width', '8px')
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
 
         .select(function (this: any) {
             return this.parentNode.appendChild(this.cloneNode(true));
@@ -51,12 +50,38 @@ export function createSlider(
                     return d3.select(this).interrupt();
                 })
                 .on('drag', (event: any) => update(x.invert(event.x))),
-        );
+        )
+        .on("mouseover", function (this: any) {
+            const parent = d3.select(this.parentNode);
+
+            parent.select('.track')
+                .transition()
+                .duration(500)
+                .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth)
+
+            parent.select('.track-inset')
+                .transition()
+                .duration(500)
+                .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth)
+        })
+        .on("mouseout", function (this: any) {
+            const parent = d3.select(this.parentNode);
+
+            parent.select('.track')
+                .transition()
+                .duration(500)
+                .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+
+            parent.select('.track-inset')
+                .transition()
+                .duration(500)
+                .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+        })
 
     slider
         .insert('g', '.track-overlay')
         .attr('class', 'ticks')
-        .style('font-size', '10px')
+        .style('font-size', theme.slider.default.trackInsetStrokeWidth)
         .attr('transform', `translate(${0},${18})`)
         .selectAll('text')
         .data(x.ticks(10))
