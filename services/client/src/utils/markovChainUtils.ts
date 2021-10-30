@@ -225,7 +225,7 @@ export function createNodes(
             divTooltip.style("opacity", 0);
             d3.select(this).style("cursor", "default")
         })
-        .call(function (this: any) { onNodeDrag.call(this, createNodesMap(gNodes), gLinks); });
+        .call(onNodeDrag(createNodesMap(gNodes), gLinks));
 }
 
 function mousemove(event: any, d: any, div: any) {
@@ -275,9 +275,6 @@ function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: 
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
-        .call(function (this: any) {
-            onNodeDrag.call(this, createNodesMap(gNodes), gLinks);
-        });
     return enterTmp;
 }
 
@@ -332,16 +329,16 @@ export function getTransitionsFromProps(g: any, props: ITransitionProps): any {
 }
 
 function onNodeDrag(nodesMap: any, gLinks: any) {
-    // console.log("start: onNodeDrag")
     return d3
         .drag<SVGGElement, unknown>()
         .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
+            console.log("start: subject(function (event: any)")
             return {
                 x: event.x,
                 y: event.y,
             };
         })
-        .on('drag', function (event: any, d: any) {
+        .on('drag', function (this: any, event: any, d: any) {
             d.x = event.x; // eslint-disable-line no-param-reassign
             d.y = event.y; // eslint-disable-line no-param-reassign
 
