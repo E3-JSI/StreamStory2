@@ -46,37 +46,12 @@ export function createSlider(
         .call(
             d3
                 .drag()
-                .on('start', function (this: any) {
-                    return d3.select(this).interrupt();
-                })
-                .on('drag', (event: any) => update(x.invert(event.x))),
+                .on('start', function (this: any) { return d3.select(this).interrupt(); })
+                .on('drag', (event: any) => { update(x.invert(event.x)); })
+                .on('end', (event: any) => { console.log('end') })
         )
-        .on("mouseover", function (this: any) {
-            const parent = d3.select(this.parentNode);
-
-            parent.select('.track')
-                .transition()
-                .duration(500)
-                .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth)
-
-            parent.select('.track-inset')
-                .transition()
-                .duration(500)
-                .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth)
-        })
-        .on("mouseout", function (this: any) {
-            const parent = d3.select(this.parentNode);
-
-            parent.select('.track')
-                .transition()
-                .duration(500)
-                .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
-
-            parent.select('.track-inset')
-                .transition()
-                .duration(500)
-                .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
-        })
+        .on("mouseover", function (this: any) { handleOnMouseOver.call(this, theme) })
+        .on("mouseout", function (this: any) { handleOnMouseOut.call(this, theme) })
 
     slider
         .insert('g', '.track-overlay')
@@ -96,7 +71,6 @@ export function createSlider(
     const handle = slider
         .insert('circle', '.track-overlay')
         .attr('class', 'handle')
-
         .style('fill', '#fff')
         .style('stroke', '#000')
         .style('stroke-opacity', '0.5')
@@ -118,6 +92,34 @@ export function createSlider(
         handle.attr('cx', x(h));
         label.attr('x', x(h)).text(showCurrVal ? format(h) : '');
     }
+}
+
+function handleOnMouseOver(this: any, theme: any) {
+    const parent = d3.select(this.parentNode);
+
+    parent.select('.track')
+        .transition()
+        .duration(500)
+        .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth)
+
+    parent.select('.track-inset')
+        .transition()
+        .duration(500)
+        .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth)
+}
+
+function handleOnMouseOut(this: any, theme: any) {
+    const parent = d3.select(this.parentNode);
+
+    parent.select('.track')
+        .transition()
+        .duration(500)
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+
+    parent.select('.track-inset')
+        .transition()
+        .duration(500)
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
 }
 
 export function test() {

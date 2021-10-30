@@ -138,15 +138,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin);
                 graphContainer = createGraphContainer(graph, width, height, chart);
-                // graphContainer
-                //     .append('rect')
-                //     .attr('width', xWidth)
-                //     .attr('height', yWidth)
-                //     .style('fill', '#1a6048')
-                //     .style('opacity', '0.1')
-                //     .style('stroke-width', '1')
-                //     .style('stroke', 'white');
-
                 gLinks = graphContainer.append('g').attr('class', 'links');
                 gNodes = graphContainer.append('g').attr('class', 'nodes');
                 gMarkers = graphContainer.append('g').attr('class', 'markers');

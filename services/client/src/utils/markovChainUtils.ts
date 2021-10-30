@@ -204,6 +204,12 @@ export function createNodes(
             colorBlueNodeAndLinks.call(this, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
+        .on("mouseover", function (this: any) {
+            d3.select(this).style("cursor", "pointer")
+        })
+        .on("mouseout", function (this: any) {
+            d3.select(this).style("cursor", "default")
+        })
         .call(function (this: any) {
             onNodeDrag.call(this, createNodesMap(gNodes), gLinks);
         });
@@ -565,8 +571,6 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
     scales
         .flatMap((sc: any) => sc.states)
         .forEach((state: any) => labelSet.add(state.suggestedLabel.label));
-    const labelsArr: any[] = Array.from(labelSet);
-    // pridobitev barve: color(state.suggestedLabel.label)
 
     scales.forEach((sc: any, scaleIx: number) => {
         sc.states.forEach((state: any, i: number) => {
@@ -588,14 +592,12 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
                         (el: any) => el.stateNo === stateNo,
                     );
                     const childKey = uniqueId(childState);
-
                     xSum += statesDict[childKey].x;
                     ySum += statesDict[childKey].y;
                 });
                 state.x = xSum / state.childStates.length; // eslint-disable-line no-param-reassign
                 state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
             }
-            // colorDict[state.suggestedLabel.label] = ""
             statesDict[key] = state;
         });
     });
