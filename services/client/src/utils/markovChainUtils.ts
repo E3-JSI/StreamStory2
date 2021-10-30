@@ -178,6 +178,7 @@ export function createNodes(
     gNodes: any,
     gLinks: any,
     gMarkers: any,
+    divTooltip: any,
     x: any,
     y: any,
     r: any,
@@ -185,6 +186,15 @@ export function createNodes(
     onNodeClickCallBack: any,
 ) {
     const { tEnter } = getTransitionsFromProps(gNodes, transitionProps);
+
+    divTooltip
+        .style("position", "absolute")
+        .style("opacity", 0)
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "2px")
+        .style("border-radius", "5px")
+        .style("padding", "5px")
 
     selectAllNodeGroups(gNodes)
         .data(data.states, (d: any) => `node_${d.id}`)
@@ -204,15 +214,40 @@ export function createNodes(
             colorBlueNodeAndLinks.call(this, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
-        .on("mouseover", function (this: any) {
+        .on("mouseover", function (this: any, event: any, d: any) {
+            divTooltip.style("display", "inline-block").style("opacity", 1);
             d3.select(this).style("cursor", "pointer")
         })
+        .on('mousemove', (event: any, d: any) => {
+            mousemove(event, d, divTooltip)
+        })
         .on("mouseout", function (this: any) {
+            divTooltip.style("opacity", 0);
             d3.select(this).style("cursor", "default")
         })
-        .call(function (this: any) {
-            onNodeDrag.call(this, createNodesMap(gNodes), gLinks);
-        });
+        .call(function (this: any) { onNodeDrag.call(this, createNodesMap(gNodes), gLinks); });
+}
+
+function mousemove(event: any, d: any, div: any) {
+    div
+        .html(`
+            <div>
+                <table>
+                    <tr>
+                        <th>nMembers</th>
+                        <th>x,y</th>
+                        <th>Label</th>
+                    </tr>
+                    <tr>
+                        <th>${d.nMembers}</td>
+                        <td>[${event.pageX}, ${event.pageY}]</td>
+                        <td>${d.suggestedLabel.label}</td>
+                    </tr>
+                </table>
+            </div>
+        `)
+        .style("left", `${(event.pageX - 3)} px`)
+        .style("top", `${(event.pageY - 12)} px`);
 }
 
 function nodeEnter(selection: any, gNodes: any, gLinks: any, x: any, y: any, r: any, tEnter: any) {
