@@ -21,6 +21,7 @@ import { TRANSITION_PROPS } from '../types/charts';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
     const [debug] = useState<boolean>(false);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
@@ -136,7 +137,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gMarkers = null;
             let gSliderProb = null;
             let gSliderScale = null;
-            let gTooltip = null;
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin);
@@ -146,10 +146,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gMarkers = graphContainer.append('g').attr('class', 'markers');
                 gSliderProb = graphContainer.append('g').attr('class', 'slider_prob');
                 gSliderScale = graphContainer.append('g').attr('class', 'c');
-                gTooltip = d3
-                    .select(containerRef.current)
-                    .append('div')
-                    .attr('class', 'state_tooltip');
                 setInitialized(true);
             } else {
                 graph = getSVG(containerRef, width, height, margin);
@@ -159,7 +155,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gMarkers = graphContainer.select('g.markers');
                 gSliderProb = graphContainer.select('g.slider_prob');
                 gSliderScale = graphContainer.select('g.slider_scale');
-                gTooltip = d3.select(containerRef.current).select('div.state_tooltip');
             }
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
@@ -182,7 +177,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gNodes,
                 gLinks,
                 gMarkers,
-                gTooltip,
+                tooltipRef,
                 x,
                 y,
                 r,
@@ -240,6 +235,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     return (
         <>
             <div ref={containerRef} style={{ backgroundColor: theme?.backgroundColor }} />
+            <div ref={tooltipRef} />
         </>
     );
 };

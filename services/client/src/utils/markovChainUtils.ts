@@ -89,7 +89,7 @@ export function createLinks(
                     .attr('class', 'link_path')
                     .attr('id', (d: any, i: number) => `path_s${d.source}t${d.target}`)
                     .attr('stroke', theme.link.default.stroke)
-                    .attr('stroke-width', (d: any) => Math.log(5 * d.p))
+                    .attr('stroke-width', (d: any) => Math.log(6 * d.p) + 0.5)
                     .attr('fill', 'none')
                     .attr('marker-end', (d: any) => `url(#arrow_s${d.source}_t${d.target})`);
 
@@ -151,7 +151,7 @@ export function createNodes(
     gNodes: any,
     gLinks: any,
     gMarkers: any,
-    divTooltip: any,
+    tooltipRef: any,
     x: any,
     y: any,
     r: any,
@@ -160,14 +160,7 @@ export function createNodes(
 ) {
     const { tEnter } = getTransitionsFromProps(gNodes, transitionProps);
 
-    divTooltip
-        .style("position", "absolute")
-        .style("opacity", 0)
-        .style("background-color", "white")
-        .style("border", "solid")
-        .style("border-width", "2px")
-        .style("border-radius", "5px")
-        .style("padding", "5px")
+    const divTooltip = d3.select(tooltipRef.current);
 
     selectAllNodeGroups(gNodes)
         .data(data.states, (d: any) => `node_${d.id}`)
@@ -188,11 +181,18 @@ export function createNodes(
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
         .on("mouseover", function (this: any, event: any, d: any) {
-            divTooltip.style("display", "inline-block").style("opacity", 1);
+            //  divTooltip.style("display", "inline-block").style("opacity", 1);
             d3.select(this).style("cursor", "pointer")
         })
         .on('mousemove', (event: any, d: any) => {
-            mousemove(event, d, divTooltip)
+            // mousemove(event, d, divTooltip)
+
+            divTooltip.style("left", `${event.positionX}px`);
+            divTooltip.style("top", `${event.positionY}px`);
+            divTooltip.style("display", "inline-block");
+            divTooltip.style("opacity", "0.9");
+            divTooltip.html(`${d.stateNo}: ${d.suggestedLabel.label}`);
+
         })
         .on("mouseout", function (this: any) {
             divTooltip.style("opacity", 0);
@@ -233,7 +233,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('cx', (d: any) => scale(x, d.x))
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
-        .attr('fill', (d: any, i: any) => d.color)
+        .attr('fill', (d: any, i: any) => d.color || "grey")
         .attr('opacity', theme.state.default.opacity)
 
     enterTmp
@@ -684,9 +684,12 @@ export function addColorsToScaleStates(scales: any) {
 
                         const curr = dict[pseudoUniqueId(childState)]; // FIXME: remove curr
 
-                        state.color = generateColor(curr.middle, scaleIx, scales.length); // eslint-disable-line no-param-reassign
-                        console.log('state=', state);
-                        console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                        const color = generateColor(curr.middle, scaleIx, scales.length);
+
+                        state.color = color; // eslint-disable-line no-param-reassign
+                        console.log('stateNo=', state.stateNo);
+                        console.log('%c color=%s', `color: ${color}`, color)
+                        // console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
                         console.log("\n")
                     });
                 } else {
@@ -696,18 +699,13 @@ export function addColorsToScaleStates(scales: any) {
                         let w = 0;
                         let ix = 0;
                         let sum = 0;
-
                         const objCurr = dict[pseudoUniqueId(childState)];
 
                         if (objCurr) {
                             sum += objCurr.w * objCurr.middle;
                             w += objCurr.w;
                             ix += 1;
-
-                            dict[pseudoUniqueId(state)] = {
-                                middle: sum / w,
-                                w,
-                            };
+                            dict[pseudoUniqueId(state)] = { middle: sum / w, w };
                             state.color = generateColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
                         }
                     });
