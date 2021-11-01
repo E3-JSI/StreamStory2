@@ -238,7 +238,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('cx', (d: any) => scale(x, d.x))
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
-        .attr('fill', (d: any, i: any) => d.color || "grey")
+        .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
 
     enterTmp
@@ -671,7 +671,7 @@ export function addColorsToScaleStates(scales: any) {
 
     scales.forEach((sc: any, scaleIx: any) => {
         if (scaleIx > 0) {
-            // console.log(`====== ${scaleIx}`);
+            console.log(`====== #${scaleIx} ==============`);
             sc.states.forEach((state: any) => {
                 if (scaleIx === 1) {
                     const childStates = initialScaleStates.filter((initState: any) =>
@@ -692,10 +692,10 @@ export function addColorsToScaleStates(scales: any) {
                         const color = generateColor(curr.middle, scaleIx, scales.length);
 
                         state.color = color; // eslint-disable-line no-param-reassign
-                        console.log('stateNo=', state.stateNo, 'pseudoUniqueId(childState)=', pseudoUniqueId(childState),);
+                        // console.log('stateNo=', state.stateNo, 'pseudoUniqueId(childState)=', pseudoUniqueId(childState),);
                         console.log('%c color=%s', `color: ${color}`, color)
-                        console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
-                        console.log("\n")
+                        // console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                        // console.log("\n")
                     });
                 } else {
                     const childStates = findChildStates(state, scales[scaleIx - 1]);
@@ -712,13 +712,24 @@ export function addColorsToScaleStates(scales: any) {
                             ix += 1;
                             dict[pseudoUniqueId(state)] = { middle: sum / w, w };
                             state.color = generateColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
+                            // console.log('stateNo=', state.stateNo, 'pseudoUniqueId(childState)=', pseudoUniqueId(childState),);
+                            console.log('%c color=%s', `color: ${state.color}`, state.color)
+                            // console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                            // console.log("\n")
                         }
                     });
                 }
+                console.log("\n")
             });
         }
-        // console.log('\n');
+        console.log('\n');
     });
+
+    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    console.log("scales.states=", scales.map((sc: any) => sc.states).flat().map((st: any) => st))
+    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+
+
 }
 
 function generateColor(middle: number, scaleIx: number, nScales: number) {
@@ -726,7 +737,7 @@ function generateColor(middle: number, scaleIx: number, nScales: number) {
     const xMax = 70;
     const percent = (scaleIx + 1) / nScales;
     const saturation = percent * (xMax - xMin) + xMin;
-    return `hsl(${middle}, ${saturation} %, 50 %)`;
+    return `hsl(${middle}, ${saturation}%, 50%)`;
 }
 
 function findChildStates(state: any, prevScale: any) {
