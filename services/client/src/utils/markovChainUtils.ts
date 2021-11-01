@@ -56,13 +56,16 @@ export function getSVG(
 
 export function createNodesMap(gNodes: any) {
     const nodesMap: any = {};
-
     selectAllNodeGroups(gNodes).each(function (this: any) {
         const item = d3.select(this);
         const d: any = item.data()[0];
-        nodesMap[d.id] = item;
+        nodesMap[d.stateNo] = item;
     });
     return nodesMap;
+}
+
+function linkWidth(d: any) {
+    return Math.log(6 * d.p) + 0.5;
 }
 
 export function createLinks(
@@ -74,6 +77,8 @@ export function createLinks(
 ) {
     const { tEnter } = getTransitionsFromProps(gLinks, transitionProps);
     const linkGroups = selectAllLinkGroups(gLinks);
+
+    const nodesMap = createNodesMap(gNodes);
 
     const links = linkGroups
         .data(data.links, (d: any) => `link_s${d.source}t${d.target}`)
@@ -89,12 +94,12 @@ export function createLinks(
                     .attr('class', 'link_path')
                     .attr('id', (d: any, i: number) => `path_s${d.source}t${d.target}`)
                     .attr('stroke', theme.link.default.stroke)
-                    .attr('stroke-width', (d: any) => Math.log(6 * d.p) + 0.5)
+                    .attr('stroke-width', linkWidth)
                     .attr('fill', 'none')
                     .attr('marker-end', (d: any) => `url(#arrow_s${d.source}_t${d.target})`);
 
                 selectLinkPath(tmp).attr('d', (d: any) =>
-                    drawLineWithOffset(createNodesMap(gNodes), d),
+                    drawLineWithOffset(nodesMap, d),
                 );
 
                 tmp.call((entr: any) => entr.transition(entr).attr('opacity', 1));
@@ -102,7 +107,7 @@ export function createLinks(
             },
             (update: any) => {
                 selectLinkPath(update).attr('d', (d: any) =>
-                    drawLineWithOffset(createNodesMap(gNodes), d),
+                    drawLineWithOffset(nodesMap, d),
                 );
 
                 update.call((updt: any) => updt.transition(tEnter).attr('opacity', 1));
@@ -191,7 +196,7 @@ export function createNodes(
             divTooltip.style("top", `${event.positionY}px`);
             divTooltip.style("display", "inline-block");
             divTooltip.style("opacity", "0.9");
-            divTooltip.html(`${d.stateNo}: ${d.suggestedLabel.label}`);
+            divTooltip.html(`stateNo=${d.stateNo}: ${d.suggestedLabel.label}`);
 
         })
         .on("mouseout", function (this: any) {
@@ -418,6 +423,7 @@ function createPath(data: any, link: any): string {
 
 export function getLinkDataWithDirectionType(nodesMap: any, link: any) {
     let data = null;
+
     const sNodeCircle = selectNodeCircle(nodesMap[link.source]);
     const tNodeCircle = selectNodeCircle(nodesMap[link.target]);
     data = {
@@ -545,28 +551,15 @@ export function uniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
 }
 
+export function uniqueIdScale(state: any, scaleIx: number) {
+    return `uid=${state.suggestedLabel.label}_scaleIx=${scaleIx}`;
+}
+
 export function pseudoUniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}`;
 }
 
-export function createDictId(scales: any) {
-    const dict: any = {};
-    let stateId = 0;
-
-    scales.forEach((sc: any) => {
-        sc.states.forEach((state: any) => {
-            const key = uniqueId(state);
-
-            if (!dict[key]) {
-                dict[key] = stateId;
-                stateId += 1;
-            }
-        });
-    });
-    return dict;
-}
-
-export function createStatesDict(scales: any, dictId: any, maxRadius: number, debug: boolean) {
+export function addCoordinatesToStates(scales: any, maxRadius: number, debug: boolean) {
     const statesDict: any = {};
     const labelSet = new Set();
     scales
@@ -574,18 +567,26 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
         .forEach((state: any) => labelSet.add(state.suggestedLabel.label));
 
     scales.forEach((sc: any, scaleIx: number) => {
+
+        // console.log(`========  ${scaleIx} =============`)
+
         sc.states.forEach((state: any, i: number) => {
             state.x = -1; // eslint-disable-line no-param-reassign
             state.y = -1; // eslint-disable-line no-param-reassign
             state.r = maxRadius * state.stationaryProbability; // eslint-disable-line no-param-reassign
             const key = uniqueId(state);
-            const currStateId = dictId[key];
+
+            // console.log("   stateNo=", state.stateNo, ", ", state.suggestedLabel.label)
+            // console.log("   statesDict[key]", statesDict[key])
 
             if (sc.areTheseInitialStates) {
+                // console.log("       if")
                 const currAngle = (360 / sc.states.length) * i;
                 state.x = maxRadius * Math.sin((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
                 state.y = maxRadius * Math.cos((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
-            } else if (!sc.areTheseInitialStates && !statesDict[currStateId]) {
+                statesDict[key] = state;
+            } else if (!sc.areTheseInitialStates && !statesDict[key]) {
+                // console.log("       else if")
                 let xSum = 0;
                 let ySum = 0;
                 state.childStates.forEach((stateNo: number) => {
@@ -593,23 +594,36 @@ export function createStatesDict(scales: any, dictId: any, maxRadius: number, de
                         (el: any) => el.stateNo === stateNo,
                     );
                     const childKey = uniqueId(childState);
+
+                    // console.log("           childKey=", childKey)
+
                     xSum += statesDict[childKey].x;
                     ySum += statesDict[childKey].y;
                 });
                 state.x = xSum / state.childStates.length; // eslint-disable-line no-param-reassign
                 state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
+                statesDict[key] = state;
+            } else if (state.childStates.length === 1) {
+                // console.log("       else if(state.childStates.length === 1, state.childStates=", state.childStates)
+
+                state.x = statesDict[key].x // eslint-disable-line no-param-reassign
+                state.y = statesDict[key].y // eslint-disable-line no-param-reassign
+
+            } else {
+                console.log("       ELSE!!")
             }
-            statesDict[key] = state;
+            // console.log("\n")
         });
     });
-    return statesDict;
+    // console.log("statesDict=", statesDict)
+    // console.log("\n")
+    // console.log("\n")
 }
 
 export function createStateLinks(
     stateIx: number,
     state: any,
     sc: any,
-    dictId: any,
     pThreshold: number,
 ) {
     const stateLinks: any[] = []
@@ -618,8 +632,8 @@ export function createStateLinks(
         const p = state.nextStateProbDistr[i];
 
         if (isValidProb(p, pThreshold)) {
-            const sourceId = dictId[uniqueId(state)];
-            const targetId = dictId[uniqueId(sc.states[i])];
+            const sourceId = state.stateNo;
+            const targetId = sc.states[i].stateNo
 
             let linkType = null;
 
@@ -638,24 +652,15 @@ export function createStateLinks(
     return stateLinks;
 }
 
-export function createGraphData(scales: any, stateDict: any, dictId: any, pThreshold: number) {
-    return scales.map((sc: any) => {
+export function createGraphData(scales: any, pThreshold: number) {
+    return scales.map((sc: any, scaleIx: number) => {
         const links: any[] = [];
         const states: any[] = [];
-
         sc.states.forEach((state: any, stateIx: number) => {
-            links.push(createStateLinks(stateIx, state, sc, dictId, pThreshold));
-            states.push(stateDict[uniqueId(state)]);
+            links.push(createStateLinks(stateIx, state, sc, pThreshold));
+            states.push(state);
         });
-
-        return {
-            states: states.map((s: any, i: number) => {
-                const stateClone = JSON.parse(JSON.stringify(s));
-                stateClone.id = dictId[uniqueId(sc.states[i])];
-                return stateClone;
-            }),
-            links: links.flat(),
-        };
+        return { states, links: links.flat() };
     });
 }
 
@@ -666,7 +671,7 @@ export function addColorsToScaleStates(scales: any) {
 
     scales.forEach((sc: any, scaleIx: any) => {
         if (scaleIx > 0) {
-            console.log(`====== ${scaleIx}`);
+            // console.log(`====== ${scaleIx}`);
             sc.states.forEach((state: any) => {
                 if (scaleIx === 1) {
                     const childStates = initialScaleStates.filter((initState: any) =>
@@ -687,9 +692,9 @@ export function addColorsToScaleStates(scales: any) {
                         const color = generateColor(curr.middle, scaleIx, scales.length);
 
                         state.color = color; // eslint-disable-line no-param-reassign
-                        console.log('stateNo=', state.stateNo);
+                        console.log('stateNo=', state.stateNo, 'pseudoUniqueId(childState)=', pseudoUniqueId(childState),);
                         console.log('%c color=%s', `color: ${color}`, color)
-                        // console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                        console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
                         console.log("\n")
                     });
                 } else {
@@ -712,10 +717,8 @@ export function addColorsToScaleStates(scales: any) {
                 }
             });
         }
-
-        console.log('\n');
+        // console.log('\n');
     });
-    return dict;
 }
 
 function generateColor(middle: number, scaleIx: number, nScales: number) {
@@ -723,7 +726,7 @@ function generateColor(middle: number, scaleIx: number, nScales: number) {
     const xMax = 70;
     const percent = (scaleIx + 1) / nScales;
     const saturation = percent * (xMax - xMin) + xMin;
-    return `hsl(${middle},${saturation}%, 50%)`;
+    return `hsl(${middle}, ${saturation} %, 50 %)`;
 }
 
 function findChildStates(state: any, prevScale: any) {

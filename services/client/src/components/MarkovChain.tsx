@@ -10,10 +10,9 @@ import {
     createGraphContainer,
     getGraphContainer,
     findMinMaxValues,
-    createDictId,
-    createStatesDict,
     createGraphData,
     addColorsToScaleStates,
+    addCoordinatesToStates,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -31,8 +30,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
-    const [dictIdTmp, setDictIdTmp] = useState<number>();
-    const [statesDictTmp, setStatesDictTmp] = useState<number>();
     const [theme, setTheme] = useState<any>();
 
     const darkTheme = {
@@ -84,13 +81,27 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             console.log('model.model.scales=', model.model.scales);
 
             addColorsToScaleStates(model.model.scales);
-            const dictId = createDictId(model.model.scales);
-            setDictIdTmp(dictId);
 
-            const statesDict = createStatesDict(model.model.scales, dictId, maxRadius, debug);
-            setStatesDictTmp(statesDict);
+            addCoordinatesToStates(model.model.scales, maxRadius, debug);
 
-            const graphData = createGraphData(model.model.scales, statesDict, dictId, pThreshold);
+            const graphData = createGraphData(model.model.scales, pThreshold);
+
+            console.log('graphData=', graphData);
+
+            for (let i = 0; i < graphData.length; i++) {
+                // console.log(`%%%%%%%%% ${i}  %%%%%%%%%`);
+
+                graphData[i].states.forEach((state: any) =>
+                    console
+                        .log
+                        // `  x=${state.x.toFixed(2)}, y=${state.y.toFixed(2)}, r=${state.r.toFixed(
+                        //     2,
+                        // )}`,
+                        (),
+                );
+                // console.log('\n');
+            }
+
             setData(graphData);
 
             setTheme(darkTheme);
@@ -108,12 +119,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             data &&
             data.length
         ) {
-            const graphData = createGraphData(
-                model.model.scales,
-                statesDictTmp,
-                dictIdTmp,
-                pThreshold,
-            );
+            const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
             renderMarkovChain(data);
         }
@@ -234,8 +240,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
-            <div ref={containerRef} style={{ backgroundColor: theme?.backgroundColor }} />
             <div ref={tooltipRef} />
+            <div ref={containerRef} style={{ backgroundColor: theme?.backgroundColor }} />
         </>
     );
 };
