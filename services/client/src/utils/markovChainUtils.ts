@@ -168,7 +168,7 @@ export function createNodes(
     const divTooltip = d3.select(tooltipRef.current);
 
     selectAllNodeGroups(gNodes)
-        .data(data.states, (d: any) => `node_${d.id}`)
+        .data(data.states, (d: any) => `node_${uniqueId(d)}`)
         .join(
             (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter),
             (update: any) => nodeUpdate(update, x, y, r),
@@ -671,34 +671,34 @@ export function addColorsToScaleStates(scales: any) {
 
     scales.forEach((sc: any, scaleIx: any) => {
         if (scaleIx > 0) {
-            console.log(`====== #${scaleIx} ==============`);
+            // console.log(`====== #${scaleIx} ==============`);
             sc.states.forEach((state: any) => {
                 if (scaleIx === 1) {
-                    const childStates = initialScaleStates.filter((initState: any) =>
-                        state.childStates.includes(initState.stateNo),
-                    );
+                    const childStates = findChildStates(state, scales[scaleIx - 1]);
+
+                    // console.log("childStates=", childStates)
+
                     childStates.forEach((childState: any) => {
                         const angle = 360 * childState.stationaryProbability;
                         const angleMiddle = degOffset + angle / 2;
+
+                        // console.log("   pseudoUniqueId(childState)=", pseudoUniqueId(childState))
 
                         dict[pseudoUniqueId(childState)] = {
                             middle: angleMiddle,
                             w: childState.stationaryProbability,
                         };
                         degOffset += angle;
-
                         const curr = dict[pseudoUniqueId(childState)]; // FIXME: remove curr
-
-                        const color = generateColor(curr.middle, scaleIx, scales.length);
-
-                        state.color = color; // eslint-disable-line no-param-reassign
-                        // console.log('stateNo=', state.stateNo, 'pseudoUniqueId(childState)=', pseudoUniqueId(childState),);
-                        console.log('%c color=%s', `color: ${color}`, color)
-                        // console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                        state.color = generateColor(curr.middle, scaleIx - 1, scales.length); // eslint-disable-line no-param-reassign
+                        // console.log('   %c color=%s', `color: ${state.color}`, state.color)
+                        // console.log("   state=", state)
                         // console.log("\n")
                     });
                 } else {
                     const childStates = findChildStates(state, scales[scaleIx - 1]);
+
+                    // console.log("childStates=", childStates)
 
                     childStates.forEach((childState: any) => {
                         let w = 0;
@@ -711,25 +711,18 @@ export function addColorsToScaleStates(scales: any) {
                             w += objCurr.w;
                             ix += 1;
                             dict[pseudoUniqueId(state)] = { middle: sum / w, w };
-                            state.color = generateColor(objCurr.middle, scaleIx, scales.length); // eslint-disable-line  no-param-reassign
-                            // console.log('stateNo=', state.stateNo, 'pseudoUniqueId(childState)=', pseudoUniqueId(childState),);
-                            console.log('%c color=%s', `color: ${state.color}`, state.color)
-                            // console.log('color=', state.color, ', dict[pseudoUniqueId(childState)]=', dict[pseudoUniqueId(childState)]);
+                            state.color = generateColor(objCurr.middle, scaleIx - 1, scales.length); // eslint-disable-line  no-param-reassign
+                            // console.log('   %c color=%s', `color: ${state.color}`, state.color)
+                            // console.log("   state=", state)
                             // console.log("\n")
                         }
                     });
                 }
-                console.log("\n")
+                // console.log("\n")
             });
         }
-        console.log('\n');
+        // console.log('\n');
     });
-
-    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-    console.log("scales.states=", scales.map((sc: any) => sc.states).flat().map((st: any) => st))
-    console.log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
-
-
 }
 
 function generateColor(middle: number, scaleIx: number, nScales: number) {
