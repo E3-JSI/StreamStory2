@@ -1,6 +1,5 @@
 import React from 'react';
 import * as d3 from 'd3';
-import { easeLinear, easeQuad } from 'd3';
 import { ITransitionProps, LinkType } from '../types/charts';
 
 export function scale(s: any, value: any) {
@@ -567,26 +566,18 @@ export function addCoordinatesToStates(scales: any, maxRadius: number, debug: bo
         .forEach((state: any) => labelSet.add(state.suggestedLabel.label));
 
     scales.forEach((sc: any, scaleIx: number) => {
-
-        // console.log(`========  ${scaleIx} =============`)
-
         sc.states.forEach((state: any, i: number) => {
             state.x = -1; // eslint-disable-line no-param-reassign
             state.y = -1; // eslint-disable-line no-param-reassign
             state.r = maxRadius * state.stationaryProbability; // eslint-disable-line no-param-reassign
             const key = uniqueId(state);
 
-            // console.log("   stateNo=", state.stateNo, ", ", state.suggestedLabel.label)
-            // console.log("   statesDict[key]", statesDict[key])
-
             if (sc.areTheseInitialStates) {
-                // console.log("       if")
                 const currAngle = (360 / sc.states.length) * i;
                 state.x = maxRadius * Math.sin((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
                 state.y = maxRadius * Math.cos((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
                 statesDict[key] = state;
             } else if (!sc.areTheseInitialStates && !statesDict[key]) {
-                // console.log("       else if")
                 let xSum = 0;
                 let ySum = 0;
                 state.childStates.forEach((stateNo: number) => {
@@ -594,9 +585,6 @@ export function addCoordinatesToStates(scales: any, maxRadius: number, debug: bo
                         (el: any) => el.stateNo === stateNo,
                     );
                     const childKey = uniqueId(childState);
-
-                    // console.log("           childKey=", childKey)
-
                     xSum += statesDict[childKey].x;
                     ySum += statesDict[childKey].y;
                 });
@@ -604,15 +592,10 @@ export function addCoordinatesToStates(scales: any, maxRadius: number, debug: bo
                 state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
                 statesDict[key] = state;
             } else if (state.childStates.length === 1) {
-                // console.log("       else if(state.childStates.length === 1, state.childStates=", state.childStates)
-
                 state.x = statesDict[key].x // eslint-disable-line no-param-reassign
                 state.y = statesDict[key].y // eslint-disable-line no-param-reassign
 
-            } else {
-                console.log("       ELSE!!")
             }
-            // console.log("\n")
         });
     });
     // console.log("statesDict=", statesDict)
