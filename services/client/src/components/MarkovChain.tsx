@@ -79,19 +79,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
             console.log('model.model.scales=', model.model.scales);
-
             addColorsToScaleStates(model.model.scales);
-
             addCoordinatesToStates(model.model.scales, maxRadius, debug);
-
             const graphData = createGraphData(model.model.scales, pThreshold);
-
-            console.log('graphData=', graphData);
-
             setData(graphData);
-
             setTheme(darkTheme);
-
             renderMarkovChain(graphData);
         }
     }, [model.model.scales]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -112,7 +104,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     }, [windowSize, pThreshold, currentScaleIx]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function renderMarkovChain(graphData: any): void {
-        console.log('start: renderMarkovChain');
         const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded

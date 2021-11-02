@@ -48,7 +48,7 @@ export function createSlider(
                 .drag()
                 .on('start', function (this: any) { return d3.select(this).interrupt(); })
                 .on('drag', (event: any) => { update(x.invert(event.x)); })
-                .on('end', (event: any) => { console.log('end') })
+            // .on('end', (event: any) => { console.log('end') })
         )
         .on("mouseover", function (this: any) { handleOnMouseOver.call(this, theme) })
         .on("mouseout", function (this: any) { handleOnMouseOut.call(this, theme) })

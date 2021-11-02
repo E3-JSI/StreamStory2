@@ -695,8 +695,8 @@ export function addColorsToScaleStates(scales: any) {
 }
 
 function generateColor(middle: number, scaleIx: number, nScales: number) {
-    const xMin = 20;
-    const xMax = 70;
+    const xMin = 20; // FIXME: hardcoded
+    const xMax = 70;  // FIXME: hardcoded
     const percent = 1 - ((scaleIx + 1) / nScales);
     const saturation = percent * (xMax - xMin) + xMin;
     return `hsl(${middle}, ${saturation}%, 50%)`;
