@@ -674,13 +674,19 @@ export function addColorsToScaleStates(scales: any) {
             sc.states.forEach((state: any) => {
 
                 console.log("-------------------------------------")
+                if (state.suggestedLabel.label === "Rainfall HIGHEST") {
+                    console.log("***")
+                }
+                const str = "[" + state.stateNo + "]: " + state.suggestedLabel.label // eslint-disable-line
+                console.log("%c" + str, "color:black;font-weight:bold;"); // eslint-disable-line prefer-template
+                console.log()
+
+                console.log("initialStates=", state.initialStates)
+
+                const childStates = findChildStates(state, scales[scaleIx - 1]);
 
                 if (scaleIx === 1) {
-                    const childStates = findChildStates(state, scales[scaleIx - 1]);
-
                     childStates.forEach((childState: any) => {
-                        console.log("childState.l=", childState.suggestedLabel.label, "\npseudoUniqueId(childState)=", pseudoUniqueId(childState))
-
                         const angle = 360 * childState.stationaryProbability;
                         const angleMiddle = degOffset + angle / 2;
 
@@ -689,14 +695,12 @@ export function addColorsToScaleStates(scales: any) {
 
                         const curr = dict[pseudoUniqueId(childState)]; // FIXME: remove curr
                         childState.color = generateColor(curr.middle, scaleIx - 1, scales.length); // eslint-disable-line no-param-reassign
-                        console.log("   childStateNo=", childState.stateNo)
+                        console.log(`   [${childState.stateNo}]: ${childState.suggestedLabel.label}`)
                         console.log('  %c color=%s', `color: ${childState.color}`, childState.color)
                         console.log("\n")
                     });
                 }
                 else {
-                    const childStates = findChildStates(state, scales[scaleIx - 1]);
-
                     childStates.forEach((childState: any) => {
                         let w = 0;
                         let ix = 0;
@@ -712,23 +716,16 @@ export function addColorsToScaleStates(scales: any) {
                             dict[pseudoUniqueId(childState)] = { middle: sum / w, w };
                             childState.color = generateColor(objCurr.middle, scaleIx - 1, scales.length); // eslint-disable-line  no-param-reassign
 
-                            console.log("   childStateNo=", childState.stateNo)
+                            console.log(`   [${childState.stateNo}]: ${childState.suggestedLabel.label}`)
                             console.log('  %c color=%s', `color: ${childState.color}`, childState.color)
                             console.log("\n")
                         }
-                        else {
-                            console.log("       childStateNo=", childState.stateNo)
-                            console.log('       %c color=%s', `color: ${childState.color}`, childState.color)
-                            console.log("\n")
-                        }
+
+                        dict[pseudoUniqueId(state)] = { middle: sum / w, w };
                     });
                 }
-
-
-                // console.log("\n")
             });
         }
-        // console.log('\n');
     });
 }
 
