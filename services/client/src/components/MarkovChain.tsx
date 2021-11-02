@@ -88,20 +88,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             console.log('graphData=', graphData);
 
-            for (let i = 0; i < graphData.length; i++) {
-                // console.log(`%%%%%%%%% ${i}  %%%%%%%%%`);
-
-                graphData[i].states.forEach((state: any) =>
-                    console
-                        .log
-                        // `  x=${state.x.toFixed(2)}, y=${state.y.toFixed(2)}, r=${state.r.toFixed(
-                        //     2,
-                        // )}`,
-                        (),
-                );
-                // console.log('\n');
-            }
-
             setData(graphData);
 
             setTheme(darkTheme);
