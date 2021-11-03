@@ -122,7 +122,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gSliderScale = null;
 
             if (!initialized) {
-                graph = createSVG(containerRef, width, height, margin);
+                graph = createSVG(containerRef, darkTheme, width, height, margin); // FIXME: hardcoded theme
                 graphContainer = createGraphContainer(graph, width, height, chart);
                 gLinks = graphContainer.append('g').attr('class', 'links');
                 gNodes = graphContainer.append('g').attr('class', 'nodes');
@@ -139,6 +139,20 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gSliderProb = graphContainer.select('g.slider_prob');
                 gSliderScale = graphContainer.select('g.slider_scale');
             }
+
+            const zoom = d3
+                .zoom()
+                .scaleExtent([0, 5])
+
+                .on('zoom', (event: any) => {
+                    console.log('event=', event);
+                    if (event) {
+                        setCurrentScaleIx(Math.floor(event.transform.k));
+                    }
+                });
+
+            graphContainer.call(zoom);
+
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
             const r = createLinearScale(
@@ -218,7 +232,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     return (
         <>
             <div ref={tooltipRef} />
-            <div ref={containerRef} style={{ backgroundColor: theme?.backgroundColor }} />
+            <div ref={containerRef} />
         </>
     );
 };

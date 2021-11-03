@@ -21,11 +21,12 @@ export function getGraphContainer(svg: any) {
 
 export function createSVG(
     container: React.MutableRefObject<any>,
+    theme: any,
     width: number,
     height: number,
     margin: any,
 ) {
-    return d3
+    const svg = d3
         .select(container.current)
         .append('svg')
         .attr('width', width)
@@ -35,6 +36,14 @@ export function createSVG(
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    svg
+        .append("rect")
+        .attr('width', width - margin.left - margin.right)
+        .attr('height', height - margin.top - margin.bottom)
+        .attr("fill", theme.backgroundColor)
+
+    return svg;
 }
 
 export function getSVG(
