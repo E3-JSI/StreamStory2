@@ -365,7 +365,7 @@ function colorBlueNodeAndLinks(this: any, theme: any, gNodes: any, gLinks: any, 
 
         const delay = 150;
 
-        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).id) {
+        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).stateNo) {
             linePath
                 .attr('stroke', theme.link.default.stroke)
                 .transition()
