@@ -13,7 +13,7 @@ WORKDIR /app
 RUN apk add --no-cache gettext
 RUN apk add --no-cache perl
 
-COPY $ROOT/package*.json .
+COPY $ROOT/package*.json ./
 RUN npm install
 
 # Copy project files from host

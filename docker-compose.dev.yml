@@ -45,7 +45,7 @@ services:
         links:
             - api
         environment:
-            PORT: ${CLIENT_PORT:-3000}
+            PORT: 3000
             REACT_APP_PROXY: http://api:8080
 
     db:

@@ -234,11 +234,11 @@
     },
     "successful_password_reset_initiation": {
         "title": "Your request for password reset has been successfully processed",
-        "message": "You should receive an e-mail with password reset link shortly. Be sure to also check spam folder if you don't find it in your inbox."
+        "message": "You should receive an e-mail with password reset link shortly. Make sure to also check spam folder if you don't find it in your inbox."
     },
     "successful_registration": {
         "title": "You have been successfully registered",
-        "message": "You should receive an e-mail with activation link shortly. Be sure to also check spam folder if you don't find it in your inbox."
+        "message": "You should receive an e-mail with activation link shortly. Make sure to also check spam folder if you don't find it in your inbox."
     },
     "error": {
         "account_deletion_failed": "Failed to delete your account.",
