@@ -1,0 +1,27 @@
+{
+    "url": "http://streamstory.ijs.si",
+    "mailer": {
+        "service": "gmail",
+        "auth": {
+            "type": "OAuth2",
+            "user": "streamstoryai@gmail.com",
+            "clientId": "332841367753-03m6gm74kiffbafj5laftissrl0olugi.apps.googleusercontent.com",
+            "clientSecret": "$MAILER_CLIENT_SECRET",
+            "refreshToken": "$MAILER_REFRESH_TOKEN"
+        }
+    },
+    "auth": {
+        "local": true,
+        "providers": [
+            {
+                "id": "google",
+                "name": "Google",
+                "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+                "accessTokenUrl": "https://oauth2.googleapis.com/token",
+                "clientId": "332841367753-c3pdgsf4o16g1gac4ing8j1oveabe0k6.apps.googleusercontent.com",
+                "clientSecret": "$GOOGLE_CLIENT_SECRET",
+                "scope": "email profile"
+            }
+        ]
+    }
+}

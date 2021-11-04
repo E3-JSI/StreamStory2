@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import { Theme } from '@material-ui/core/styles';
 import { useMediaQuery } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
-import Container from '@material-ui/core/Container';
 
 import Header from './Header';
 import SideNav from './SideNav';
@@ -39,13 +38,9 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
             return (
                 <Box className={classes.root}>
                     <Header variant="simple" />
-                    <Container
-                        component="main"
-                        className={clsx(classes.main, classes.mainContent, classes.mainSimple)}
-                        maxWidth="xs"
-                    >
+                    <main className={clsx(classes.main, classes.mainContent, classes.mainSimple)}>
                         <>{children}</>
-                    </Container>
+                    </main>
                 </Box>
             );
         case 'content':

@@ -5,7 +5,7 @@ function handleErrors(err: Error, req: Request, res: Response): void {
         console.error(err);
     }
 
-    res.status(500).send({
+    res.status(res.statusCode || 500).send({
         error: err.message,
     });
 }

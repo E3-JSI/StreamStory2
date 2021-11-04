@@ -1,18 +1,34 @@
 # Build stage
 # ===========
 
-FROM node:14.17.0-alpine3.11 AS build-stage
+FROM node:14.18.1-alpine3.14 AS build-stage
+
+ARG CONFIG
+ARG CONFIG_NAME=${CONFIG:-production}
+ARG ROOT
 
 WORKDIR /app
 
 # Install build dependencies
-COPY ["package*.json", "./"]
-# bcrypt fix
-# RUN apk --no-cache add --virtual builds-deps build-base python
+RUN apk add --no-cache gettext
+RUN apk add --no-cache perl
+
+COPY $ROOT/package*.json .
 RUN npm install
 
 # Copy project files from host
-COPY . .
+COPY $ROOT .
+
+# Setup config
+COPY ./scripts ./scripts
+COPY ./configs/$CONFIG_NAME.json ./config.json
+COPY .en[v] .
+
+RUN source scripts/loadenv.sh .env && \
+    format=$(perl -e 'print "\$$_" for grep /^[_a-zA-Z]\w*$/, keys %ENV') && \
+    envsubst "$format" < config.json | tee _config.json && \
+    node scripts/setupConfig.js api ./_config.json > config.json && \
+    rm _config.json
 
 # Build service
 RUN npm run build
@@ -21,24 +37,20 @@ RUN npm run build
 # Production stage
 # ================
 
-FROM node:14.17.0-alpine3.11
+FROM node:14.18.1-alpine3.14
 
 ENV NODE_ENV=production
-
-# RUN addgroup app && adduser -S -G app app
-# USER app
 
 WORKDIR /app
 
 # Copy from build stage
 COPY --from=build-stage /app/build /app
-COPY ["package*.json", "./"]
-# RUN apk --no-cache add --virtual builds-deps build-base python
+COPY --from=build-stage /app/config.json /app
+COPY --from=build-stage /app/package*.json /app
 
 # Install production dependencies
 RUN npm install --production
 
-
-USER node
-EXPOSE 80
-ENTRYPOINT ["node", "index.js"]
+# Run service
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "export CONFIG=$(cat config.json); node index.js"]

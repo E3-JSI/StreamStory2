@@ -152,7 +152,7 @@ export async function createModel(req: Request, res: Response, next: NextFunctio
             numberOfStates,
             numberOfHistogramBuckets: 10,
         });
-        await new Promise((resolve) => setTimeout(resolve, 10000));
+
         if (modellingResponse.status === 'error') {
             res.status(400).json({
                 error: modellingResponse.errors,
@@ -199,7 +199,7 @@ export async function getModels(req: Request, res: Response, next: NextFunction)
     try {
         const modelList = await models.get(user.id, true);
         res.status(200).json({
-            models: modelList.map((model) => getModelResponse(model, true)),
+            model: modelList.map((model) => getModelResponse(model, true)),
         });
     } catch (error) {
         next(error);

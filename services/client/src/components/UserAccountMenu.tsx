@@ -12,7 +12,8 @@ import Typography from '@material-ui/core/Typography';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
-import { User } from '../types/api';
+import { AuthResponse } from '../api/auth';
+import { User } from '../api/users';
 import { getResponseErrors } from '../utils/errors';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
@@ -29,15 +30,11 @@ function UserAccountMenu(
     const [{ user }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 
-    function getUserDisplayName({ email, firstName, lastName }: User) {
+    function getUserDisplayName({ email, name }: User) {
         const displayName = [];
 
-        if (firstName) {
-            displayName.push(firstName);
-        }
-
-        if (lastName) {
-            displayName.push(lastName);
+        if (name) {
+            displayName.push(name);
         }
 
         if (!displayName.length) {
@@ -51,7 +48,7 @@ function UserAccountMenu(
         toggleMenu();
 
         try {
-            const response = await axios.post('/api/auth/logout');
+            const response = await axios.post<AuthResponse>('/api/auth/logout');
 
             if (response.data.success) {
                 setSession({

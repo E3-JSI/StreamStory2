@@ -1,13 +1,13 @@
 import React from 'react';
 
-import Typography from '@material-ui/core/Typography';
+import Typography, { TypographyProps } from '@material-ui/core/Typography';
 import Link from '@material-ui/core/Link';
 
 import TransHtml from './TransHtml';
 
-function Copyright(): JSX.Element {
+function Copyright(props: TypographyProps): JSX.Element {
     return (
-        <Typography variant="body2" color="textSecondary" align="center">
+        <Typography variant="body2" color="textSecondary" align="center" {...props}>
             <TransHtml
                 i18nKey="copyright"
                 values={{

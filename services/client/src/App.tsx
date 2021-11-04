@@ -13,7 +13,7 @@ import PasswordReset from './pages/PasswordReset';
 import Registration from './pages/Registration';
 import UserProfile from './pages/UserProfile';
 
-import { getUserSession } from './contexts/SessionContext';
+import { AuthResponse } from './api/auth';
 import useMountEffect from './hooks/useMountEffect';
 import useSession from './hooks/useSession';
 import PageRoute from './components/PageRoute';
@@ -37,10 +37,10 @@ function App(): JSX.Element {
     useMountEffect(() => {
         async function getStatus() {
             try {
-                const response = await axios.get('/api/auth/status');
+                const response = await axios.get<AuthResponse>('/api/auth/status');
 
                 if (response.data.user) {
-                    setSession(getUserSession(response.data.user));
+                    setSession({ user: response.data.user });
                 }
 
                 setSyncing(false);
@@ -71,7 +71,7 @@ function App(): JSX.Element {
                                 exact
                             />
                             <PageRoute
-                                path="/dashboard/:view"
+                                path="/dashboard/:view?"
                                 type="private"
                                 variant="application"
                                 component={Dashboard}
@@ -86,7 +86,7 @@ function App(): JSX.Element {
                             />
                             {/* Restricted routes */}
                             <PageRoute
-                                path="/login/:token?"
+                                path="/login/:action?/:token?"
                                 type="restricted"
                                 variant="simple"
                                 component={Login}

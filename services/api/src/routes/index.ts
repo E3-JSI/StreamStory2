@@ -9,6 +9,7 @@ const router = Router();
 
 const authPath = '/auth';
 router.post(`${authPath}/login`, auth.logIn);
+router.post(`${authPath}/oauth`, auth.logInWithOauth);
 router.post(`${authPath}/logout`, requireAuth, auth.logOut);
 router.get(`${authPath}/status`, auth.getStatus);
 router.post(`${authPath}/registration`, auth.register);

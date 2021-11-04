@@ -8,7 +8,8 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import Typography from '@material-ui/core/Typography';
 import CheckIcon from '@material-ui/icons/Check';
 
-import { getUserSession, AppTheme } from '../contexts/SessionContext';
+import { User, UsersResponse } from '../api/users';
+import { AppTheme } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 
 import useStyles from './ThemeMenu.styles';
@@ -43,13 +44,13 @@ function ThemeMenu(
         if (user) {
             // Save theme selection for logged in users.
             try {
-                const response = await axios.put('/api/users/current', {
+                const response = await axios.put<UsersResponse>('/api/users/current', {
                     theme: newTheme,
                 });
 
                 if (response.data.user) {
                     // Sync session.
-                    setSession(getUserSession(response.data.user));
+                    setSession({ user: response.data.user as User });
                 }
             } catch {
                 // Failed to save new theme selection.

@@ -2,7 +2,8 @@ import React from 'react';
 
 import { PaletteType } from '@material-ui/core';
 
-import { Model, User } from '../types/api';
+import { Model } from '../api/models';
+import { User } from '../api/users';
 
 export type AppTheme = PaletteType | 'system';
 
@@ -20,18 +21,6 @@ export interface Session {
 }
 
 export type SessionProps = Partial<Omit<Session, 'update'>>;
-
-export function getUserSession(user: User): SessionProps {
-    const session: SessionProps = {
-        user,
-    };
-
-    if (user.settings.theme) {
-        session.theme = user.settings.theme as AppTheme;
-    }
-
-    return session;
-}
 
 export const defaultProps: Required<SessionProps> = {
     user: null,

@@ -10,7 +10,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import SaveIcon from '@material-ui/icons/Save';
 
-import { Model } from '../types/api';
+import { Model } from '../api/models';
 import LoadingButton from './LoadingButton';
 
 import useStyles from './StateDetails.styles';

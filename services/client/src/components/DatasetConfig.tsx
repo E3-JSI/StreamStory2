@@ -18,6 +18,7 @@ import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import DescriptionIcon from '@material-ui/icons/Description';
 
+import { DatasetAttribute, ModelsResponse } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import { formatDataSize } from '../utils/misc';
 import useSnackbar from '../hooks/useSnackbar';
@@ -32,11 +33,6 @@ enum UploadState {
     Uploading,
     Success,
     Failure,
-}
-
-export interface DatasetAttribute {
-    name: string;
-    numeric: boolean;
 }
 
 export interface DatasetConfigProps {
@@ -92,7 +88,7 @@ function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
             data.append('file', file);
 
             const uploadStartTime = Date.now();
-            const response = await axios.post('/api/models/data', data, {
+            const response = await axios.post<ModelsResponse>('/api/models/data', data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -139,7 +135,7 @@ function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
         setIsRemoveFileDialogOpen(false);
 
         try {
-            const response = await axios.delete('/api/models/data');
+            const response = await axios.delete<ModelsResponse>('/api/models/data');
 
             if (response.data.success) {
                 setUploadState(UploadState.Ready);

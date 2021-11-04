@@ -3,8 +3,8 @@
 
 FROM ubuntu:focal AS build-stage
 
-ARG MODELLING_PORT=8096
-ENV BUILD release
+ARG ROOT
+ENV BUILD=release
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN cd qminer/src/glib && \
     mv glib.a glib-${BUILD}.a
 
 # Copy project files from host
-COPY . .
+COPY $ROOT .
 
 # Build service
 RUN make ${BUILD}
@@ -40,5 +40,5 @@ COPY --from=build-stage /app/ss2 /app
 COPY --from=build-stage /app/src/UnicodeDef.bin /app
 
 # Run service
-EXPOSE ${MODELLING_PORT}
-ENTRYPOINT ["./ss2", "-port:${MODELLING_PORT}", "-logfile:modelling.log"]
+EXPOSE 8096
+ENTRYPOINT ["./ss2", "-port:8096", "-logfile:modelling.log"]
