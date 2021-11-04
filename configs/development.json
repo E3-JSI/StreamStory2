@@ -9,19 +9,5 @@
             "user": "user@email.com",
             "pass": "password"
         }
-    },
-    "auth": {
-        "local": true,
-        "providers": [
-            {
-                "id": "google",
-                "name": "Google",
-                "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
-                "accessTokenUrl": "https://oauth2.googleapis.com/token",
-                "clientId": "332841367753-c3pdgsf4o16g1gac4ing8j1oveabe0k6.apps.googleusercontent.com",
-                "clientSecret": "$GOOGLE_CLIENT_SECRET",
-                "scope": "email profile"
-            }
-        ]
     }
 }
