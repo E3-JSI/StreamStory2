@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 
-import SessionContext, { Session, SessionProps } from '../contexts/SessionContext';
+import SessionContext, { AppTheme, Session, SessionProps } from '../contexts/SessionContext';
 
 export interface SessionProviderProps {
     children: React.ReactNode;
@@ -8,6 +8,7 @@ export interface SessionProviderProps {
 
 const storageSessionKey = 'streamstory.session';
 const storageSessionProps = ['theme', 'isSideNavExpanded', 'modelsPerPage'];
+let loaderState = -1;
 
 function loadFromStorage(sessionState: Session): Session {
     if (localStorage) {
@@ -43,13 +44,30 @@ function saveToStorage(sessionState: Session) {
 function SessionProvider({ children }: SessionProviderProps): JSX.Element {
     const [session, setSession] = useState(loadFromStorage(useContext(SessionContext)));
 
+    if (loaderState < 0) {
+        loaderState = Number(session.isPageLoading);
+    }
+
     // Pass `update` function to SessionContext.Provider
     session.update = (props: SessionProps) => {
+        if (props.isPageLoading !== undefined) {
+            // Resolve nested calls for isPageLoading state change.
+            loaderState += props.isPageLoading ? 1 : -1;
+            loaderState = Math.max(0, loaderState);
+        }
+
         setSession((prevState) => {
             const newSession = {
                 ...prevState,
                 ...props,
             };
+
+            if (props.user?.settings.theme) {
+                // Sync theme.
+                newSession.theme = props.user.settings.theme as AppTheme;
+            }
+
+            newSession.isPageLoading = !!loaderState;
 
             // Synchronize updated session with local storage.
             saveToStorage(newSession);

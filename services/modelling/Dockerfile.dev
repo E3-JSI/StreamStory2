@@ -1,7 +1,7 @@
 FROM ubuntu:focal
 
-ARG MODELLING_PORT=8096
-ENV BUILD debug
+ARG ROOT
+ENV BUILD=debug
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN cd qminer/src/glib && \
     mv glib.a glib-${BUILD}.a
 
 # Copy project files from host
-COPY . .
+COPY $ROOT .
 
 # Build service
 RUN make ${BUILD}
@@ -27,5 +27,5 @@ RUN mkdir -p bin
 RUN mv ss2 bin
 
 # Run service
-EXPOSE ${MODELLING_PORT}
-CMD ["./bin/ss2", "-port:${MODELLING_PORT}", "-fnUnicodeDef:src/UnicodeDef.bin", "-logfile:modelling.log"]
+EXPOSE 8096
+CMD ["./bin/ss2", "-port:8096", "-fnUnicodeDef:src/UnicodeDef.bin", "-logfile:modelling.log"]

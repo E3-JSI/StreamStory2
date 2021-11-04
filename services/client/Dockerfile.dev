@@ -1,19 +1,35 @@
-FROM node:14.17.0-alpine3.11
+FROM node:14.18.1-alpine3.14
 
+ARG CONFIG=development
+ARG CONFIG_NAME=${CONFIG:-development}
+ARG ROOT
 ENV NODE_ENV=development
-
-# RUN addgroup app && adduser -S -G app app
-# USER app
 
 WORKDIR /app
 
 # Install dependencies
-COPY ["package*.json", "./"]
+RUN apk add --no-cache gettext
+RUN apk add --no-cache perl
+
+COPY $ROOT/package*.json .
 RUN npm install
 
 # Copy project files from host
-COPY . .
+COPY $ROOT .
+
+# Setup config
+COPY ./scripts ./scripts
+COPY ./configs/$CONFIG_NAME.json ./config.json
+COPY .en[v] .
+
+RUN source scripts/loadenv.sh .env && \
+    format=$(perl -e 'print "\$$_" for grep /^[_a-zA-Z]\w*$/, keys %ENV') && \
+    envsubst "$format" < config.json | tee _config.json && \
+    node scripts/setupConfig.js client ./_config.json > config.json && \
+    mkdir -p configs && \
+    mv config.json configs && \
+    rm _config.json
 
 # Run service
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["sh", "-c", "export REACT_APP_CONFIG=$(cat configs/config.json); npm start"]

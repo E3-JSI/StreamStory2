@@ -2,7 +2,10 @@ import { createStyles, makeStyles /* , Theme */ } from '@material-ui/core';
 
 const useStyles = makeStyles((/* theme: Theme */) =>
     createStyles({
-        root: {},
+        tabsPaper: {
+            position: 'relative',
+            flexGrow: 1,
+        },
     }));
 
 export default useStyles;

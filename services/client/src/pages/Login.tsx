@@ -1,45 +1,46 @@
 import React from 'react';
 
 import axios from 'axios';
-import { useHistory, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+import { AuthResponse } from '../api/auth';
 import { getResponseErrors } from '../utils/errors';
 import { validationPatterns } from '../utils/forms';
+import config from '../config';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import useMountEffect from '../hooks/useMountEffect';
 import UserAccountForm from '../components/UserAccountForm';
 
+export enum LoginAction {
+    activation = 'activation',
+    oauth = 'oauth',
+}
 export interface LoginUrlParams {
+    action?: string;
     token?: string;
 }
 
 function Login(): JSX.Element {
-    const history = useHistory();
     const { t } = useTranslation();
+    const history = useHistory();
+    const location = useLocation();
+    const { action, token } = useParams<LoginUrlParams>();
     const [, /* session */ setSession] = useSession();
     const [showSnackbar] = useSnackbar();
-    const { token } = useParams<LoginUrlParams>();
+
+    const siteUrl = config.url.replace(/:(80)?$/, '');
 
     function redirect() {
         history.push('/login');
     }
 
     useMountEffect(() => {
-        // Try to activate user if activation token is provided in url.
-        if (!token) {
-            return;
-        }
-
-        if (!token.match(validationPatterns.userToken)) {
-            redirect();
-        }
-
         async function activate() {
             try {
                 setSession({ isPageLoading: true });
-                const response = await axios.post('/api/auth/activation', { token });
+                const response = await axios.post<AuthResponse>('/api/auth/activation', { token });
                 setSession({ isPageLoading: false });
 
                 if (response.data.success) {
@@ -66,7 +67,67 @@ function Login(): JSX.Element {
             redirect();
         }
 
-        activate();
+        async function login(code: string, state: string) {
+            try {
+                setSession({ isPageLoading: true });
+                const response = await axios.post<AuthResponse>('/api/auth/oauth', {
+                    code,
+                    state,
+                    redirect_uri: `${siteUrl}/login/oauth`,
+                });
+
+                if (response.data.user) {
+                    setSession({ user: response.data.user });
+                }
+
+                setSession({ isPageLoading: false });
+            } catch (error) {
+                setSession({ isPageLoading: false });
+
+                const errors = getResponseErrors(error, t);
+
+                if (Array.isArray(errors)) {
+                    showSnackbar({
+                        message: errors,
+                        severity: 'error',
+                    });
+                }
+
+                redirect();
+            }
+        }
+
+        switch (action) {
+            case LoginAction.activation: {
+                // Try to activate user if activation token is provided in url.
+                if (!token || !token.match(validationPatterns.userToken)) {
+                    redirect();
+                    break;
+                }
+
+                activate();
+                break;
+            }
+            case LoginAction.oauth: {
+                const searchParams = new URLSearchParams(location.search.slice(1));
+                const code = searchParams.get('code');
+                const state = searchParams.get('state');
+
+                if (!code || !state) {
+                    redirect();
+                    break;
+                }
+
+                login(code, state);
+                break;
+            }
+            default:
+                if (action) {
+                    redirect();
+                }
+
+                break;
+        }
     });
 
     return <UserAccountForm variant="login" />;

@@ -1,14 +1,21 @@
+import querystring from 'querystring';
+
+import axios from 'axios';
 import bcrypt from 'bcryptjs';
 import { NextFunction, Request, Response } from 'express';
 
+import config from '../config';
 import transporter from '../config/mailing';
 import { rememberMeCookie, userTokenSize } from '../config/const';
+import oauth, { OauthUserInfo, OauthProviderId } from '../lib/oauth';
 import * as users from '../db/users';
 import * as tokens from '../db/tokens';
 import { getUserResponse } from './users';
-import { getRandomString } from '../utils/misc';
+import { getValue, getRandomString } from '../utils/misc';
 
 export const minPasswordLength = 6;
+
+const siteUrl = config.url.replace(/:(80)?$/, '');
 
 export async function logIn(req: Request, res: Response, next: NextFunction): Promise<void> {
     if (req.user) {
@@ -50,6 +57,115 @@ export async function logIn(req: Request, res: Response, next: NextFunction): Pr
             const newToken = await tokens.issue(user.id);
             res.cookie(rememberMeCookie.name, newToken, rememberMeCookie.options);
         }
+
+        res.status(200).json({
+            user: getUserResponse(user),
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function logInWithOauth(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        const provider =
+            config.auth?.providers && config.auth.providers.find((p) => p.id === req.body.state);
+
+        if (!provider) {
+            res.status(401).json({
+                error: ['unknown_oauth_provider'],
+            });
+            return;
+        }
+
+        const { clientId, clientSecret, accessTokenUrl } = provider;
+
+        // Get access token.
+        const tokenResponse = await axios.request<{
+            // eslint-disable-next-line camelcase
+            access_token?: string;
+            // eslint-disable-next-line camelcase
+            expires_in?: number;
+            error?: string;
+        }>({
+            method: 'POST',
+            url: accessTokenUrl,
+            data: querystring.encode({
+                grant_type: 'authorization_code',
+                code: req.body.code,
+                redirect_uri: req.body.redirect_uri,
+                client_id: clientId,
+                client_secret: clientSecret,
+            }),
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+        const accessToken = tokenResponse.data.access_token;
+
+        if (!accessToken) {
+            res.status(401).json({
+                error: ['bad_oauth_verification_code'],
+            });
+            return;
+        }
+
+        let userInfo: OauthUserInfo | null = null;
+
+        if (provider.id in oauth) {
+            userInfo = await oauth[provider.id as OauthProviderId].getUserInfo(accessToken);
+        } else if (provider.userRequest && provider.userResponse) {
+            const userResponse = await axios.request(
+                JSON.parse(
+                    JSON.stringify(provider.userRequest).replace(/ACCESS_TOKEN/g, accessToken)
+                )
+            );
+            const { data } = userResponse;
+            userInfo = {
+                email: getValue(data, provider.userResponse.email) || '',
+                name: getValue(data, provider.userResponse.name) || '',
+            };
+        }
+
+        if (!userInfo) {
+            res.status(400).json({
+                error: ['oauth_user_request_failed'],
+            });
+            return;
+        }
+
+        if (
+            !userInfo.email ||
+            typeof userInfo.email !== 'string' ||
+            !/^.+@.+$/.test(userInfo.email)
+        ) {
+            res.status(400).json({
+                error: ['oauth_email_retrieval_failed'],
+            });
+            return;
+        }
+
+        // Find/create user with given email.
+        const user =
+            (await users.findByEmail(userInfo.email)) ||
+            (await users.findById(await users.add(2, userInfo.name, userInfo.email, '', {})));
+
+        if (!user) {
+            res.status(500).json({
+                error: ['db_query_failed'],
+            });
+            return;
+        }
+
+        // Log in user.
+        req.user = user;
+        req.session.userId = user.id;
+        await users.updateLastLogin(user.id);
 
         res.status(200).json({
             user: getUserResponse(user),
@@ -112,7 +228,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
         }
 
         const activationToken = getRandomString(userTokenSize);
-        const success = await users.add(2, email, password, {
+        const success = await users.add(2, '', email, password, {
             activation: activationToken,
         });
 
@@ -124,11 +240,11 @@ export async function register(req: Request, res: Response, next: NextFunction):
         }
 
         // Send activation e-mail.
-        const activationLink = `${process.env.HOST}/login/${activationToken}`;
+        const activationLink = `${siteUrl}/login/activation/${activationToken}`;
 
         // TODO: prepare email templates (separate content from code)
         await transporter.sendMail({
-            from: 'StreamStory <streamstory@ijs.si>',
+            from: 'StreamStory <streamstoryai@gmail.com>',
             to: email,
             subject: 'Activate your account',
             text: `Thank you for registering.\nFollow the link below to activate your account:\n${activationLink}`,
@@ -192,14 +308,14 @@ export async function initiatePasswordReset(
         }
 
         // Send reset e-mail.
-        const resetLink = `${process.env.HOST}/password-reset/${passwordResetToken}`;
+        const resetLink = `${siteUrl}/password-reset/${passwordResetToken}`;
 
         // TODO: prepare email templates (separate content from code)
         await transporter.sendMail({
-            from: 'StreamStory <streamstory@ijs.si>',
+            from: 'StreamStory <streamstoryai@gmail.com>',
             to: email,
             subject: 'Reset your password',
-            text: `You requested a password reset for your StreamStory account. Follow the link below to reset it:\n${resetLink}\nThis link is valid for the next 24 hours. After that you have to request a new one.\nIf you did not request a password reset, you can safely ignore this e-mail.`,
+            text: `You requested a password reset for your StreamStory account.\nTo reset your password follow the link below:\n${resetLink}\nThis link will be valid for the next 24 hours.\nIf you did not request a password reset, you can safely ignore this e-mail.`,
         });
 
         res.status(200).json({

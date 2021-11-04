@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    ChangeHandler,
     FieldPath,
     FieldValues,
     Path,
@@ -41,62 +40,6 @@ export const validationPatterns: ValidationPatterns = {
     emailLoose: /^.+@.+$/,
     emailStrict: /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/,
 };
-
-/**
- * Extend react hook form's control registration return value.
- * @param registerReturn Register's return value.
- * @param options Extending options.
- * @returns Extended control registration return value.
- */
-export function extendRegRet(
-    registerReturn: UseFormRegisterReturn,
-    options?: {
-        refTarget?: 'ref' | 'inputRef';
-        ref?: RefCallBack;
-        onBlur?: ChangeHandler;
-        onChange?: ChangeHandler;
-    },
-): UseFormRegisterReturn | UseFormRegisterReturnMui {
-    const { onBlur, onChange, name, ref } = registerReturn;
-
-    let newRef = ref;
-    if (options?.ref) {
-        newRef = (instance) => {
-            (options.ref as RefCallBack)(instance);
-            ref(instance);
-        };
-    }
-
-    let newOnBlur = onBlur;
-    if (options?.onBlur) {
-        newOnBlur = async (event) => {
-            (options.onBlur as ChangeHandler)(event);
-            onBlur(event);
-        };
-    }
-
-    let newOnChange = onChange;
-    if (options?.onChange) {
-        newOnChange = async (event) => {
-            (options.onChange as ChangeHandler)(event);
-            onChange(event);
-        };
-    }
-
-    return options?.refTarget === 'ref'
-        ? {
-              name,
-              onBlur: newOnBlur,
-              onChange: newOnChange,
-              ref: newRef,
-          }
-        : {
-              name,
-              onBlur: newOnBlur,
-              onChange: newOnChange,
-              inputRef: newRef,
-          };
-}
 
 /**
  * Initialize `register` function based on react hook form's `register`, with

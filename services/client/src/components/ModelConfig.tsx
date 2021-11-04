@@ -9,9 +9,9 @@ import FormHelperText from '@material-ui/core/FormHelperText';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
 
+import { DatasetAttribute } from '../api/models';
 import { Option } from '../types/select';
 import { initMuiRegister } from '../utils/forms';
-import { DatasetAttribute } from './DatasetConfig';
 import Fieldset from './Fieldset';
 import DualMultiselect from './DualMultiselect';
 import Multiselect from './Multiselect';

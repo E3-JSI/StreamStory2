@@ -10,7 +10,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import TuneIcon from '@material-ui/icons/Tune';
 
-import { Model } from '../types/api';
+import { Model } from '../api/models';
 import AlertPopup from './AlertPopup';
 import TransHtml from './TransHtml';
 

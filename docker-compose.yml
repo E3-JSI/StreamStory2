@@ -1,80 +1,72 @@
 version: '3.4'
 
 services:
+    api:
+        # container_name: streamstory_api
+        build:
+            context: .
+            dockerfile: ./services/api/Dockerfile
+            args:
+                ROOT: ./services/api
+        depends_on:
+            - db
+            - modelling
+        volumes:
+            - data:/app/data
+        links:
+            - db
+            - modelling
+        environment:
+            SESSION_SECRET: ${SESSION_SECRET:-secret}
+            DB_NAME: streamstory
+            DB_USER: root
+            DB_PASSWORD: ${DB_PASSWORD:-password}
+        restart: unless-stopped
+
     client:
         # container_name: streamstory_client
         build:
-            context: ./services/client
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: ./services/client/Dockerfile
+            args:
+                ROOT: ./services/client
         depends_on:
             - api
         links:
             - api
         ports:
-            - 80:80
-        restart: unless-stopped
-
-    api:
-        # container_name: streamstory_api
-        build:
-            context: ./services/api
-            dockerfile: Dockerfile
-        depends_on:
-            - db
-        volumes:
-            - data:/app/data
-        links:
-            - db
-        # ports:
-        #     - 8080:80
-        restart: unless-stopped
+            - ${CLIENT_PORT:-80}:80
         environment:
-            HOST: ${HOST}
-            SESSION_SECRET: ${SESSION_SECRET}
-            EMAIL_HOST: ${EMAIL_HOST}
-            EMAIL_PORT: ${EMAIL_PORT}
-            EMAIL_USER: ${EMAIL_USER}
-            EMAIL_PASSWORD: ${EMAIL_PASSWORD}
-            # db
-            POSTGRES_HOST: ${POSTGRES_HOST:-db}
-            POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-            POSTGRES_DB: ${POSTGRES_DB:-streamstory}
-            POSTGRES_USER: ${POSTGRES_USER:-root}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-            # modelling
-            MODELLING_HOST: ${MODELLING_HOST:-modelling}
-            MODELLING_PORT: ${MODELLING_PORT:-8096}
-
-    modelling:
-        # container_name: streamstory_modelling
-        build:
-            context: ./services/modelling
-            dockerfile: Dockerfile
-            args:
-                MODELLING_PORT: ${MODELLING_PORT}
-        volumes:
-            - data:/app/data
-        # ports:
-        #     - 8096:8096
+            PORT: ${CLIENT_PORT:-80}
         restart: unless-stopped
 
     db:
         # container_name: streamstory_db
         # image: postgres:11.12
         build:
-            context: ./services/db
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: ./services/db/Dockerfile
+            args:
+                ROOT: ./services/db
         volumes:
             - ./services/db/data:/var/lib/postgresql/data
             - ./services/db/schema:/docker-entrypoint-initdb.d
-        # ports:
-        #     - 5432:5432
         environment:
-            POSTGRES_HOST: ${POSTGRES_HOST:-db}
-            POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-            POSTGRES_DB: ${POSTGRES_DB:-streamstory}
-            POSTGRES_USER: ${POSTGRES_USER:-root}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+            PGDATA: /var/lib/postgresql/data/pgdata
+            POSTGRES_DB: streamstory
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+        restart: unless-stopped
+
+    modelling:
+        # container_name: streamstory_modelling
+        build:
+            context: .
+            dockerfile: ./services/modelling/Dockerfile
+            args:
+                ROOT: ./services/modelling
+        volumes:
+            - data:/app/data
         restart: unless-stopped
 
 volumes:

@@ -29,7 +29,8 @@ export function convertKeysToCamelCase<T>(record: Record<string, unknown>): T {
 }
 
 /**
- * Generate random number on given interval. If `min` > `max`, bounds are switched.
+ * Generate random number on given interval.
+ * If `min` > `max`, bounds are switched.
  * @param min Lower bound.
  * @param max Upper bound.
  * @returns Random integer between `min` and `max`.
@@ -39,7 +40,8 @@ export function getRandomInt(min: number, max: number): number {
 }
 
 /**
- * Generate random string of given length. Characters are randpmly chosen from [A-Za-z0-9],
+ * Generate random string of given length.
+ * Characters are randpmly chosen from [A-Za-z0-9].
  * @param len Length of random string (absolute value).
  * @returns Random string of length `len`.
  */
@@ -62,4 +64,25 @@ export function getRandomString(len: number): string {
 export function isNumeric(value: string): boolean {
     const number = parseFloat(value);
     return !Number.isNaN(number) && Number.isFinite(number);
+}
+
+/**
+ * Gets nested value in given object.
+ * @param obj Object
+ * @param path Path to nested value, consisting of dot separated object keys
+ * @returns Nested object value if it exists, `undefined` otherwise.
+ */
+export function getValue<T extends unknown>(obj: unknown, path: string): T | undefined {
+    const paths = path.split('.');
+    let current = obj;
+
+    for (let i = 0; i < paths.length; i++) {
+        if (typeof current === 'object' || current !== null) {
+            current = (current as Record<string, unknown>)[paths[i]];
+        } else {
+            return undefined;
+        }
+    }
+
+    return current as T;
 }

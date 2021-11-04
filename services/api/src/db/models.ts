@@ -86,7 +86,7 @@ export async function add(
         INSERT INTO models(user_id, name, description, dataset, online, active, public, model)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id;`,
-        [userId, name, description, dataset, online, online, false, model],
+        [userId, name, description, dataset, online, online, false, model]
     );
     return rowCount && rows[0].id;
 }

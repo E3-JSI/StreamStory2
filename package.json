@@ -4,14 +4,12 @@
     "description": "StreamStory - Making a story of streaming data",
     "main": "index.js",
     "scripts": {
-        "dev:build": "docker-compose -f docker-compose.dev.yml -p streamstory build",
-        "dev:start": "docker-compose -f docker-compose.dev.yml -p streamstory up -d",
-        "dev:log": "docker-compose -p streamstory logs -f",
-        "dev:stop": "docker-compose -p streamstory down --remove-orphans -v",
-        "prod:build": "docker-compose -p streamstory build",
-        "prod:start": "docker-compose -p streamstory up -d",
-        "prod:log": "docker-compose -p streamstory logs -f",
-        "prod:stop": "docker-compose -p streamstory down --remove-orphans -v",
+        "build": "docker-compose -p streamstory build --build-arg CONFIG=$npm_config_config",
+        "build:dev": "docker-compose -f docker-compose.dev.yml -p streamstory build --build-arg CONFIG=$npm_config_config",
+        "start": "docker-compose -p streamstory up -d",
+        "start:dev": "docker-compose -f docker-compose.dev.yml -p streamstory up -d",
+        "log": "docker-compose -p streamstory logs -f",
+        "stop": "docker-compose -p streamstory down --remove-orphans -v",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {

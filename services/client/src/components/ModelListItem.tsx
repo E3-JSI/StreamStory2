@@ -31,8 +31,8 @@ import SaveIcon from '@material-ui/icons/Save';
 import TimelineIcon from '@material-ui/icons/Timeline';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 
-import { Model } from '../types/api';
-import { extendRegRet } from '../utils/forms';
+import { Model } from '../api/models';
+import { initMuiRegister } from '../utils/forms';
 import { Errors, getResponseErrors } from '../utils/errors';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
@@ -101,6 +101,7 @@ function ModelListItem({
     } = useForm<FormRequestData>({
         defaultValues,
     });
+    const muiRegister = initMuiRegister(register);
     const dateFormatter = new Intl.DateTimeFormat(i18n.language, {
         dateStyle: 'short',
     });
@@ -408,7 +409,7 @@ function ModelListItem({
                                                         autoFocus
                                                         fullWidth
                                                         multiline
-                                                        {...extendRegRet(register('description'))}
+                                                        {...muiRegister('description')}
                                                     />
                                                     <Grid
                                                         className={classes.formButtons}

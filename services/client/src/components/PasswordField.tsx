@@ -9,13 +9,13 @@ import InputLabel from '@material-ui/core/InputLabel';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import Input from '@material-ui/core/Input';
 import FilledInput from '@material-ui/core/FilledInput';
-import OutlinedInput, { OutlinedInputProps } from '@material-ui/core/OutlinedInput';
+import OutlinedInput from '@material-ui/core/OutlinedInput';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import IconButton from '@material-ui/core/IconButton';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 
-import { filterDefinedProps } from '../utils/misc';
+import { cleanProps } from '../utils/misc';
 
 export type PasswordFieldProps = Omit<
     TextFieldProps,
@@ -100,7 +100,7 @@ function PasswordField(
     const InputComponent = variantComponent[textFieldVariant];
     const InputElement = (
         <InputComponent
-            {...filterDefinedProps<OutlinedInputProps>({
+            {...cleanProps({
                 'aria-describedby': helperTextId,
                 autoComplete,
                 autoFocus,
@@ -141,7 +141,7 @@ function PasswordField(
 
     return (
         <FormControl
-            {...filterDefinedProps({
+            {...cleanProps({
                 className: clsx(className, classes && classes.root),
                 color,
                 component: 'div',
@@ -158,7 +158,7 @@ function PasswordField(
         >
             {label && (
                 <InputLabel
-                    {...filterDefinedProps({
+                    {...cleanProps({
                         htmlFor: id,
                         id: inputLabelId,
                     })}
@@ -171,10 +171,7 @@ function PasswordField(
             {InputElement}
 
             {helperText && (
-                <FormHelperText
-                    {...filterDefinedProps({ id: helperTextId })}
-                    {...FormHelperTextProps}
-                >
+                <FormHelperText {...cleanProps({ id: helperTextId })} {...FormHelperTextProps}>
                     {helperText}
                 </FormHelperText>
             )}
