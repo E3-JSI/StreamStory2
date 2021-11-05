@@ -93,7 +93,9 @@ export async function getModellingRequest(config: ModelConfig): Promise<Modellin
     // Filter attributes.
     req.config.attributes = [
         attributes[timeIndex],
-        ...config.selectedAttributes.map((key) => attributes[Number(key)]),
+        ...config.selectedAttributes
+            .filter((key) => key !== `${timeIndex}`)
+            .map((key) => attributes[Number(key)]),
     ];
 
     return req;
