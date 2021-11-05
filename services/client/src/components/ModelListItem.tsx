@@ -293,8 +293,8 @@ function ModelListItem({
                             />
                         </Box>
                     ) : (
-                        <IconButton size="small" disabled>
-                            <MoreVertIcon />
+                        <IconButton size="small" edge="end" disabled>
+                            <MoreVertIcon fontSize="small" />
                         </IconButton>
                     )}
                 </TableCell>
