@@ -213,7 +213,7 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
     try {
         const model = await models.findById(modelId);
 
-        if (!model || user.id !== model.userId) {
+        if (!model || user.id !== model.userId && !model.public) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
