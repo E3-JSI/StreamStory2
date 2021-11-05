@@ -5,18 +5,18 @@ import Box, { BoxProps } from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Tabs from '@material-ui/core/Tabs';
 
-import { Model } from '../types/api';
+import { Model } from '../api/models';
 import Tab from './Tab';
 import TabPanel, { getTabA11yProps } from './TabPanel';
 
-// import useStyles from './StateVisualization.styles';
+import useStyles from './StateVisualization.styles';
 
 export interface StateVisualizationProps extends BoxProps {
     model?: Model;
 }
 
 function StateVisualization({ /* model, */ ...other }: StateVisualizationProps): JSX.Element {
-    // const classes = useStyles();
+    const classes = useStyles();
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
 
@@ -28,7 +28,7 @@ function StateVisualization({ /* model, */ ...other }: StateVisualizationProps):
 
     return (
         <Box {...other}>
-            <Paper square>
+            <Paper className={classes.tabsPaper} square>
                 <Tabs
                     value={tabValue}
                     variant="scrollable"

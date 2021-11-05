@@ -11,7 +11,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import SaveIcon from '@material-ui/icons/Save';
 
-import { Model } from '../types/api';
+import { Model } from '../api/models';
 import LoadingButton from './LoadingButton';
 
 import useStyles from './StateDetails.styles';
@@ -41,79 +41,80 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                 </Typography>
             </Toolbar>
             <Divider />
-            <Box p={2}>
-                <form>
-                    <TextField
-                        name="stateName"
-                        label={t('state_name')}
-                        defaultValue="Rainfall"
-                        // variant="standard"
-                        margin="none"
-                        InputLabelProps={{
-                            required: true,
-                        }}
-                        fullWidth
-                    />
-                    <TextField
-                        name="stateDescription"
-                        label={t('description')}
-                        // variant="standard"
-                        margin="normal"
-                        // rows={3}
-                        multiline
-                        fullWidth
-                    />
-                    <Grid className={classes.formButtons} spacing={1} container>
-                        {/* <Grid item>
-                            <Button
-                                variant="contained"
-                                size="small"
-                                color="secondary"
-                                startIcon={<CancelIcon />}
-                                // onClick={handleCancelButtonClick}
-                            >
-                                {t('cancel')}
-                            </Button>
-                        </Grid> */}
-                        <Grid item>
-                            <LoadingButton
-                                type="submit"
-                                variant="contained"
-                                size="small"
-                                color="primary"
-                                // loading={isSubmitting}s
-                                // disabled={!isDirty}
-                                disabled
-                                startIcon={<SaveIcon />}
-                            >
-                                {t('save')}
-                            </LoadingButton>
+            {selectedState && (
+                <Box p={2}>
+                    <form>
+                        <TextField
+                            name="stateName"
+                            label={t('state_name')}
+                            defaultValue={selectedState.suggestedLabel.label}
+                            variant="standard"
+                            margin="none"
+                            InputLabelProps={{
+                                required: true,
+                            }}
+                            fullWidth
+                        />
+                        <TextField
+                            name="stateDescription"
+                            label={t('description')}
+                            variant="standard"
+                            margin="normal"
+                            // rows={3}
+                            multiline
+                            fullWidth
+                        />
+                        <Grid className={classes.formButtons} spacing={1} container>
+                            {/* <Grid item>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    color="secondary"
+                                    startIcon={<CancelIcon />}
+                                    // onClick={handleCancelButtonClick}
+                                >
+                                    {t('cancel')}
+                                </Button>
+                            </Grid> */}
+                            <Grid item>
+                                <LoadingButton
+                                    type="submit"
+                                    variant="contained"
+                                    size="small"
+                                    color="primary"
+                                    // loading={isSubmitting}s
+                                    // disabled={!isDirty}
+                                    disabled
+                                    startIcon={<SaveIcon />}
+                                >
+                                    {t('save')}
+                                </LoadingButton>
+                            </Grid>
                         </Grid>
-                    </Grid>
-                </form>
-                <Typography className={classes.attributesTitle} component="h3">
-                    {t('attributes')}
-                </Typography>
-
-                <Box>
-                    <Grid container spacing={2}>
-                        {selectedState?.histograms?.map((histogram: any, i: number) => (
-                            <>
-                                <Grid item xs={6}>
-                                    <Item>
-                                        <h2>{histogram?.attrName}</h2>
-                                        <Histogram
-                                            histogram={histogram}
-                                            totalHistogram={model?.model?.totalHistograms[i]}
-                                            key={selectedState?.stateNo + Math.random()}
-                                        />
-                                    </Item>
-                                </Grid>
-                            </>
-                        ))}
-                    </Grid>
+                    </form>
+                    {selectedState.histograms?.length && (
+                        <Box>
+                            <Typography className={classes.attributesTitle} component="h3">
+                                {t('attributes')}
+                            </Typography>
+                            <Grid container spacing={2}>
+                                {selectedState.histograms.map((histogram: any, i: number) => (
+                                    <Grid key={histogram.attrName} item xs={6}>
+                                        <Item>
+                                            <h2>{histogram.attrName}</h2>
+                                            <Histogram
+                                                histogram={histogram}
+                                                totalHistogram={model?.model?.totalHistograms[i]}
+                                                key={selectedState.stateNo + Math.random()}
+                                            />
+                                        </Item>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
+                    )}
                 </Box>
-            </Box>
+            )}
         </Paper>
     );
 }

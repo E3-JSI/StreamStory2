@@ -14,9 +14,10 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 
+import { DatasetAttribute } from '../api/models';
 import { DialogOnCloseExt } from '../types/dialog';
 import ModelConfig from './ModelConfig';
-import DatasetConfig, { DatasetAttribute } from './DatasetConfig';
+import DatasetConfig from './DatasetConfig';
 
 import useStyles from './AddModelDialog.styles';
 

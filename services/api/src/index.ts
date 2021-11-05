@@ -7,14 +7,15 @@ import pgSession from 'connect-pg-simple';
 
 import handleErrors from './middleware/handleErrors';
 import handleUnknown from './middleware/handleUnknown';
+import authenticateFromMemory from './middleware/authenticateFromMemory';
 import routes from './routes';
 import db, { waitForDB } from './config/db';
-import authenticateFromMemory from './middleware/authenticateFromMemory';
 
 async function main() {
     // Load environment variables (from .env file).
     dotenv.config();
     console.log(`Environment: ${process.env.NODE_ENV}`);
+    // console.log(`Environment vars: ${JSON.stringify(process.env)}`);
 
     console.log('Waiting for database...');
     await waitForDB();
@@ -31,7 +32,7 @@ async function main() {
     const PgSession = pgSession(session);
     app.use(
         session({
-            secret: process.env.SESSION_SECRET || 'c1ZgMKc2J4gzv5Et',
+            secret: process.env.SESSION_SECRET || 'secret',
             resave: false,
             saveUninitialized: false,
             store: new PgSession({
@@ -54,7 +55,7 @@ async function main() {
     app.use(handleErrors);
 
     // Start up server.
-    const port = process.env.API_PORT || 80;
+    const port = Number(process.env.PORT || 8080);
     app.listen(port, () => {
         console.info(`Listening on port ${port}.`);
     });

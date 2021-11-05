@@ -6,16 +6,14 @@ import TextField from '@material-ui/core/TextField';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import LockIcon from '@material-ui/icons/Lock';
 
-import { User } from '../types/api';
-import { extendRegRet } from '../utils/forms';
-import { getUserSession } from '../contexts/SessionContext';
+import { User } from '../api/users';
+import { initMuiRegister } from '../utils/forms';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
 
 export interface FormRequestData {
-    firstName?: string;
-    lastName?: string;
+    name?: string;
 }
 
 export interface FormResponseData {
@@ -32,18 +30,18 @@ function UserProfileDetailsForm(): JSX.Element {
 
     const form = useForm<FormRequestData>({
         defaultValues: {
-            firstName: user?.firstName,
-            lastName: user?.lastName,
+            name: user?.name,
         },
     });
     const { register, reset } = form;
+    const muiRegister = initMuiRegister(register);
 
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (
         response,
         requestData,
     ) => {
         if (response.data.user) {
-            setSession(getUserSession(response.data.user));
+            setSession({ user: response.data.user });
             showSnackbar({
                 message: t('details_successfully_saved'),
                 severity: 'success',
@@ -59,19 +57,12 @@ function UserProfileDetailsForm(): JSX.Element {
             onResponse={handleResponse}
         >
             <TextField
-                id="first-name"
-                label={t('first_name')}
+                id="display-name"
+                label={t('display_name')}
                 margin="normal"
                 autoFocus
                 fullWidth
-                {...extendRegRet(register('firstName'))}
-            />
-            <TextField
-                id="last-name"
-                label={t('last_name')}
-                margin="normal"
-                fullWidth
-                {...extendRegRet(register('lastName'))}
+                {...muiRegister('name')}
             />
             <TextField
                 id="email"

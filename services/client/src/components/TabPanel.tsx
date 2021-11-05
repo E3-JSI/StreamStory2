@@ -33,7 +33,7 @@ function TabPanel({
             {...other}
         >
             {value === index && (
-                <Box p={2} mt={0.5} clone>
+                <Box p={2} clone>
                     <Paper elevation={0} square>
                         {children}
                     </Paper>

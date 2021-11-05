@@ -10,6 +10,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import CloseIcon from '@material-ui/icons/Close';
 
+import { Model as ModelType, ModelsResponse } from '../api/models';
 import useMountEffect from '../hooks/useMountEffect';
 import useSession from '../hooks/useSession';
 import ModelVisualization from '../components/ModelVisualization';
@@ -37,10 +38,12 @@ function Model(): JSX.Element {
     useMountEffect(() => {
         async function getModel() {
             try {
-                const response = await axios.get(`/api/models/${id}`);
+                const response = await axios.get<ModelsResponse>(`/api/models/${id}`);
 
                 if (response.data.model) {
-                    setSession({ currentModel: [response.data.model, ...currentModel] });
+                    setSession({
+                        currentModel: [response.data.model as ModelType, ...currentModel],
+                    });
                 }
 
                 setIsLoading(false);

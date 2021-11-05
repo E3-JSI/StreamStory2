@@ -29,7 +29,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import SearchIcon from '@material-ui/icons/Search';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
-import { Model } from '../types/api';
+import { Model } from '../api/models';
 import { DialogOnCloseEvent, DialogOnCloseReasonExt } from '../types/dialog';
 import { Errors, getResponseErrors } from '../utils/errors';
 import useSession from '../hooks/useSession';

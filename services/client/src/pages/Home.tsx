@@ -96,10 +96,7 @@ function Home(): JSX.Element {
                                 maxWidth={false}
                             >
                                 <video width="1920" className={classes.video} controls>
-                                    <source
-                                        src="http://streamstory.ijs.si/material/streamstory.mp4"
-                                        type="video/mp4"
-                                    />
+                                    <source src="/video/streamstory.mp4" type="video/mp4" />
                                     Your browser does not support embedded videos.
                                 </video>
                             </Dialog>
@@ -246,16 +243,13 @@ function Home(): JSX.Element {
                                     </Link>{' '}
                                     and get started. Check out our{' '}
                                     <Link
-                                        href="http://streamstory.ijs.si/material/streamstory.mp4"
+                                        href="/video/streamstory.mp4"
                                         onClick={handleWatchVideoButtonClick}
                                     >
                                         video presentation
                                     </Link>{' '}
                                     to see how its done and experiment with our{' '}
-                                    <Link href="http://streamstory.ijs.si/material/weather.csv">
-                                        example dataset
-                                    </Link>
-                                    .
+                                    <Link href="/data/weather.csv">example dataset</Link>.
                                 </Typography>
                             </ListItemText>
                         </ListItem>
@@ -360,7 +354,7 @@ function Home(): JSX.Element {
                         <Grid xs={12} sm="auto" item>
                             <Button
                                 component="a"
-                                href="mailto:streamstory@ijs.si"
+                                href="mailto:streamstoryai@gmail.com"
                                 target="_blank"
                                 variant="contained"
                                 size="large"

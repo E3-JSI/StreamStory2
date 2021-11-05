@@ -11,7 +11,7 @@ import PauseIcon from '@material-ui/icons/Pause';
 import PublicIcon from '@material-ui/icons/Public';
 import Typography from '@material-ui/core/Typography';
 
-import { Model } from '../types/api';
+import { Model, ModelsResponse } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import useSnackbar from '../hooks/useSnackbar';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -94,7 +94,7 @@ function ActionMenu(
 
     async function toggleModelState(state: boolean) {
         try {
-            const response = await axios.put(
+            const response = await axios.put<ModelsResponse>(
                 `/api/models/${model.id}`,
                 isOnline
                     ? {
@@ -106,7 +106,7 @@ function ActionMenu(
             );
 
             if (response.data.model) {
-                updateModel(response.data.model);
+                updateModel(response.data.model as Model);
             }
         } catch (error) {
             const responseErrors = getResponseErrors(error, t);
@@ -126,7 +126,7 @@ function ActionMenu(
 
     async function deleteModel() {
         try {
-            const response = await axios.delete(`/api/models/${model.id}`);
+            const response = await axios.delete<ModelsResponse>(`/api/models/${model.id}`);
 
             if (response.data.success) {
                 updateModel(model, true);

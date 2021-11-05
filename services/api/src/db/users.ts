@@ -11,8 +11,7 @@ export interface UserSettings {
 export interface User {
     id: number;
     groupId: number;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
     password: string;
     active: boolean;
@@ -25,8 +24,7 @@ function getUser(row: QueryResultRow): User {
     return {
         id: row.id,
         groupId: row.group_id,
-        firstName: row.first_name,
-        lastName: row.last_name,
+        name: row.name,
         email: row.email,
         password: row.password,
         active: row.active,
@@ -79,17 +77,18 @@ export async function updateLastLogin(id: number): Promise<boolean> {
 
 export async function add(
     groupId: number,
+    name: string,
     email: string,
     password: string,
     settings: UserSettings
 ): Promise<number> {
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = password ? await bcrypt.hash(password, salt) : '';
     const { rowCount, rows } = await db.query(
         `
-        INSERT INTO users(group_id, email, password, settings)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO users(group_id, name, email, password, settings)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING id;`,
-        [groupId, email, hashedPassword, settings]
+        [groupId, name, email, hashedPassword, settings]
     );
     return rowCount && rows[0].id;
 }
@@ -258,18 +257,13 @@ export async function setPassword(id: number, password: string): Promise<boolean
     return rowCount > 0;
 }
 
-export async function updateDetails(
-    id: number,
-    firstName: string,
-    lastName: string
-): Promise<boolean> {
+export async function updateDetails(id: number, name: string): Promise<boolean> {
     const { rowCount } = await db.query(
         `
         UPDATE users
-        SET first_name = $1,
-            last_name = $2
-        WHERE id = $3`,
-        [firstName, lastName, id]
+        SET name = $1
+        WHERE id = $2`,
+        [name, id]
     );
     return rowCount > 0;
 }

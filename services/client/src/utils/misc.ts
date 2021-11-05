@@ -1,19 +1,19 @@
-import { OmitRequiredProps, AllowUndefinedProps } from '../types/utility';
-
 /**
- * Exclude list of properties from given object.
- * @param obj Object
- * @param excludedKeys List of properties to be excluded from `obj`.
- * @returns New object without properties listed in `excludedKeys`.
+ * Filter properties of given object based on predicate.
+ * @param props Object
+ * @param predicate Determines if property `key` with `value` should be included
+ * in result.
+ * @returns New object with filtered properties.
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function excludeProps<T>(obj: object, excludedKeys: string[]): Record<string, T> {
-    const oldProps = obj as Record<string, T>;
-    const newProps: Record<string, T> = {};
+export function filterProps(
+    props: Record<string, unknown>,
+    predicate: (key: string, value: unknown) => boolean,
+): Record<string, unknown> {
+    const newProps: Record<string, unknown> = {};
 
-    Object.keys(oldProps).forEach((key: string) => {
-        if (!excludedKeys.includes(key)) {
-            newProps[key] = oldProps[key];
+    Object.keys(props).forEach((key: string) => {
+        if (predicate(key, props[key])) {
+            newProps[key] = props[key];
         }
     });
 
@@ -22,23 +22,24 @@ export function excludeProps<T>(obj: object, excludedKeys: string[]): Record<str
 
 /**
  * Discard all undefined properties of a given object.
- * @param obj Object with (un)defined properties.
+ * @param props Object
  * @returns New object without undefined properties.
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function filterDefinedProps<T extends object>(
-    obj: AllowUndefinedProps<OmitRequiredProps<T>>,
+export function cleanProps(props: Record<string, unknown>): Record<string, unknown> {
+    return filterProps(props, (key, val) => val !== undefined);
+}
+
+/**
+ * Exclude list of properties from given object.
+ * @param props Object
+ * @param excludedKeys List of properties to be excluded from `props`.
+ * @returns New object without properties listed in `excludedKeys`.
+ */
+export function excludeProps(
+    props: Record<string, unknown>,
+    excludedKeys: string[],
 ): Record<string, unknown> {
-    const oldProps = obj as Record<string, unknown>;
-    const newProps: Record<string, unknown> = {};
-
-    Object.keys(oldProps).forEach((key: string) => {
-        if (oldProps[key] !== undefined) {
-            newProps[key] = oldProps[key];
-        }
-    });
-
-    return newProps;
+    return filterProps(props, (key) => !excludedKeys.includes(key));
 }
 
 /**
@@ -88,17 +89,18 @@ export function formatDataSize(
 }
 
 /**
- * Check if given item is object.
- * @param item Item to check.
- * @returns `true` if given item is object, `false` otherwise.
+ * Check if given value is an object.
+ * @param value Value
+ * @returns `true` if value is an object, `false` otherwise.
  */
-export function isObject(item: unknown): boolean {
-    return !!item && typeof item === 'object' && !Array.isArray(item);
+export function isObject(value: unknown): boolean {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**
- * Recursively merge given source objects into target object, where source objects are processed
- * from left to right and next object's properties always overwrite previous object's ones.
+ * Recursively merge given source objects into target object, where source
+ * objects are processed from left to right and next object's properties always
+ * overwrite previous object's ones.
  * @param target Target object.
  * @param sources Source objects.
  * @returns Merged target object.
@@ -138,8 +140,8 @@ export function mergeDeep(
 /**
  * Set opacity of a given color.
  * @param color CSS color in HEX or RGB(A) format.
- * @param opacity Opacity on [0, 1] interval, where 0 means 100% transparent and 1 menas 100%
- * opaque.
+ * @param opacity Opacity on [0, 1] interval, where 0 means 100% transparent
+ * and 1 menas 100% opaque.
  * @returns Color with opacity in RGBA format.
  */
 export function setColorOpacity(color: string, opacity: number): string {
@@ -191,7 +193,7 @@ export function setTranslationMap(
  * Performs (simple) deep comparison between two given values.
  * @param value1 First value to compare.
  * @param value2 Second value to compare.
- * @param quick Indicates if quick comparison should be used (with JSON.stringify).
+ * @param quick Indicates if quick (JSON based) comparison should be used.
  * @returns `true` if `value1` equals `value2`, `false` otherwise.
  */
 export function isEqual(value1: unknown, value2: unknown, quick = true): boolean {
