@@ -214,30 +214,6 @@ export function createNodes(
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
 }
 
-function mousemove(event: any, d: any, div: any) {
-    div
-        .html(`
-            <div>
-                <table>
-                    <tr>
-                        <th>stateNo</th>
-                        <th>nMembers</th>
-                        <th>x,y</th>
-                        <th>Label</th>
-                    </tr>
-                    <tr>
-                        <th>${d.stateNo}</td>
-                        <th>${d.nMembers}</td>
-                        <td>[${event.pageX}, ${event.pageY}]</td>
-                        <td>${d.suggestedLabel.label}</td>
-                    </tr>
-                </table>
-            </div>
-        `)
-        .style("left", `${(event.pageX - 3)} px`)
-        .style("top", `${(event.pageY - 12)} px`);
-}
-
 function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
     const enterTmp = selection.append('g').attr('class', 'node_group').attr('opacity', 0);
     enterTmp
@@ -249,22 +225,85 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
 
+
+    const text =
+        "Hello! This notebookshows how to wrap andfit text inside a circle. Itmight be useful forlabelling a bubble chart.You can edit the textbelow, or read the notesand code to learn howit works! 😎";
+
+    const lineHeight = 20;
+    const targetWidth = Math.sqrt(measureWidth(text.trim()) * lineHeight);
+    const lines = createLines(createWords(text), targetWidth);
+
+    console.log("lines=", lines)
+
     enterTmp
-        .append('text')
-        .attr('class', 'node_title')
-        .attr('x', (d: any) => scale(x, d.x))
-        .attr('dy', (d: any) => scale(y, d.y))
-        .style('fill', 'white')
-        .attr('text-anchor', 'middle')
-        .text((d: any) =>
-            d.suggestedLabel && d.suggestedLabel.label ? d.suggestedLabel.label : '',
-        );
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("font-size", `${lineHeight}px`)
+        .attr(
+            "transform", (d: any) =>
+            `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(lines, lineHeight))
+            })`
+        )
+        .selectAll("tspan")
+        .data(lines)
+        .enter()
+        .append("tspan")
+        .attr("x", 0)
+        .attr("y", (d: any, i: number) => (i - lines.length / 2 + 0.8) * lineHeight)
+        .text((d: any) => d.text);
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
     return enterTmp;
 }
 
+function textRadius(lines: any[], lineHeight: number) {
+    let radius = 0;
+    for (let i = 0, n = lines.length; i < n; ++i) {
+        const dy = (Math.abs(i - n / 2 + 0.5) + 0.5) * lineHeight;
+        const dx = lines[i].width / 2;
+        radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
+    }
+    console.log("radius=", radius)
+    return radius;
+}
+
+function createWords(text: string) {
+    const words = text.split(/\s+/g);
+    if (!words[words.length - 1]) words.pop();
+    if (!words[0]) words.shift();
+    return words;
+}
+
+function createLines(words: any[], targetWidth: number) {
+    console.log("start: createLines")
+    let line: any;
+    let lineWidth0 = Infinity;
+    const lines = [];
+
+    for (let i = 0, n = words.length; i < n; ++i) {
+        const first = (line ? `${line.text} ` : "");
+        const lineText1 = `${first}${words[i]}` // (line ? line.text + " " : "") + words[i];
+        const lineWidth1 = measureWidth(lineText1);
+
+        if ((lineWidth0 + lineWidth1) / 2 < targetWidth) {
+            line.width = lineWidth0 = lineWidth1; // eslint-disable-line no-multi-assign
+            line.text = lineText1;
+        }
+        else {
+            lineWidth0 = measureWidth(words[i]);
+            line = { width: lineWidth0, text: words[i] };
+            lines.push(line);
+        }
+    }
+    console.log("end: createLines")
+    return lines;
+}
+
+function measureWidth(text: string) {
+    const ctx: any = document.createElement("canvas").getContext("2d");
+    return ctx.measureText(text).width;
+}
 function nodeUpdate(selection: any, x: any, y: any, r: any) {
     const enterTmp = selectNodeGroup(selection);
     selectNodeCircle(selection)
