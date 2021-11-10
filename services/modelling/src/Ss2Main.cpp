@@ -172,6 +172,7 @@ public:
 		// Calculate various statistics about the model.
 		model->CalcHistograms();
 		model->CalcLabels();
+		model->CalcStatePositions();
 		// ToDo: state labels, decision trees etc. should also be calculated here.
 		// Export the model to json.
 		req.outJson->AddToObj("model",  model->SaveToJson());
