@@ -26,6 +26,11 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
     const classes = useStyles();
     const { t } = useTranslation();
 
+
+    if(selectedState) {
+        console.log("selectedState=", selectedState.suggestedLabel.label)
+    }
+
     const Item = styled(Paper)(({ theme }) => ({
         ...theme.typography.body2,
         padding: theme.spacing(1),
@@ -34,7 +39,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
     }));
 
     return (
-        <Paper {...other}>
+        <Paper key={selectedState?.suggestedLabel?.label} {...other}>
             <Toolbar className={classes.toolbar} variant="dense">
                 <Typography className={classes.title} component="h2" variant="h6">
                     {t('details')}
