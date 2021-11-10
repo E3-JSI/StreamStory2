@@ -1,11 +1,11 @@
 import fs from 'fs';
-import { RequestOptions } from 'https';
 import { once } from 'events';
 import readline from 'readline';
+
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import csvParse from 'csv-parse/lib/sync';
 
 import { isNumeric } from '../utils/misc';
-import request from './request';
 
 export interface ModelConfig {
     filePath: string;
@@ -93,7 +93,9 @@ export async function getModellingRequest(config: ModelConfig): Promise<Modellin
     // Filter attributes.
     req.config.attributes = [
         attributes[timeIndex],
-        ...config.selectedAttributes.map((key) => attributes[Number(key)]),
+        ...config.selectedAttributes
+            .filter((key) => key !== `${timeIndex}`)
+            .map((key) => attributes[Number(key)]),
     ];
 
     return req;
@@ -138,9 +140,9 @@ export async function getDatasetAttributes(filePath: string): Promise<DatasetAtt
 }
 
 class Modelling {
-    options: RequestOptions;
+    options: AxiosRequestConfig;
 
-    constructor(options: RequestOptions) {
+    constructor(options: AxiosRequestConfig) {
         this.options = options;
     }
 
@@ -150,17 +152,24 @@ class Modelling {
     }
 
     async build(req: ModellingRequest): Promise<ModellingResponse> {
-        const data = JSON.stringify(req);
-        const options = {
+        // const data = JSON.stringify(req);
+        const options: AxiosRequestConfig<ModellingRequest> = {
             ...this.options,
-            path: '/buildModel',
+            url: '/buildModel',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': data.length,
+                // 'Content-Length': `${data.length}`,
             },
+            data: req,
         };
-        return request<ModellingResponse>(options, data);
+        const res = await axios.request<
+            ModellingResponse,
+            AxiosResponse<ModellingResponse>,
+            ModellingRequest
+        >(options);
+
+        return res.data;
     }
 }
 

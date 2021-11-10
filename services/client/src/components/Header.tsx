@@ -18,7 +18,7 @@ import BrightnessHighIcon from '@material-ui/icons/BrightnessHigh';
 import BrightnessMediumIcon from '@material-ui/icons/BrightnessMedium';
 import MenuIcon from '@material-ui/icons/Menu';
 
-import { User } from '../types/api';
+import { User } from '../api/users';
 import useSession from '../hooks/useSession';
 import { PageVariant } from './Page';
 import Logo from './Logo';
@@ -67,15 +67,11 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
             ? t(isSideNavExpanded ? 'collapse_menu' : 'expand_menu')
             : t(isSideNavOpen ? 'close_menu' : 'open_menu');
 
-    function getInitials({ email, firstName, lastName }: User) {
+    function getInitials({ email, name }: User) {
         const initials = [];
 
-        if (firstName) {
-            initials.push(firstName[0]);
-        }
-
-        if (lastName) {
-            initials.push(lastName[0]);
+        if (name) {
+            initials.push(name[0]);
         }
 
         if (!initials.length) {
@@ -145,10 +141,7 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
                         <Logo />
                     </Link>
                 </Box>
-                <Tooltip
-                    title={t('change_theme')}
-                    enterDelay={muiTheme.timing.tooltipEnterDelay}
-                >
+                <Tooltip title={t('change_theme')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                     <IconButton
                         ref={themeButtonRef}
                         edge={isSimpleHeader ? 'end' : undefined}

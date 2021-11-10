@@ -8,8 +8,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Radio from '@material-ui/core/Radio';
 
-import { User } from '../types/api';
-import { getUserSession } from '../contexts/SessionContext';
+import { User } from '../api/users';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
@@ -39,7 +38,7 @@ function UserProfileSettingsForm(): JSX.Element {
     ) => {
         if (response.data.user) {
             // Sync session.
-            setSession(getUserSession(response.data.user));
+            setSession({ user: response.data.user });
             showSnackbar({
                 message: t('settings_successfully_saved'),
                 severity: 'success',
@@ -74,11 +73,7 @@ function UserProfileSettingsForm(): JSX.Element {
                                 control={<Radio />}
                                 label={t('light')}
                             />
-                            <FormControlLabel
-                                value="dark"
-                                control={<Radio />}
-                                label={t('dark')}
-                            />
+                            <FormControlLabel value="dark" control={<Radio />} label={t('dark')} />
                             <FormControlLabel
                                 value="system"
                                 control={<Radio />}

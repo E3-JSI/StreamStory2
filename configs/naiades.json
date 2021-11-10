@@ -1,0 +1,37 @@
+{
+    "url": "http://atena.ijs.si:$CLIENT_PORT",
+    "mailer": {
+        "service": "gmail",
+        "auth": {
+            "type": "OAuth2",
+            "user": "streamstoryai@gmail.com",
+            "clientId": "332841367753-03m6gm74kiffbafj5laftissrl0olugi.apps.googleusercontent.com",
+            "clientSecret": "$MAILER_CLIENT_SECRET",
+            "refreshToken": "$MAILER_REFRESH_TOKEN"
+        }
+    },
+    "auth": {
+        "local": true,
+        "providers": [
+            {
+                "id": "naiades",
+                "name": "NAIADES",
+                "authorizationUrl": "https://test.naiades-project.eu:3443/oauth2/authorize",
+                "accessTokenUrl": "https://test.naiades-project.eu:3443/oauth2/token",
+                "clientId": "275f44b0-ad47-4283-afba-2b8ab251c238",
+                "clientSecret": "$NAIADES_CLIENT_SECRET",
+                "userRequest": {
+                    "method": "GET",
+                    "url": "https://test.naiades-project.eu:3443/user",
+                    "params": {
+                        "access_token": "ACCESS_TOKEN"
+                    }
+                },
+                "userResponse": {
+                    "email": "email",
+                    "name": "username"
+                }
+            }
+        ]
+    }
+}

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { Errors } from '../utils/errors';
-import { minPasswordLength, extendRegRet } from '../utils/forms';
+import { minPasswordLength, initMuiRegister } from '../utils/forms';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
 import PasswordField from './PasswordField';
@@ -41,8 +41,8 @@ function UserProfileChangePasswordForm(): JSX.Element {
         formState: { errors },
         register,
         reset,
-        setFocus,
     } = form;
+    const muiRegister = initMuiRegister(register);
 
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (response) => {
         if (response.data.success) {
@@ -52,7 +52,6 @@ function UserProfileChangePasswordForm(): JSX.Element {
                 // autoHideDuration: null
             });
             reset(defaultValues);
-            setFocus('oldPassword');
         }
     };
 
@@ -72,17 +71,15 @@ function UserProfileChangePasswordForm(): JSX.Element {
                 autoFocus
                 fullWidth
                 required
-                {...extendRegRet(
-                    register('oldPassword', {
-                        required: t('error.required_field'),
-                        minLength: {
-                            value: minPasswordLength,
-                            message: t('error.short_password', {
-                                count: minPasswordLength,
-                            }),
-                        },
-                    }),
-                )}
+                {...muiRegister('oldPassword', {
+                    required: t('error.required_field'),
+                    minLength: {
+                        value: minPasswordLength,
+                        message: t('error.short_password', {
+                            count: minPasswordLength,
+                        }),
+                    },
+                })}
             />
             <PasswordField
                 id="new-password"
@@ -91,24 +88,22 @@ function UserProfileChangePasswordForm(): JSX.Element {
                 error={!!errors.newPassword}
                 helperText={errors.newPassword?.message}
                 margin="normal"
+                inputProps={{
+                    ref: (instance: HTMLInputElement) => {
+                        newPasswordRef.current = instance;
+                    },
+                }}
                 fullWidth
                 required
-                {...extendRegRet(
-                    register('newPassword', {
-                        required: t('error.required_field'),
-                        minLength: {
-                            value: minPasswordLength,
-                            message: t('error.short_password', {
-                                count: minPasswordLength,
-                            }),
-                        },
-                    }),
-                    {
-                        ref: (instance) => {
-                            newPasswordRef.current = instance;
-                        },
+                {...muiRegister('newPassword', {
+                    required: t('error.required_field'),
+                    minLength: {
+                        value: minPasswordLength,
+                        message: t('error.short_password', {
+                            count: minPasswordLength,
+                        }),
                     },
-                )}
+                })}
             />
             <PasswordField
                 id="new-password2"
@@ -119,13 +114,11 @@ function UserProfileChangePasswordForm(): JSX.Element {
                 margin="normal"
                 fullWidth
                 required
-                {...extendRegRet(
-                    register('newPassword2', {
-                        required: t('error.required_field'),
-                        validate: (value) =>
-                            value === newPasswordRef.current?.value || t('error.password_mismatch'),
-                    }),
-                )}
+                {...muiRegister('newPassword2', {
+                    required: t('error.required_field'),
+                    validate: (value) =>
+                        value === newPasswordRef.current?.value || t('error.password_mismatch'),
+                })}
             />
         </UserProfileForm>
     );

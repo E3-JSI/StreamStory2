@@ -116,9 +116,7 @@ function AlertPopup({
             >
                 <Alert severity={severity} icon={false} {...AlertProps}>
                     {title && <AlertTitle>{title}</AlertTitle>}
-                    <Box className={classes.alertContent}>
-                        {children}
-                    </Box>
+                    <Box className={classes.alertContent}>{children}</Box>
                 </Alert>
             </Popover>
         </>

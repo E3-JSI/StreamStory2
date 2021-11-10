@@ -1,12 +1,11 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-    host: process.env.POSTGRES_HOST || 'db',
-    port: Number(process.env.POSTGRES_PORT || 5432),
-    database: process.env.POSTGRES_DB || 'streamstory',
-    user: process.env.POSTGRES_USER || 'root',
-    password: process.env.POSTGRES_PASSWORD || 'password',
-    ssl: false,
+    host: 'db',
+    port: 5432,
+    database: process.env.DB_NAME || 'streamstory',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'password',
 });
 
 export async function waitForDB(): Promise<void> {

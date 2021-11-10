@@ -9,6 +9,7 @@ import InfoIcon from '@material-ui/icons/Info';
 import LockIcon from '@material-ui/icons/Lock';
 import SettingsIcon from '@material-ui/icons/Settings';
 
+import useSession from '../hooks/useSession';
 import PageTitle from '../components/PageTitle';
 import Tab from '../components/Tab';
 import TabPanel, { getTabA11yProps } from '../components/TabPanel';
@@ -30,11 +31,12 @@ function UserProfile(): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
     const params = useParams<UserProfileUrlParams>();
+    const [session] = useSession();
     const [tabValue, setTabValue] = useState(params.tab || tabPaths[0]);
 
     const profileTabPrefix = 'profile';
 
-    function handleChange(event: ChangeEvent<Record<string, never>>, newValue: string) {
+    function handleTabChange(event: ChangeEvent<Record<string, never>>, newValue: string) {
         setTabValue(newValue);
     }
 
@@ -42,14 +44,14 @@ function UserProfile(): JSX.Element {
         <>
             <PageTitle gutterBottom>{t('my_profile')}</PageTitle>
 
-            <Paper className={classes.root} square>
+            <Paper className={classes.tabsPaper} square>
                 <Tabs
                     value={tabValue}
                     variant="scrollable"
                     scrollButtons="auto"
                     indicatorColor="primary"
                     textColor="primary"
-                    onChange={handleChange}
+                    onChange={handleTabChange}
                     aria-label={t('my_profile')}
                     // centered
                 >
@@ -69,14 +71,16 @@ function UserProfile(): JSX.Element {
                         icon={<SettingsIcon fontSize="small" />}
                         {...getTabA11yProps(tabPaths[1], profileTabPrefix)}
                     />
-                    <Tab
-                        component={RouterLink}
-                        to={`${basePath}/${tabPaths[2]}`}
-                        value={tabPaths[2]}
-                        label={t('change_password')}
-                        icon={<LockIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths[2], profileTabPrefix)}
-                    />
+                    {session.user?.active && (
+                        <Tab
+                            component={RouterLink}
+                            to={`${basePath}/${tabPaths[2]}`}
+                            value={tabPaths[2]}
+                            label={t('change_password')}
+                            icon={<LockIcon fontSize="small" />}
+                            {...getTabA11yProps(tabPaths[2], profileTabPrefix)}
+                        />
+                    )}
                     <Tab
                         component={RouterLink}
                         to={`${basePath}/${tabPaths[3]}`}
@@ -93,9 +97,11 @@ function UserProfile(): JSX.Element {
             <TabPanel value={tabValue} index={tabPaths[1]} prefix={profileTabPrefix}>
                 <UserProfileSettingsForm />
             </TabPanel>
-            <TabPanel value={tabValue} index={tabPaths[2]} prefix={profileTabPrefix}>
-                <UserProfileChangePasswordForm />
-            </TabPanel>
+            {session.user?.active && (
+                <TabPanel value={tabValue} index={tabPaths[2]} prefix={profileTabPrefix}>
+                    <UserProfileChangePasswordForm />
+                </TabPanel>
+            )}
             <TabPanel value={tabValue} index={tabPaths[3]} prefix={profileTabPrefix}>
                 <UserProfileDeleteAccountForm />
             </TabPanel>

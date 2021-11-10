@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    ChangeHandler,
     FieldPath,
     FieldValues,
     Path,
@@ -43,69 +42,12 @@ export const validationPatterns: ValidationPatterns = {
 };
 
 /**
- * Extend react hook form's control registration return value.
- * @param registerReturn Register's return value.
- * @param options Extending options.
- * @returns Extended control registration return value.
- */
-export function extendRegRet(
-    registerReturn: UseFormRegisterReturn,
-    options?: {
-        refTarget?: 'ref' | 'inputRef';
-        ref?: RefCallBack;
-        onBlur?: ChangeHandler;
-        onChange?: ChangeHandler;
-    },
-): UseFormRegisterReturn | UseFormRegisterReturnMui {
-    const { onBlur, onChange, name, ref } = registerReturn;
-
-    let newRef = ref;
-    if (options?.ref) {
-        newRef = (instance) => {
-            (options.ref as RefCallBack)(instance);
-            ref(instance);
-        };
-    }
-
-    let newOnBlur = onBlur;
-    if (options?.onBlur) {
-        newOnBlur = async (event) => {
-            (options.onBlur as ChangeHandler)(event);
-            onBlur(event);
-        };
-    }
-
-    let newOnChange = onChange;
-    if (options?.onChange) {
-        newOnChange = async (event) => {
-            (options.onChange as ChangeHandler)(event);
-            onChange(event);
-        };
-    }
-
-    return options?.refTarget === 'ref'
-        ? {
-              name,
-              onBlur: newOnBlur,
-              onChange: newOnChange,
-              ref: newRef,
-          }
-        : {
-              name,
-              onBlur: newOnBlur,
-              onChange: newOnChange,
-              inputRef: newRef,
-          };
-}
-
-
-/**
  * Initialize `register` function based on react hook form's `register`, with
  * modified return object with `inputRef` instead of `ref`.
  * @param register React hook form's register function.
  * @returns New `register` function, addapted for MUI components with `inputRef`.
  */
- export function initMuiRegister<TFieldValues extends FieldValues>(
+export function initMuiRegister<TFieldValues extends FieldValues>(
     register: UseFormRegister<TFieldValues>,
 ) {
     return (
@@ -116,7 +58,7 @@ export function extendRegRet(
         return {
             ...other,
             // inputRef: ref,
-            inputRef: (instance) => {                
+            inputRef: (instance) => {
                 ref(instance?.node ?? instance);
             },
         };
@@ -140,7 +82,7 @@ export function initFormFieldRegister<TFieldValues extends FieldValues>(
         return {
             ...other,
             // inputRef: ref,
-            inputRef: (instance) => {                
+            inputRef: (instance) => {
                 ref(instance?.node ?? instance);
             },
         };

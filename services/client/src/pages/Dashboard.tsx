@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { Theme } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 
-import { Model } from '../types/api';
+import { Model, ModelsResponse } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import useMountEffect from '../hooks/useMountEffect';
 import useSnackbar from '../hooks/useSnackbar';
@@ -32,8 +32,12 @@ function Dashboard(): JSX.Element {
             setIsLoading(true);
 
             try {
-                const response = await axios.get('/api/models/');
-                setModels(response.data.models);
+                const response = await axios.get<ModelsResponse>('/api/models/');
+
+                if (Array.isArray(response.data.model)) {
+                    setModels(response.data.model);
+                }
+
                 setIsLoading(false);
             } catch (error) {
                 setIsLoading(false);

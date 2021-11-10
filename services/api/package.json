@@ -12,6 +12,7 @@
         "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,md}"
     },
     "dependencies": {
+        "axios": "^0.23.0",
         "bcryptjs": "^2.4.3",
         "connect-pg-simple": "^6.2.1",
         "cookie-parser": "^1.4.5",

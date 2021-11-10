@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { NavLink, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@material-ui/core/styles';
+import Box from '@material-ui/core/Box';
 import Drawer, { DrawerProps } from '@material-ui/core/Drawer';
 import IconButton from '@material-ui/core/IconButton';
 import Link from '@material-ui/core/Link';
@@ -13,14 +14,14 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import Toolbar from '@material-ui/core/Toolbar';
 import Tooltip from '@material-ui/core/Tooltip';
-import CollectionsBookmarkIcon from '@material-ui/icons/CollectionsBookmark';
-import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
+import UpdateIcon from '@material-ui/icons/Update';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import CloseIcon from '@material-ui/icons/Close';
 
 import useSession from '../hooks/useSession';
-import Logo from './Logo';
 import useClientRect from '../hooks/useClientRect';
+import Logo from './Logo';
+import UpdateDisabledIcon from './icons/UpdateDisabled';
 
 import useStyles from './SideNav.styles';
 
@@ -44,24 +45,21 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
         {
             path: '/dashboard/offline-models',
             title: t('offline_models'),
-            icon: <CollectionsBookmarkIcon />,
+            icon: <UpdateDisabledIcon />,
             divider: false,
-            skip: false,
         },
         {
             path: '/dashboard/online-models',
             title: t('online_models'),
-            icon: <PlayCircleFilledIcon />,
-            divider: currentModel !== null,
-            skip: false,
+            icon: <UpdateIcon />,
+            divider: currentModel.length > 0,
         },
-        {
-            path: `/model/${currentModel?.id}`,
-            title: t('current_model'),
+        ...currentModel.map((model) => ({
+            path: `/model/${model.id}`,
+            title: model.name,
             icon: <BubbleChartIcon />,
             divider: false,
-            skip: currentModel === null,
-        },
+        })),
     ];
 
     let width: string | number = 'auto';
@@ -135,47 +133,45 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
                     </>
                 )}
             </Toolbar>
-            <div
+            <Box
                 role="presentation"
                 className={classes.drawerContainer}
                 onClick={toggleDrawer(false)}
             >
                 <List component="nav">
-                    {items.map((item) =>
-                        item.skip ? null : (
-                            <Tooltip
-                                key={item.path}
-                                title={isSideNavExpanded || isSideNavOpen ? '' : item.title}
-                                enterDelay={muiTheme.timing.tooltipEnterDelay}
-                                placement="right"
+                    {items.map((item) => (
+                        <Tooltip
+                            key={item.path}
+                            title={isSideNavExpanded || isSideNavOpen ? '' : item.title}
+                            enterDelay={muiTheme.timing.tooltipEnterDelay}
+                            placement="right"
+                        >
+                            <ListItem
+                                component={NavLink}
+                                to={item.path}
+                                className={clsx(classes.navItem)}
+                                divider={item.divider}
+                                button
                             >
-                                <ListItem
-                                    component={NavLink}
-                                    to={item.path}
-                                    className={clsx(classes.navItem)}
-                                    divider={item.divider}
-                                    button
-                                >
-                                    <ListItemIcon className={clsx(classes.navItemIcon)}>
-                                        {item.icon}
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary={item.title}
-                                        classes={{
-                                            primary: clsx(classes.navItemText, {
-                                                [classes.navItemTextCollapsed]:
-                                                    !isSideNavExpanded &&
-                                                    isPermanentSideNav &&
-                                                    sideNavWidth.expanded,
-                                            }),
-                                        }}
-                                    />
-                                </ListItem>
-                            </Tooltip>
-                        ),
-                    )}
+                                <ListItemIcon className={clsx(classes.navItemIcon)}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={item.title}
+                                    classes={{
+                                        primary: clsx(classes.navItemText, {
+                                            [classes.navItemTextCollapsed]:
+                                                !isSideNavExpanded &&
+                                                isPermanentSideNav &&
+                                                sideNavWidth.expanded,
+                                        }),
+                                    }}
+                                />
+                            </ListItem>
+                        </Tooltip>
+                    ))}
                 </List>
-            </div>
+            </Box>
         </Drawer>
     );
 }

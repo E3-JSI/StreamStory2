@@ -8,8 +8,7 @@
 CREATE TABLE IF NOT EXISTS public.users (
     id serial PRIMARY KEY,
     group_id integer DEFAULT 2 NOT NULL,
-    first_name varchar(255) NOT NULL DEFAULT '',
-    last_name varchar(255) NOT NULL DEFAULT '',
+    name varchar(255) NOT NULL DEFAULT '',
     email varchar(255) UNIQUE NOT NULL,
     password varchar(255) NOT NULL,
     active boolean DEFAULT false NOT NULL,
@@ -27,12 +26,12 @@ DO $$
             (
                 SELECT *
                 FROM users
-                WHERE email = 'streamstory@ijs.si'
+                WHERE email = 'streamstoryai@gmail.com'
             )
         THEN
             INSERT INTO users (
                 group_id,
-                first_name,
+                name,
                 email,
                 password,
                 active,
@@ -41,7 +40,7 @@ DO $$
             VALUES (
                 1,
                 'Admin',
-                'streamstory@ijs.si',
+                'streamstoryai@gmail.com',
                 '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
                 true,
                 '{}'
@@ -113,12 +112,13 @@ CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions (expire);
 -- DROP TABLE IF EXISTS models;
 CREATE TABLE IF NOT EXISTS public.models (
     id serial PRIMARY KEY,
+    -- uuid UUID DEFAULT gen_random_uuid(),
     user_id integer NOT NULL,
     name varchar(255) NOT NULL,
     description text NOT NULL DEFAULT '',
     dataset varchar(255) NOT NULL,
-    online boolean NOT NULL,
-    active boolean DEFAULT true NOT NULL,
+    online boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT false NOT NULL,
     public boolean DEFAULT false NOT NULL,
     created_at timestamp DEFAULT now() NOT NULL,
     model json NOT NULL,

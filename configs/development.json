@@ -1,0 +1,13 @@
+{
+    "url": "http://localhost:$CLIENT_PORT",
+    "mailer": {
+        "secure": false,
+        "host": "email",
+        "port": 1025,
+        "auth": {
+            "type": "login",
+            "user": "user@email.com",
+            "pass": "password"
+        }
+    }
+}

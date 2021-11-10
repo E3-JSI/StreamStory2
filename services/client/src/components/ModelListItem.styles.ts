@@ -4,7 +4,7 @@ import { setColorOpacity } from '../utils/misc';
 
 const useStyles = makeStyles((theme: Theme) => {
     const selectedRowBgColor = setColorOpacity(
-        theme.palette.info.main,
+        theme.palette.primary.main,
         theme.palette.action.selectedOpacity,
     );
     return createStyles({

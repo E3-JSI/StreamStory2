@@ -8,8 +8,7 @@ import { minPasswordLength } from './auth';
 
 export interface UserResponse {
     id: number;
-    firstName: string;
-    lastName: string;
+    name: string;
     email: string;
     active: boolean;
     settings: UserSettings;
@@ -25,8 +24,7 @@ export interface UserResponse {
 export function getUserResponse(user: User): UserResponse {
     return {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        name: user.name,
         email: user.email,
         active: user.active,
         settings: user.settings,
@@ -58,12 +56,8 @@ export async function updateCurrentUser(
             // res.status(200).json({
             //     success
             // });
-        } else if (req.body.firstName !== undefined) {
-            const success = await users.updateDetails(
-                user.id,
-                req.body.firstName,
-                req.body.lastName
-            );
+        } else if (req.body.name !== undefined) {
+            const success = await users.updateDetails(user.id, req.body.name);
 
             if (!success) {
                 res.status(500).json({

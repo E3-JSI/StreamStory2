@@ -382,7 +382,7 @@ function Multiselect({
                             variant: 'body2',
                             className: clsx({
                                 [classes.textDisabled]: disabled,
-                            })
+                            }),
                         }}
                     />
                 </>
