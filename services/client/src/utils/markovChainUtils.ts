@@ -194,18 +194,27 @@ export function createNodes(
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
         .on("mouseover", function (this: any, event: any, d: any) {
-            //  divTooltip.style("display", "inline-block").style("opacity", 1);
             d3.select(this).style("cursor", "pointer")
         })
         .on('mousemove', (event: any, d: any) => {
-            // mousemove(event, d, divTooltip)
-
-            divTooltip.style("left", `${event.positionX}px`);
-            divTooltip.style("top", `${event.positionY}px`);
-            divTooltip.style("display", "inline-block");
-            divTooltip.style("opacity", "0.9");
-            divTooltip.html(`stateNo=${d.stateNo}: ${d.suggestedLabel.label}`);
-
+            divTooltip
+                .style("position", "absolute")
+                .style('top', `${event.pageY + 10}px`)
+                .style('left', `${event.pageX + 10}px`)
+                .style('background-color', 'white')
+                .style('border-radius', '4px')
+                .style('width', "100%")
+                .style('max-width', "230px")
+                .style('padding', '1.5em')
+                .style("word-wrap", "break-word")
+                .style("opacity", 0)
+                .html(`<div>
+                <h3><span>${d.suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
+                </div>
+                `)
+                .transition()
+                .duration(700)
+                .style("opacity", "0.9")
         })
         .on("mouseout", function (this: any) {
             divTooltip.style("opacity", 0);
