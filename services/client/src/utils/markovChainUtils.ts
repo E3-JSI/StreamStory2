@@ -226,30 +226,32 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('opacity', theme.state.default.opacity)
 
 
-    const text =
-        "Hello! This notebookshows how to wrap andfit text inside a circle. Itmight be useful forlabelling a bubble chart.You can edit the textbelow, or read the notesand code to learn howit works! 😎";
-
     const lineHeight = 20;
-    const targetWidth = Math.sqrt(measureWidth(text.trim()) * lineHeight);
-    const lines = createLines(createWords(text), targetWidth);
+    const linesArr: any[] = []
 
-    console.log("lines=", lines)
+    enterTmp
+        .each(function (this: any) {
+            const d: any = d3.select(this).data()[0];
+            console.log("d=", d)
+            const lines = createLines(d.suggestedLabel.label, lineHeight);
+            linesArr.push(lines);
+        });
 
     enterTmp
         .append("text")
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
         .attr(
-            "transform", (d: any) =>
-            `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(lines, lineHeight))
+            "transform", (d: any, i: number) =>
+            `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesArr[i], lineHeight))
             })`
         )
         .selectAll("tspan")
-        .data(lines)
+        .data((d: any, i: number) => linesArr[i])
         .enter()
         .append("tspan")
         .attr("x", 0)
-        .attr("y", (d: any, i: number) => (i - lines.length / 2 + 0.8) * lineHeight)
+        .attr("y", (d: any, i: number, lines: any[]) => (i - lines.length / 2 + 0.8) * lineHeight)
         .text((d: any) => d.text);
 
     enterTmp
@@ -275,8 +277,11 @@ function createWords(text: string) {
     return words;
 }
 
-function createLines(words: any[], targetWidth: number) {
+function createLines(text: any, lineHeight: number) {
     console.log("start: createLines")
+
+    const words: any[] = createWords(text.trim())
+    const targetWidth = Math.sqrt(measureWidth(text.trim()) * lineHeight);
     let line: any;
     let lineWidth0 = Infinity;
     const lines = [];
