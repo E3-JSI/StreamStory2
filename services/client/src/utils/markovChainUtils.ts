@@ -227,14 +227,19 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
 
 
     const lineHeight = 20;
-    const linesArr: any[] = []
+    // const linesArr: any[] = []
+
+    const linesDict: any = {}
+
+
+    let iter = 0;
 
     enterTmp
         .each(function (this: any) {
             const d: any = d3.select(this).data()[0];
-            console.log("d=", d)
             const lines = createLines(d.suggestedLabel.label, lineHeight);
-            linesArr.push(lines);
+            linesDict[uniqueId(d)] = lines;
+            iter += 1;
         });
 
     enterTmp
@@ -242,12 +247,10 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
         .attr(
-            "transform", (d: any, i: number) =>
-            `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesArr[i], lineHeight))
-            })`
-        )
+            "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
+                })`)
         .selectAll("tspan")
-        .data((d: any, i: number) => linesArr[i])
+        .data((d: any, i: number) => linesDict[uniqueId(d)])
         .enter()
         .append("tspan")
         .attr("x", 0)
@@ -261,12 +264,14 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
 
 function textRadius(lines: any[], lineHeight: number) {
     let radius = 0;
-    for (let i = 0, n = lines.length; i < n; ++i) {
-        const dy = (Math.abs(i - n / 2 + 0.5) + 0.5) * lineHeight;
-        const dx = lines[i].width / 2;
-        radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
+
+    if (lines && lines.length && lineHeight) {
+        for (let i = 0, n = lines.length; i < n; ++i) {
+            const dy = (Math.abs(i - n / 2 + 0.5) + 0.5) * lineHeight;
+            const dx = lines[i].width / 2;
+            radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
+        }
     }
-    console.log("radius=", radius)
     return radius;
 }
 
@@ -278,8 +283,6 @@ function createWords(text: string) {
 }
 
 function createLines(text: any, lineHeight: number) {
-    console.log("start: createLines")
-
     const words: any[] = createWords(text.trim())
     const targetWidth = Math.sqrt(measureWidth(text.trim()) * lineHeight);
     let line: any;
@@ -301,7 +304,6 @@ function createLines(text: any, lineHeight: number) {
             lines.push(line);
         }
     }
-    console.log("end: createLines")
     return lines;
 }
 
@@ -651,9 +653,6 @@ export function addCoordinatesToStates(scales: any, maxRadius: number, debug: bo
             }
         });
     });
-    // console.log("statesDict=", statesDict)
-    // console.log("\n")
-    // console.log("\n")
 }
 
 export function createStateLinks(
