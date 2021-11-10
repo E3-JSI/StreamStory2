@@ -94,6 +94,7 @@ A state object contains the following attributes:
 - `nMembers`: the number of datapoints (from the input dataset) belonging to this state (or, in other words, to the initial states out of which the present state has been aggregated).
 - `nextStateProbDistr`: an array of floating-point values containing the probabilities of the next state.  Thus, `states[i].nextStateProbDistr[j]` is the probability that the next datapoint belongs to `states[j]` conditional on the fact that the current datapoint belongs to `states[i]`. 
 - `histograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst the datapoints that belong to the current state.  For more detauls about the structure of the histogram objects, see a subsequent section.
+- `xCenter`, `yCenter`, `radius`: suggested position of a circle used to represent this state in visualizations.  Circles associated with states on the same scale will not overlap, and if several scales have an identical state (i.e. one consisting of the same set of initial states), this state will receive the same coordinates and radius at all scales where it appears.  The coordinates are not guaranteed to lie in any particular range, and the caller should scale them as needed.
 - `suggestedLabel`: an object containing the following attributes:
   - `label`: a suggested string label for this state, e.g. `"humidity HIGH"`.  
   - `nCoveredInState`, `nNotCoveredInState`: the number of instances that belong to this state and do/don't match the label.

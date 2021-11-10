@@ -167,8 +167,8 @@ bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
 	// Parse the ops.  
 	do { 
 		PJsonVal jsonOps; if (! Json_GetObjKey(val, "ops", true, true, jsonOps, "model config", errList)) return false; 
-		if (! jsonOps->IsArr() && ! jsonOps->IsNull()) { errList.Add("The \'ops\' value is not an array."); return false; }
-		const int nOps = (jsonOps->IsNull()) ? 0 : jsonOps->GetArrVals();
+		if (! jsonOps.Empty() && ! jsonOps->IsArr() && ! jsonOps->IsNull()) { errList.Add("The \'ops\' value is not an array."); return false; }
+		const int nOps = (jsonOps.Empty() || jsonOps->IsNull()) ? 0 : jsonOps->GetArrVals();
 		for (int i = 0; i < nOps; ++i)
 		{
 			POpDesc opDesc = TOpDesc::New(jsonOps->GetArrVal(i), errList);
@@ -1098,6 +1098,9 @@ PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PSta
 	vState->AddToObj("stateNo", TJsonVal::NewNum(thisStateNo));
 	vState->AddToObj("initialStates", TJsonVal::NewArr(initialStates));
 	vState->AddToObj("nMembers", TJsonVal::NewNum(members.Len()));
+	vState->AddToObj("xCenter", TJsonVal::NewNum(xCenter));
+	vState->AddToObj("yCenter", TJsonVal::NewNum(yCenter));
+	vState->AddToObj("radius", TJsonVal::NewNum(radius));
 	PJsonVal vLabel = TJsonVal::NewObj(); vState->AddToObj("suggestedLabel", vLabel);
 	vLabel->AddToObj("label", label.label);
 	vLabel->AddToObj("nCoveredInState", label.nCoveredInState);
@@ -1162,6 +1165,91 @@ void TModel::BuildRowToInitialState()
 			rowToInitialState[rowNo] = stateNo; ++total; }
 	}
 	IAssert(total == nRows);
+}
+
+void TModel::CalcStatePositions()
+{
+	const int nScales = statePartitions.Len();
+	// Use SVD for the initial placement of the initial states.
+	statePartitions[0]->CalcRadiuses();
+	statePartitions[0]->CalcCentersUsingSvd(*dataset);
+	// For aggregated states, their position is the average of the positions of the initial states.
+	for (int scaleNo = 1; scaleNo < nScales; ++scaleNo)
+	{
+		statePartitions[scaleNo]->CalcRadiuses();
+		TStatePartition &scale = *statePartitions[scaleNo];
+		for (const PState& aggState : scale.aggStates)
+		{
+			const TIntV& v = aggState->initialStates;
+			double xSum = 0, ySum = 0; for (int initStateNo : v) {
+				TState &S = *initialStates[initStateNo];
+				xSum += S.xCenter; ySum += S.yCenter; }
+			aggState->xCenter = xSum / double(TMath::Mx(1, v.Len()));
+			aggState->yCenter = ySum / double(TMath::Mx(1, v.Len()));
+		}
+	}
+	// We'll move the states apart if needed to prevent overlap.    However,
+	// if two states at different scales are identical (composed of the same set of initial states),
+	// we'll keep them in the same place.  For this purpose it's useful to know if a state is the
+	// same as its parent (at the next higher scale) or child (at the next lower scale).
+	struct TSamePr { int parent, child; };
+	TVec<TVec<TSamePr>> sameAs; sameAs.Gen(nScales);
+	for (int scaleNo = 0; scaleNo < nScales; ++scaleNo) { auto &v = sameAs[scaleNo];
+		v.Gen(statePartitions[scaleNo]->aggStates.Len()); v.PutAll({-1, -1}); }
+	for (int scaleNo = 0; scaleNo < nScales - 1; ++scaleNo)
+	{
+		const TStatePartition &scale = *statePartitions[scaleNo]; int nStates = scale.aggStates.Len();
+		const TStatePartition &parentScale = *statePartitions[scaleNo + 1]; int nParentStates = parentScale.aggStates.Len();
+		for (int stateNo = 0; stateNo < nStates; ++stateNo)
+		{
+			const TIntV& v = scale.aggStates[stateNo]->initialStates; IAssert(v.IsSorted());
+			for (int parentStateNo = 0; parentStateNo < nParentStates; ++parentStateNo)
+				if (v == parentScale.aggStates[parentStateNo]->initialStates) { 
+					sameAs[scaleNo][stateNo].parent = parentStateNo; sameAs[scaleNo + 1][parentStateNo].child = stateNo; break; }
+		}
+	}
+	// Keep moving states apart until they stop overlapping.
+	TRnd rnd(123);
+	const double STEP_FACTOR = 0.02, OVERLAP_EXTRA = 1.1;
+	while (true)
+	{
+		bool anyChanges = false;
+		for (int scaleNo = 0; scaleNo < nScales; ++scaleNo)
+		{
+			TStatePartition &scale = *statePartitions[scaleNo]; int nStates = scale.aggStates.Len();
+			TIntV order; order.Gen(nStates); for (int stateNo = 0; stateNo < nStates; ++stateNo) order[stateNo] = stateNo;
+			order.Shuffle(rnd);
+			// Check states at this scale for overlap, in a random order.
+			for (int i = 0; i < nStates - 1; ++i) 
+			{
+				TState &state = *scale.aggStates[order[i]];
+				for (int j = i + 1; j < nStates; ++j)
+				{
+					TState &otherState = *scale.aggStates[order[j]];
+					double dx = state.xCenter - otherState.xCenter, dy = state.yCenter - otherState.yCenter;
+					double dist = sqrt(dx * dx + dy * dy);
+					if (dist > (state.radius + otherState.radius) * OVERLAP_EXTRA) continue; // no overlap
+					anyChanges = true;
+					// Move state i away from state j.
+					if (dist < 1e-6) { double angle = rnd.GetUniDev() * 2 * TMath::Pi; dx = cos(angle); dy = sin(angle); dist = 1; }
+					state.xCenter += dx * STEP_FACTOR / dist; 
+					state.yCenter += dy * STEP_FACTOR / dist;
+					if (isnan(state.xCenter) || isnan(state.yCenter))
+						printf("!");
+					// Propagate this change to identical states at other scales.
+					for (int curScale = scaleNo, stateNo = order[i]; curScale > 0; ) {
+						stateNo = sameAs[curScale][stateNo].child; if (stateNo < 0) break;
+						TState &nextState = *statePartitions[--curScale]->aggStates[stateNo];
+						nextState.xCenter = state.xCenter; nextState.yCenter = state.yCenter; }
+					for (int curScale = scaleNo, stateNo = order[i]; curScale + 1 < nScales; ) {
+						stateNo = sameAs[curScale][stateNo].parent; if (stateNo < 0) break;
+						TState &nextState = *statePartitions[++curScale]->aggStates[stateNo];
+						nextState.xCenter = state.xCenter; nextState.yCenter = state.yCenter; }
+				}
+			}
+		}
+		if (! anyChanges) break;
+	}
 }
 
 PJsonVal TModel::SaveToJson() const
@@ -1365,6 +1453,89 @@ PJsonVal TStatePartition::SaveToJson(const TDataset& dataset, bool areTheseIniti
 	return vPartition;
 }
 
+void TStatePartition::CalcCentersUsingSvd(const TDataset& dataset)
+{
+	// First, calculate a (dense) centroid matrix; each state gets one column.
+	int nDim = 0, nDim2 = 0, nStates = aggStates.Len(); 
+	TFltVV centroidMx;
+	for (int pass = 0; pass < 2; ++pass)
+	{
+		for (int colNo = 0; colNo < dataset.cols.Len(); ++colNo)
+		{
+			const TDataColumn &col = dataset.cols[colNo];
+			double colWgt = sqrt(col.distWeight);
+			if (col.type == TAttrType::Time) continue;
+			else if (col.type == TAttrType::Numeric) 
+			{
+				if (pass == 0) { ++nDim; continue; }
+				for (int stateNo = 0; stateNo < nStates; ++stateNo) {
+					const TCentroidComponent &cc = aggStates[stateNo]->centroid[colNo];
+					centroidMx(nDim2, stateNo) = colWgt * cc.fltVal; }
+				++nDim2;
+			}
+			else if (col.type == TAttrType::Categorical)
+			{
+				int nComps = 0;
+				if (col.subType == TAttrSubtype::Int) nComps = col.intKeyMap.Len();
+				else if (col.subType == TAttrSubtype::String) nComps = col.strKeyMap.Len();
+				else IAssert(false);
+				if (pass == 0) { nDim += nComps; continue; }
+				for (int stateNo = 0; stateNo < nStates; ++stateNo) {
+					const TCentroidComponent &cc = aggStates[stateNo]->centroid[colNo];
+					IAssert(cc.denseVec.Len() == nComps);
+					for (int i = 0; i < nComps; ++i) centroidMx(nDim2 + i, stateNo) = colWgt * cc.denseVec[i]; }
+				nDim2 += nComps;
+			}
+			else if (col.type == TAttrType::Text)
+			{
+				int nComps = 0; for (const auto &kd : col.sparseVecData) if (kd.Key + 1 > nComps) nComps = kd.Key + 1;
+				if (pass == 0) { nDim += nComps; continue; } 
+				for (int stateNo = 0; stateNo < nStates; ++stateNo) {
+					const TCentroidComponent &cc = aggStates[stateNo]->centroid[colNo];
+					for (const auto &kd : cc.sparseVec) centroidMx(nDim2 + kd.Key, stateNo) = colWgt * kd.Dat; }
+				nDim2 += nComps;
+			}
+			else IAssert(false);
+		}
+		if (pass == 0) { centroidMx.Gen(nDim, nStates); centroidMx.PutAll(0); }
+		else IAssert(nDim2 == nDim);
+	}
+	// Center its rows.
+	TFullMatrix X1(centroidMx, true); TLinAlgTransform::CenterRows(X1.GetMat());
+	// Perform a thin SVD decomposition.
+	TMatVecMatTr svd = X1.Svd(2);
+	// We got X = U S V', where X is nDim * nStates, U is nDim * 2, S is 2 * 2 and diagonal,
+	// and V' is 2 * nStates; hence V is nStates * 2.  The columns of S * V' are a good two-dimensional
+	// representation of our states.
+	IAssert(svd.Val2.Len() == 2);
+	double s0 = svd.Val2[0], s1 = svd.Val2[1]; 
+	auto V = svd.Val3.GetMat(); IAssert(V.GetRows() == nStates); IAssert(V.GetCols() == 2);
+	for (int stateNo = 0; stateNo < nStates; ++stateNo)
+	{
+		TState &state = *aggStates[stateNo];
+		state.xCenter = s0 * V(stateNo, 0);
+		state.yCenter = s1 * V(stateNo, 1);
+	}
+	// Make sure that the states do not cover too much of the screen area.
+	// Instead of shrinking the states, we'll disperse them.
+	double xMin = TFlt::Mx, yMin = TFlt::Mx, xMax = TFlt::Mn, yMax = TFlt::Mn;
+	double totalStateArea = 0;
+	for (const PState &state : aggStates) {
+		xMin = TFlt::GetMn(xMin, state->xCenter - state->radius); xMax = TFlt::GetMx(xMax, state->xCenter + state->radius);
+		yMin = TFlt::GetMn(yMin, state->yCenter - state->radius); yMax = TFlt::GetMx(yMax, state->yCenter + state->radius);
+		totalStateArea += TMath::Pi * state->radius * state->radius; }
+	const double STATE_OCCUPANCY_PERC = 0.5;
+	const double screenArea = (xMax - xMin) * (yMax - yMin);
+	const double desiredArea = totalStateArea * STATE_OCCUPANCY_PERC;
+	const double scaleFactor = desiredArea / screenArea;
+	const double scaleFactorX = sqrt(scaleFactor);
+	const double scaleFactorY = scaleFactorX * (xMax - xMin) / (yMax - yMin);
+	const double xMid = (xMin + xMax) / 2.0, yMid = (yMin + yMax) / 2.0;
+	for (const PState &state : aggStates) {
+		state->xCenter = (state->xCenter - xMid) * scaleFactorX;
+		state->yCenter = (state->yCenter - yMid) * scaleFactorY; }
+}
+
 //-----------------------------------------------------------------------------
 //
 // TStateAggregator
@@ -1447,6 +1618,7 @@ PStatePartition TStateAggregator::BuildNextPartition(const PStatePartition &part
 		PState newState = new TState();
 		newState->members = state1->members; newState->members.AddV(state2->members);
 		newState->initialStates = state1->initialStates; newState->initialStates.AddV(state2->initialStates);
+		newState->initialStates.Sort();
 		newState->InitCentroid0(dataset);
 		const int n1 = state1->members.Len(), n2 = state2->members.Len();
 		newState->AddToCentroid(dataset, state1->centroid, n1);
