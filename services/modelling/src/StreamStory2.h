@@ -305,9 +305,10 @@ protected:
 public:
 	TCentroidComponentV centroid; // index: column number from TDataset.cols
 	TIntV members; // contains row indices into the dataset
-	TIntV initialStates; // indexes of initial states from which this state has been aggregated
+	TIntV initialStates; // indexes of initial states from which this state has been aggregated; sorted incrementally
 	THistogramV histograms; // index: column number, same as TDataset::cols
 	TStateLabel label;
+	double xCenter, yCenter, radius;
 	void InitCentroid0(const TDataset& dataset);
 	void AddToCentroid(const TDataset& dataset, int rowNo, double coef);  // Works like centroid += coef * dataset[rowNo].
 	void AddToCentroid(const TDataset& dataset, const TCentroidComponentV& other, double coef); // centroid += coef * other.
@@ -336,6 +337,8 @@ public:
 	void CalcHistograms(const TDataset& dataset) { for (const PState& state : aggStates) state->CalcHistograms(dataset); }
 	void CalcLabels(const TDataset& dataset, const THistogramV& totalHists) { TState::CalcLabels(dataset, aggStates, totalHists); }
 	PJsonVal SaveToJson(const TDataset& dataset, bool areTheseInitialStates, const PStatePartition& nextLowerScale) const;
+	void CalcRadiuses() { for (int stateNo = 0; stateNo < aggStates.Len(); ++stateNo) aggStates[stateNo]->radius = sqrt(statProbs[stateNo] / TMath::Pi); }
+	void CalcCentersUsingSvd(const TDataset& dataset); // assumes that centroids and statProbs are already available; doesn't try to avoid overlaps
 };
 
 typedef TPt<TDataset> PDataset;
@@ -390,6 +393,7 @@ public:
 		THistogramV totalHists; THistogram::CalcHistograms(totalHists, *dataset, {}, true, 5); 
 		TState::CalcLabels(*dataset, initialStates, totalHists);
 		for (const PStatePartition& scale : statePartitions) scale->CalcLabels(*dataset, totalHists); }
+	void CalcStatePositions(); // requires static probabilities and centroids
 
 	PJsonVal SaveToJson() const;
 };
@@ -457,6 +461,27 @@ protected:
 public:
 	inline static void SelectScales(TModel& model, TStatePartitionV allPartitions, int nToSelect, TStatePartitionV &dest) { TStateAggScaleSelector s { model, std::move(allPartitions) }; s.SelectScales(nToSelect, dest); }
 };
+
+#if 0
+class TDecTreeNode;
+typedef TPt<TDecTreeNode> PDecTreeNode;
+
+class TDecTreeNode
+{
+protected:
+	TCRef CRef;
+	friend TPt<TDecTreeNode>;
+public:
+	// Number of instances that reach this node and are inside/outside the state.
+	int nIn, nOut; 
+	// The attribute used to split the instances amongst subtrees.
+	int attrNo;
+	int intThresh; // used if the attribute is Numeric/Int; the first subtree is for <, the second for >=
+	double fltThresh; // used if the attribute is Numeric/Flt; the first subtree is for <, the second for >=
+// 	// Allowed combinations of type and subtype: Time/{String, Int, Flt}, Numeric/{Int, Flt}, Categorical/{String, Int}, Text/{String}.
+
+};
+#endif
 
 bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList);
