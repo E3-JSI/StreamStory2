@@ -457,7 +457,7 @@ function createPath(data: any, link: any): string {
             const { x, y, r } = data.source;
             const xNew = x + r;
             const t = (x + xNew) / 2;
-            const yNew = y - 5.5 * r;
+            const yNew = y - 3.5 * r;
             const ctx = d3.path();
             ctx.moveTo(xNew, y);
             ctx.quadraticCurveTo(t, yNew, x, y - data.source.r);
