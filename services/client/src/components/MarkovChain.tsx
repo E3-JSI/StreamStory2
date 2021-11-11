@@ -112,13 +112,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function renderMarkovChain(graphData: any): void {
         const boundary = findMinMaxValues(model.model.scales);
-
-        console.log('boundary=', boundary);
-
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
         const margin = { top: 5, right: 5, bottom: 10, left: 10 }; // FIXME: hardcoded
-        const chart = { top: 100, left: 100 }; // FIXME: hardcoded
+        const chart = { top: 130, left: 100 }; // FIXME: hardcoded
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
 
@@ -150,12 +147,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gMarkers = graphContainer.select('g.markers');
             }
 
-            graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.7)`); // FIXME: hardcoded scale
+            graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.8)`); // FIXME: hardcoded scale
 
             const zoom = d3
                 .zoom()
                 .scaleExtent([0, 5])
-
                 .on('zoom', (event: any) => {
                     console.log('event=', event);
                     if (event) {
@@ -171,9 +167,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 [boundary.r.min, boundary.r.max],
                 [yWidth / 20, yWidth / 5],
             );
-
-            console.log('r.range=', r.range(), ', r.domain=', r.domain());
-
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
             const ySliderScale = createLinearScale(
                 [0, model.model.scales.length],
