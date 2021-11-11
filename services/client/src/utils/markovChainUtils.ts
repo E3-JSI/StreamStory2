@@ -263,15 +263,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
         .attr(
-            "transform", (d: any, i: number) => {
-
-                console.log(`d.r=${d.r}, textRadius=${textRadius(linesDict[uniqueId(d)], lineHeight)}, textRadiusScaled=${scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))}, scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
-
-
-                return `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`;
-            })
-        // "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)})`)
-
+            "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")
         .data((d: any) => linesDict[uniqueId(d)])
         .enter()
@@ -379,7 +371,10 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
             // d.y = event.y; // eslint-disable-line no-param-reassign
             const nodeGroup = d3.select(this);
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
-            selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y})`)
+            const transform = selectNodeLabel(nodeGroup).attr("transform");
+            const scaleIx = transform.indexOf("scale")
+            const scaleStr = transform.substring(scaleIx, transform.length)
+            selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y}) ${scaleStr}`)
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
         });
 }
