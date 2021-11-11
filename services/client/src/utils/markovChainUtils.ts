@@ -26,6 +26,10 @@ export function createSVG(
     height: number,
     margin: any,
 ) {
+
+    //  scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
+
+
     const svg = d3
         .select(container.current)
         .append('svg')
@@ -179,7 +183,7 @@ export function createNodes(
         .data(data.states, (d: any) => `node_${uniqueId(d)}`)
         .join(
             (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter),
-            (update: any) => nodeUpdate(update, x, y, r),
+            (update: any) => update,
             (exit: any) => {
                 exit.remove();
                 return exit;
@@ -234,32 +238,33 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
 
-
-    const lineHeight = 20;
-    // const linesArr: any[] = []
-
+    const lineHeight = 40; // FIXME: hardcoded
     const linesDict: any = {}
-
-
-    let iter = 0;
 
     enterTmp
         .each(function (this: any) {
             const d: any = d3.select(this).data()[0];
             const lines = createLines(d.suggestedLabel.label, lineHeight);
             linesDict[uniqueId(d)] = lines;
-            iter += 1;
         });
 
     enterTmp
         .append("text")
+        .attr("class", "node_label")
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
         .attr(
-            "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
-                })`)
+            "transform", (d: any, i: number) => {
+
+                console.log(`d.r=${d.r}, textRadius=${textRadius(linesDict[uniqueId(d)], lineHeight)}, textRadiusScaled=${scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))}, scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
+
+
+                return `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`;
+            })
+        // "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)})`)
+
         .selectAll("tspan")
-        .data((d: any, i: number) => linesDict[uniqueId(d)])
+        .data((d: any) => linesDict[uniqueId(d)])
         .enter()
         .append("tspan")
         .attr("x", 0)
@@ -320,20 +325,6 @@ function measureWidth(text: string) {
     const ctx: any = document.createElement("canvas").getContext("2d");
     return ctx.measureText(text).width;
 }
-function nodeUpdate(selection: any, x: any, y: any, r: any) {
-    const enterTmp = selectNodeGroup(selection);
-    selectNodeCircle(selection)
-        .attr('cx', (d: any) => scale(x, d.x))
-        .attr('cy', (d: any) => scale(y, d.y))
-        .attr('r', (d: any) => scale(r, d.r))
-        .attr('opacity', (d: any) => d.opacity || 1);
-
-    selectNodeTitle(selection)
-        .attr('x', (d: any) => scale(x, d.x))
-        .attr('dy', (d: any) => scale(y, d.y));
-
-    return enterTmp;
-}
 
 export function createMarkers(theme: any, data: any, gMarkers: any) {
     const markers = gMarkers
@@ -373,20 +364,13 @@ export function getTransitionsFromProps(g: any, props: ITransitionProps): any {
 function onNodeDrag(nodesMap: any, gLinks: any) {
     return d3
         .drag<SVGGElement, unknown>()
-        .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
-            return {
-                x: event.x,
-                y: event.y,
-            };
-        })
+        .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
             d.x = event.x; // eslint-disable-line no-param-reassign
             d.y = event.y; // eslint-disable-line no-param-reassign
-
             const nodeGroup = d3.select(this);
-            selectNodeCircle(nodeGroup).attr('cx', d.x).attr('cy', d.y);
-            selectNodeTitle(nodeGroup).attr('x', d.x).attr('dy', d.y);
-
+            selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
+            selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y})`)
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
         });
 }
@@ -536,8 +520,8 @@ export function selectNodeCircle(selection: any) {
     return selection.select('.node_circle');
 }
 
-export function selectNodeTitle(selection: any) {
-    return selection.select('.node_title');
+export function selectNodeLabel(selection: any) {
+    return selection.select('.node_label');
 }
 
 export function createBandScale(domain: string[], range: number[], padding: number) {
@@ -603,10 +587,6 @@ export function findMinMaxValues(scales: any) {
             rez.r.min = Math.min(rez.r.min, el.r);
             rez.r.max = Math.max(rez.r.max, el.r);
         });
-    rez.x.min -= rez.r.max;
-    rez.y.min -= rez.r.max;
-    rez.x.max += rez.r.max;
-    rez.y.max += rez.r.max;
     return rez;
 }
 
