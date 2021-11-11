@@ -366,8 +366,8 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
         .drag<SVGGElement, unknown>()
         .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
-            d.x = event.x; // eslint-disable-line no-param-reassign
-            d.y = event.y; // eslint-disable-line no-param-reassign
+            // d.x = event.x; // eslint-disable-line no-param-reassign
+            // d.y = event.y; // eslint-disable-line no-param-reassign
             const nodeGroup = d3.select(this);
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
             selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y})`)
