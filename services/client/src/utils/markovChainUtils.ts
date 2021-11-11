@@ -85,6 +85,8 @@ export function createLinks(
     data: any,
     gNodes: any,
     gLinks: any,
+    x: any,
+    y: any,
     transitionProps: ITransitionProps,
 ) {
     const { tEnter } = getTransitionsFromProps(gLinks, transitionProps);
@@ -133,12 +135,19 @@ export function createLinks(
         );
     links
         .append('text')
+        .attr("x", (d: any, i: number) => {
+            const dSource = nodesMap[d.source].data()[0];
+            const dTarget = nodesMap[d.target].data()[0];
+            return (scale(x, dSource.x) + scale(x, dTarget.x)) / 2
+        })
+        .attr("y", (d: any, i: number) => {
+            const dSource = nodesMap[d.source].data()[0];
+            const dTarget = nodesMap[d.target].data()[0];
+            return (scale(y, dSource.y) + scale(y, dTarget.y)) / 2
+        })
         .attr('fill', 'white')
-        .append('textPath')
-        .attr('class', 'textpath')
         .attr('text-anchor', 'middle')
         .attr('startOffset', '20%')
-        .attr('xlink:href', (d: any, i: any) => `#path_s${d.source}t${d.target}`)
         .text((d: any) => formatLinkP(d.p));
 
     return links;

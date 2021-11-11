@@ -223,7 +223,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     handleOnScaleChanged,
                 );
             }
-            createLinks(darkTheme, graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
+            createLinks(
+                darkTheme,
+                graphData[currentScaleIx],
+                gNodes,
+                gLinks,
+                x,
+                y,
+                TRANSITION_PROPS,
+            );
             createMarkers(darkTheme, graphData[currentScaleIx], gMarkers);
         }
     }
