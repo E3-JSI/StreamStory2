@@ -32,7 +32,7 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
     function renderHistogram(boundsFn: any, freqFn: any, totalFreqFn: any) {
         const margin = { top: 10, right: 30, bottom: 20, left: 50 };
         const width = (containerRef?.current?.offsetWidth || 150) - margin.left - margin.right;
-        const height = 300 - margin.top - margin.bottom;
+        const height = 200 - margin.top - margin.bottom;
         const svg = d3
             .select(containerRef.current)
             .append('svg')

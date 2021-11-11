@@ -21,11 +21,16 @@ export function getGraphContainer(svg: any) {
 
 export function createSVG(
     container: React.MutableRefObject<any>,
+    theme: any,
     width: number,
     height: number,
     margin: any,
 ) {
-    return d3
+
+    //  scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
+
+
+    const svg = d3
         .select(container.current)
         .append('svg')
         .attr('width', width)
@@ -35,6 +40,14 @@ export function createSVG(
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    svg
+        .append("rect")
+        .attr('width', width - margin.left - margin.right)
+        .attr('height', height - margin.top - margin.bottom)
+        .attr("fill", theme.backgroundColor)
+
+    return svg;
 }
 
 export function getSVG(
@@ -72,6 +85,8 @@ export function createLinks(
     data: any,
     gNodes: any,
     gLinks: any,
+    x: any,
+    y: any,
     transitionProps: ITransitionProps,
 ) {
     const { tEnter } = getTransitionsFromProps(gLinks, transitionProps);
@@ -120,12 +135,19 @@ export function createLinks(
         );
     links
         .append('text')
+        .attr("x", (d: any, i: number) => {
+            const dSource = nodesMap[d.source].data()[0];
+            const dTarget = nodesMap[d.target].data()[0];
+            return (scale(x, dSource.x) + scale(x, dTarget.x)) / 2
+        })
+        .attr("y", (d: any, i: number) => {
+            const dSource = nodesMap[d.source].data()[0];
+            const dTarget = nodesMap[d.target].data()[0];
+            return (scale(y, dSource.y) + scale(y, dTarget.y)) / 2
+        })
         .attr('fill', 'white')
-        .append('textPath')
-        .attr('class', 'textpath')
         .attr('text-anchor', 'middle')
         .attr('startOffset', '20%')
-        .attr('xlink:href', (d: any, i: any) => `#path_s${d.source}t${d.target}`)
         .text((d: any) => formatLinkP(d.p));
 
     return links;
@@ -170,7 +192,7 @@ export function createNodes(
         .data(data.states, (d: any) => `node_${uniqueId(d)}`)
         .join(
             (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter),
-            (update: any) => nodeUpdate(update, x, y, r),
+            (update: any) => update,
             (exit: any) => {
                 exit.remove();
                 return exit;
@@ -185,48 +207,33 @@ export function createNodes(
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
         .on("mouseover", function (this: any, event: any, d: any) {
-            //  divTooltip.style("display", "inline-block").style("opacity", 1);
             d3.select(this).style("cursor", "pointer")
         })
         .on('mousemove', (event: any, d: any) => {
-            // mousemove(event, d, divTooltip)
-
-            divTooltip.style("left", `${event.positionX}px`);
-            divTooltip.style("top", `${event.positionY}px`);
-            divTooltip.style("display", "inline-block");
-            divTooltip.style("opacity", "0.9");
-            divTooltip.html(`stateNo=${d.stateNo}: ${d.suggestedLabel.label}`);
-
+            divTooltip
+                .style("position", "absolute")
+                .style('top', `${event.pageY + 10}px`)
+                .style('left', `${event.pageX + 10}px`)
+                .style('background-color', 'white')
+                .style('border-radius', '4px')
+                .style('width', "100%")
+                .style('max-width', "230px")
+                .style('padding', '1.5em')
+                .style("word-wrap", "break-word")
+                .style("opacity", 0)
+                .html(`<div>
+                <h3><span>${d.suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
+                </div>
+                `)
+                .transition()
+                .duration(700)
+                .style("opacity", "0.9")
         })
         .on("mouseout", function (this: any) {
             divTooltip.style("opacity", 0);
             d3.select(this).style("cursor", "default")
         })
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
-}
-
-function mousemove(event: any, d: any, div: any) {
-    div
-        .html(`
-            <div>
-                <table>
-                    <tr>
-                        <th>stateNo</th>
-                        <th>nMembers</th>
-                        <th>x,y</th>
-                        <th>Label</th>
-                    </tr>
-                    <tr>
-                        <th>${d.stateNo}</td>
-                        <th>${d.nMembers}</td>
-                        <td>[${event.pageX}, ${event.pageY}]</td>
-                        <td>${d.suggestedLabel.label}</td>
-                    </tr>
-                </table>
-            </div>
-        `)
-        .style("left", `${(event.pageX - 3)} px`)
-        .style("top", `${(event.pageY - 12)} px`);
 }
 
 function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
@@ -240,35 +247,84 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
 
+    const lineHeight = 40; // FIXME: hardcoded
+    const linesDict: any = {}
+
     enterTmp
-        .append('text')
-        .attr('class', 'node_title')
-        .attr('x', (d: any) => scale(x, d.x))
-        .attr('dy', (d: any) => scale(y, d.y))
-        .style('fill', 'white')
-        .attr('text-anchor', 'middle')
-        .text((d: any) =>
-            d.suggestedLabel && d.suggestedLabel.label ? d.suggestedLabel.label : '',
-        );
+        .each(function (this: any) {
+            const d: any = d3.select(this).data()[0];
+            const lines = createLines(d.suggestedLabel.label, lineHeight);
+            linesDict[uniqueId(d)] = lines;
+        });
+
+    enterTmp
+        .append("text")
+        .attr("class", "node_label")
+        .attr("text-anchor", "middle")
+        .attr("font-size", `${lineHeight}px`)
+        .attr(
+            "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
+        .selectAll("tspan")
+        .data((d: any) => linesDict[uniqueId(d)])
+        .enter()
+        .append("tspan")
+        .attr("x", 0)
+        .attr("y", (d: any, i: number, lines: any[]) => (i - lines.length / 2 + 0.8) * lineHeight)
+        .text((d: any) => d.text);
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
     return enterTmp;
 }
 
-function nodeUpdate(selection: any, x: any, y: any, r: any) {
-    const enterTmp = selectNodeGroup(selection);
-    selectNodeCircle(selection)
-        .attr('cx', (d: any) => scale(x, d.x))
-        .attr('cy', (d: any) => scale(y, d.y))
-        .attr('r', (d: any) => scale(r, d.r))
-        .attr('opacity', (d: any) => d.opacity || 1);
+function textRadius(lines: any[], lineHeight: number) {
+    let radius = 0;
 
-    selectNodeTitle(selection)
-        .attr('x', (d: any) => scale(x, d.x))
-        .attr('dy', (d: any) => scale(y, d.y));
+    if (lines && lines.length && lineHeight) {
+        for (let i = 0, n = lines.length; i < n; ++i) {
+            const dy = (Math.abs(i - n / 2 + 0.5) + 0.5) * lineHeight;
+            const dx = lines[i].width / 2;
+            radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2));
+        }
+    }
+    return radius;
+}
 
-    return enterTmp;
+function createWords(text: string) {
+    const words = text.split(/\s+/g);
+    if (!words[words.length - 1]) words.pop();
+    if (!words[0]) words.shift();
+    return words;
+}
+
+function createLines(text: any, lineHeight: number) {
+    const words: any[] = createWords(text.trim())
+    const targetWidth = Math.sqrt(measureWidth(text.trim()) * lineHeight);
+    let line: any;
+    let lineWidth0 = Infinity;
+    const lines = [];
+
+    for (let i = 0, n = words.length; i < n; ++i) {
+        const first = (line ? `${line.text} ` : "");
+        const lineText1 = `${first}${words[i]}` // (line ? line.text + " " : "") + words[i];
+        const lineWidth1 = measureWidth(lineText1);
+
+        if ((lineWidth0 + lineWidth1) / 2 < targetWidth) {
+            line.width = lineWidth0 = lineWidth1; // eslint-disable-line no-multi-assign
+            line.text = lineText1;
+        }
+        else {
+            lineWidth0 = measureWidth(words[i]);
+            line = { width: lineWidth0, text: words[i] };
+            lines.push(line);
+        }
+    }
+    return lines;
+}
+
+function measureWidth(text: string) {
+    const ctx: any = document.createElement("canvas").getContext("2d");
+    return ctx.measureText(text).width;
 }
 
 export function createMarkers(theme: any, data: any, gMarkers: any) {
@@ -309,20 +365,16 @@ export function getTransitionsFromProps(g: any, props: ITransitionProps): any {
 function onNodeDrag(nodesMap: any, gLinks: any) {
     return d3
         .drag<SVGGElement, unknown>()
-        .subject(function (event: any) { // eslint-disable-line prefer-arrow-callback
-            return {
-                x: event.x,
-                y: event.y,
-            };
-        })
+        .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
-            d.x = event.x; // eslint-disable-line no-param-reassign
-            d.y = event.y; // eslint-disable-line no-param-reassign
-
+            // d.x = event.x; // eslint-disable-line no-param-reassign
+            // d.y = event.y; // eslint-disable-line no-param-reassign
             const nodeGroup = d3.select(this);
-            selectNodeCircle(nodeGroup).attr('cx', d.x).attr('cy', d.y);
-            selectNodeTitle(nodeGroup).attr('x', d.x).attr('dy', d.y);
-
+            selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
+            const transform = selectNodeLabel(nodeGroup).attr("transform");
+            const scaleIx = transform.indexOf("scale")
+            const scaleStr = transform.substring(scaleIx, transform.length)
+            selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y}) ${scaleStr}`)
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
         });
 }
@@ -365,7 +417,7 @@ function colorBlueNodeAndLinks(this: any, theme: any, gNodes: any, gLinks: any, 
 
         const delay = 150;
 
-        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).id) {
+        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).stateNo) {
             linePath
                 .attr('stroke', theme.link.default.stroke)
                 .transition()
@@ -402,7 +454,7 @@ function createPath(data: any, link: any): string {
             const { x, y, r } = data.source;
             const xNew = x + r;
             const t = (x + xNew) / 2;
-            const yNew = y - 5.5 * r;
+            const yNew = y - 3.5 * r;
             const ctx = d3.path();
             ctx.moveTo(xNew, y);
             ctx.quadraticCurveTo(t, yNew, x, y - data.source.r);
@@ -472,8 +524,8 @@ export function selectNodeCircle(selection: any) {
     return selection.select('.node_circle');
 }
 
-export function selectNodeTitle(selection: any) {
-    return selection.select('.node_title');
+export function selectNodeLabel(selection: any) {
+    return selection.select('.node_label');
 }
 
 export function createBandScale(domain: string[], range: number[], padding: number) {
@@ -539,10 +591,6 @@ export function findMinMaxValues(scales: any) {
             rez.r.min = Math.min(rez.r.min, el.r);
             rez.r.max = Math.max(rez.r.max, el.r);
         });
-    rez.x.min -= rez.r.max;
-    rez.y.min -= rez.r.max;
-    rez.x.max += rez.r.max;
-    rez.y.max += rez.r.max;
     return rez;
 }
 
@@ -598,9 +646,6 @@ export function addCoordinatesToStates(scales: any, maxRadius: number, debug: bo
             }
         });
     });
-    // console.log("statesDict=", statesDict)
-    // console.log("\n")
-    // console.log("\n")
 }
 
 export function createStateLinks(

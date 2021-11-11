@@ -21,10 +21,8 @@ import { TRANSITION_PROPS } from '../types/charts';
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
-    const [debug] = useState<boolean>(false);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
-    const [maxRadius] = useState<number>(130);
     const [currScaleIx] = useState<number>(0);
     const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
@@ -79,8 +77,17 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
             console.log('model.model.scales=', model.model.scales);
+
+            const maxRadius = 100; // FIXME: hardcoded
+
+            model.model.scales.forEach((sc: any) => {
+                sc.states.forEach((state: any) => {
+                    state.x = state.xCenter; // eslint-disable-line no-param-reassign
+                    state.y = state.yCenter; // eslint-disable-line no-param-reassign
+                    state.r = state.radius * maxRadius; // eslint-disable-line no-param-reassign
+                });
+            });
             addColorsToScaleStates(model.model.scales);
-            addCoordinatesToStates(model.model.scales, maxRadius, debug);
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
             setTheme(darkTheme);
@@ -108,7 +115,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
         const margin = { top: 5, right: 5, bottom: 10, left: 10 }; // FIXME: hardcoded
-        const chart = { top: 2, left: 2 }; // FIXME: hardcoded
+        const chart = { top: 130, left: 100 }; // FIXME: hardcoded
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
 
@@ -122,23 +129,38 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gSliderScale = null;
 
             if (!initialized) {
-                graph = createSVG(containerRef, width, height, margin);
+                graph = createSVG(containerRef, darkTheme, width, height, margin); // FIXME: hardcoded theme
+                gSliderProb = graph.append('g').attr('class', 'slider_prob');
+                gSliderScale = graph.append('g').attr('class', 'c');
                 graphContainer = createGraphContainer(graph, width, height, chart);
                 gLinks = graphContainer.append('g').attr('class', 'links');
                 gNodes = graphContainer.append('g').attr('class', 'nodes');
                 gMarkers = graphContainer.append('g').attr('class', 'markers');
-                gSliderProb = graphContainer.append('g').attr('class', 'slider_prob');
-                gSliderScale = graphContainer.append('g').attr('class', 'c');
                 setInitialized(true);
             } else {
                 graph = getSVG(containerRef, width, height, margin);
+                gSliderProb = graph.select('g.slider_prob');
+                gSliderScale = graph.select('g.slider_scale');
                 graphContainer = getGraphContainer(graph);
                 gLinks = graphContainer.select('g.links');
                 gNodes = graphContainer.select('g.nodes');
                 gMarkers = graphContainer.select('g.markers');
-                gSliderProb = graphContainer.select('g.slider_prob');
-                gSliderScale = graphContainer.select('g.slider_scale');
             }
+
+            graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.8)`); // FIXME: hardcoded scale
+
+            const zoom = d3
+                .zoom()
+                .scaleExtent([0, 5])
+                .on('zoom', (event: any) => {
+                    console.log('event=', event);
+                    if (event) {
+                        setCurrentScaleIx(Math.floor(event.transform.k));
+                    }
+                });
+
+            graphContainer.call(zoom);
+
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
             const r = createLinearScale(
@@ -194,7 +216,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     handleOnScaleChanged,
                 );
             }
-            createLinks(darkTheme, graphData[currentScaleIx], gNodes, gLinks, TRANSITION_PROPS);
+            createLinks(
+                darkTheme,
+                graphData[currentScaleIx],
+                gNodes,
+                gLinks,
+                x,
+                y,
+                TRANSITION_PROPS,
+            );
             createMarkers(darkTheme, graphData[currentScaleIx], gMarkers);
         }
     }
@@ -218,7 +248,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     return (
         <>
             <div ref={tooltipRef} />
-            <div ref={containerRef} style={{ backgroundColor: theme?.backgroundColor }} />
+            <div ref={containerRef} />
         </>
     );
 };
