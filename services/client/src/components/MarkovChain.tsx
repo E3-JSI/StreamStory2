@@ -171,7 +171,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             );
             const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
             const ySliderScale = createLinearScale(
-                [0, model.model.scales.length],
+                [0, model.model.scales.length - 1],
                 [yWidth, 0],
             ).clamp(true);
 
