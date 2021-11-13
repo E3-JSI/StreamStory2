@@ -30,6 +30,9 @@ public:
 		else { Assert(false); return std::numeric_limits<double>::quiet_NaN(); } }
 
 	TStr ToStr() const;
+
+	static TStr GetDowName(int dowOneBased);
+	static TStr GetMonthName(int monthOneBased);
 };
 
 typedef TVec<TTimeStamp> TTimeStampV;
@@ -157,6 +160,15 @@ public:
 };
 */
 
+class TDecTreeConfig
+{
+public:
+	int maxDepth = -1; 
+	double minEntropyToSplit = -1;
+	double minNormInfGainToSplit = -1;
+	void Clr() { *this = {}; }
+};
+
 class TModelConfig;
 typedef TPt<TModelConfig> PModelConfig;
 
@@ -169,7 +181,8 @@ public:
 	TOpDescV ops;
 	int numInitialStates;
 	int numHistogramBuckets;
-	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; }
+	TDecTreeConfig decTreeConfig;
+	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); }
 	bool InitFromJson(const PJsonVal& val, TStrV& errors);
 protected:
 	bool AddAttrsFromOps(TStrV& errors);
@@ -277,6 +290,64 @@ public:
 	static void CalcHistograms(THistogramV& dest, const TDataset& dataset, const TIntV& rowNos, bool allRows = false, int nBucketsOverride = -1);
 };
 
+enum class TDecTreeTimeUnit { Hour, Month, DayOfWeek };
+
+class TDecTreeNode;
+typedef TPt<TDecTreeNode> PDecTreeNode;
+typedef TVec<PDecTreeNode> TDecTreeNodeV;
+
+struct TDecTreeNodeStats
+{
+	double entropyBeforeSplit, entropyAfterSplit;
+	double splitCost, infGain, normInfGain;
+};
+
+class TDecTreeNode
+{
+protected:
+	TCRef CRef;
+	friend TPt<TDecTreeNode>;
+public:
+	TDecTreeNodeV children;
+	// Number of instances that reach this node and are positive (inside the state) or negative (outside the state).
+	int nPos, nNeg;
+	// The attribute used to split the instances amongst subtrees; -1 if this is a leaf.
+	int attrNo;
+	int intThresh; // used if the attribute is Numeric/Int; the first subtree is for <, the second for >=
+	double fltThresh; // used if the attribute is Numeric/Flt; the first subtree is for <, the second for >=
+	// Time attributes are used only if their timeType is Time (and not Int or Flt).
+	// They are first converted to 'unit' (hour / month / day of week) and then
+	// used in the following way: if intThresh <= attribute value < intThresh2, go to the left subtree,
+	// otherwise go to the second subtree.  Note that for months and days of week, the thresholds are 0-based, not 1-based.
+	TDecTreeTimeUnit timeUnit;
+	int intThresh2;
+	TDecTreeNodeStats stats;
+
+protected:
+	void BuildSubtree(const TDataset& dataset, const TIntV& posList, const TIntV& negList, TBoolV& attrToIgnore, int maxDepth, double minEntropyToSplit, double minNormInfGainToSplit);
+	void SelectBestSplit(const TDataset& dataset, const TIntV& posList, const TIntV& negList, const TBoolV& attrToIgnore, double &bestNormInfGain);
+public:
+	static inline PDecTreeNode New(const TDataset& dataset, const TIntV& posList, const TIntV& negList, TBoolV& attrToIgnore, int maxDepth, double minEntropyToSplit, double minNormInfGainToSplit) {
+		PDecTreeNode node = new TDecTreeNode();
+		node->BuildSubtree(dataset, posList, negList, attrToIgnore, maxDepth, minEntropyToSplit, minNormInfGainToSplit); 
+		return node; }
+	PJsonVal SaveToJson(const TDataset& dataset) const;
+public:
+	static inline double Entropy(int nPos, int nNeg) { // in bits
+		Assert(nPos >= 0); Assert(nNeg >= 0);
+		if (nPos <= 0 || nNeg <= 0) return 0;
+		// H = - pPos ln pPos - pNeg ln pNeg
+		//   = - (nPos/N) ln (nPos/N) - (nNeg/N) ln (nNeg/N)
+		//   = - [nPos ln (nPos/N) + nNeg ln (nNeg/N)] / N
+		//   = - [nPos ln nPos - nPos ln N + nNeg ln nNeg - nNeg ln N)] / N
+		//   = - [nPos ln nPos + nNeg ln nNeg - N ln N] / N
+		//   = - [nPos ln nPos + nNeg ln nNeg] / N + ln N
+		int N = nPos + nNeg;
+		const double inv_ln2 = 1.0 / 0.69314718055994530941723212145818;
+		return (log(N) - (nPos * log(nPos) + nNeg * log(nNeg)) / double(N)) * inv_ln2; }
+	static inline double Entropy(const TIntPr pr) { return Entropy(pr.Val1, pr.Val2); }
+};
+
 class TState;
 typedef TPt<TState> PState;
 typedef TVec<PState> TStateV;
@@ -308,6 +379,7 @@ public:
 	TIntV initialStates; // indexes of initial states from which this state has been aggregated; sorted incrementally
 	THistogramV histograms; // index: column number, same as TDataset::cols
 	TStateLabel label;
+	PDecTreeNode decTree;
 	double xCenter, yCenter, radius;
 	void InitCentroid0(const TDataset& dataset);
 	void AddToCentroid(const TDataset& dataset, int rowNo, double coef);  // Works like centroid += coef * dataset[rowNo].
@@ -394,6 +466,7 @@ public:
 		TState::CalcLabels(*dataset, initialStates, totalHists);
 		for (const PStatePartition& scale : statePartitions) scale->CalcLabels(*dataset, totalHists); }
 	void CalcStatePositions(); // requires static probabilities and centroids
+	void BuildDecTrees(int maxDepth, double minEntropyToSplit, double minNormInfGainToSplit);
 
 	PJsonVal SaveToJson() const;
 };
@@ -461,27 +534,6 @@ protected:
 public:
 	inline static void SelectScales(TModel& model, TStatePartitionV allPartitions, int nToSelect, TStatePartitionV &dest) { TStateAggScaleSelector s { model, std::move(allPartitions) }; s.SelectScales(nToSelect, dest); }
 };
-
-#if 0
-class TDecTreeNode;
-typedef TPt<TDecTreeNode> PDecTreeNode;
-
-class TDecTreeNode
-{
-protected:
-	TCRef CRef;
-	friend TPt<TDecTreeNode>;
-public:
-	// Number of instances that reach this node and are inside/outside the state.
-	int nIn, nOut; 
-	// The attribute used to split the instances amongst subtrees.
-	int attrNo;
-	int intThresh; // used if the attribute is Numeric/Int; the first subtree is for <, the second for >=
-	double fltThresh; // used if the attribute is Numeric/Flt; the first subtree is for <, the second for >=
-// 	// Allowed combinations of type and subtype: Time/{String, Int, Flt}, Numeric/{Int, Flt}, Categorical/{String, Int}, Text/{String}.
-
-};
-#endif
 
 bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList);

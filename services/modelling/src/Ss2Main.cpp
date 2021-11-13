@@ -173,6 +173,7 @@ public:
 		model->CalcHistograms();
 		model->CalcLabels();
 		model->CalcStatePositions();
+		model->BuildDecTrees(config->decTreeConfig.maxDepth, config->decTreeConfig.minEntropyToSplit, config->decTreeConfig.minNormInfGainToSplit);
 		// ToDo: state labels, decision trees etc. should also be calculated here.
 		// Export the model to json.
 		req.outJson->AddToObj("model",  model->SaveToJson());
