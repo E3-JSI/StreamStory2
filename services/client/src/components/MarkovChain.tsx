@@ -23,7 +23,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
-    const [currScaleIx] = useState<number>(0);
     const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [pThreshold, setPThreshold] = useState<number>(0.1);
@@ -87,6 +86,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     state.r = state.radius * maxRadius; // eslint-disable-line no-param-reassign
                 });
             });
+
+            setCurrentScaleIx(model.model.scales.length - 1);
+
             addColorsToScaleStates(model.model.scales);
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
@@ -216,7 +218,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     ySliderScale,
                     scaleStartX,
                     scaleStartY,
-                    currScaleIx,
+                    model.model.scales.length - 1,
                     true,
                     false,
                     false,
