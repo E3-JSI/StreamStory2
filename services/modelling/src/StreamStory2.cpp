@@ -151,6 +151,9 @@ bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
 	if (! Json_GetObjInt(val, "numInitialStates", true, -1, numInitialStates, "model config", errList)) return false;
 	// ToDo: the alternative to numInitialStates is to specify the radius and use DP-means.
 	if (! Json_GetObjInt(val, "numHistogramBuckets", true, 10, numHistogramBuckets, "model config", errList)) return false;
+	if (! Json_GetObjInt(val, "decTree_maxDepth", true, 3, decTreeConfig.maxDepth, "model config", errList)) return false;
+	if (! Json_GetObjNum(val, "decTree_minEntropyToSplit", true, TDecTreeNode::Entropy(1, 3 * numInitialStates - 1), decTreeConfig.minEntropyToSplit, "model config", errList)) return false;
+	if (! Json_GetObjNum(val, "decTree_minNormInfGainToSplit", true, -1, decTreeConfig.minNormInfGainToSplit, "model config", errList)) return false;
 	// Parse the attribute decriptions.
 	{
 		PJsonVal jsonAttrs; if (! Json_GetObjKey(val, "attributes", false, false, jsonAttrs, "model config", errList)) return false; 
@@ -429,7 +432,7 @@ bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TStrV& errors)
 				intmax_t intVal; if (1 != sscanf(value.CStr(), "%jd", &intVal))  { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); return false; }
 				if (col.timeType == TTimeType::Time) ts.SetTime(intVal, 0);
 				else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
-				else if (col.timeType == TTimeType::Flt) ts.SetFlt(intVal);
+				else if (col.timeType == TTimeType::Flt) ts.SetFlt((double) intVal);
 				else IAssert(false); }
 			else if (col.subType == TAttrSubtype::Flt) {
 				double x; if (1 != sscanf(value.CStr(), "%lf", &x))  { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not a floating-point number."); return false; }
@@ -536,7 +539,7 @@ bool TDataset::ReadDataFromJsonArray(const PJsonVal &jsonData, TStrV& errors)
 					double x = val->GetNum(); int64_t intVal = (int64_t) floor(x); if (intVal != x) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is a number but not an integer."); return false; }
 					if (col.timeType == TTimeType::Time) ts.SetTime(intVal, 0);
 					else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
-					else if (col.timeType == TTimeType::Flt) ts.SetFlt(intVal);
+					else if (col.timeType == TTimeType::Flt) ts.SetFlt((double) intVal);
 					else IAssert(false); }
 				else if (col.subType == TAttrSubtype::Flt) {
 					if (! val->IsNum()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a number."); return false; }
@@ -1055,12 +1058,24 @@ void TState::CalcLabels(const TDataset& dataset, const TStateV& states, const TH
 		states[stateNo]->CalcLabel(dataset, stateNo, totalHists, eps); 
 }
 
+TStr TTimeStamp::GetDowName(int dowOneBased)
+{
+	static const char *dowNames[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	Assert(1 <= dowOneBased); Assert(dowOneBased <= 7);
+	return dowNames[dowOneBased - 1];
+}
+
+TStr TTimeStamp::GetMonthName(int monthOneBased)
+{
+	static const char *monthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+	Assert(1 <= monthOneBased); Assert(monthOneBased <= 12);
+	return monthNames[monthOneBased - 1];
+}
+
 void TState::CalcLabel(const TDataset& dataset, int thisStateNo, const THistogramV& totalHists, double eps)
 {
 	TStateLabel &bestLabel = this->label; bestLabel = TStateLabel(); bestLabel.label = TInt::GetStr(thisStateNo);
-	static const char *dowNames[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 	static const char *bucketNames[] = { "LOWEST", "LOW", "MEDIUM", "HIGH", "HIGHEST", "ERROR" };
-	static const char *monthNames[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 	const int nStateMembers = members.Len(), nAllInstances = dataset.nRows;
 	for (int colNo = 0; colNo < dataset.cols.Len(); ++colNo) 
 	{
@@ -1086,8 +1101,8 @@ void TState::CalcLabel(const TDataset& dataset, int thisStateNo, const THistogra
 		else if (col.type == TAttrType::Time && col.timeType == TTimeType::Time)
 		{
 			for (int bucketNo = 0; bucketNo < 24; ++bucketNo) if (bestLabel.SetIfBetter(hist.hourFreqs[bucketNo], nStateMembers, totalHist.hourFreqs[bucketNo], nAllInstances, eps, hist.hourFreqs.Len())) bestLabel.label = "HOUR(" + col.userFriendlyLabel + ") = " + TInt::GetStr(bucketNo); 
-			for (int bucketNo = 0; bucketNo < 12; ++bucketNo) if (bestLabel.SetIfBetter(hist.monthFreqs[bucketNo], nStateMembers, totalHist.monthFreqs[bucketNo], nAllInstances, eps, hist.monthFreqs.Len())) bestLabel.label = col.userFriendlyLabel + " = " + monthNames[bucketNo]; 
-			for (int bucketNo = 0; bucketNo < 7; ++bucketNo) if (bestLabel.SetIfBetter(hist.dowFreqs[bucketNo], nStateMembers, totalHist.dowFreqs[bucketNo], nAllInstances, eps, hist.dowFreqs.Len())) bestLabel.label = col.userFriendlyLabel + " = " + dowNames[bucketNo];
+			for (int bucketNo = 0; bucketNo < 12; ++bucketNo) if (bestLabel.SetIfBetter(hist.monthFreqs[bucketNo], nStateMembers, totalHist.monthFreqs[bucketNo], nAllInstances, eps, hist.monthFreqs.Len())) bestLabel.label = col.userFriendlyLabel + " = " + TTimeStamp::GetMonthName(bucketNo + 1); 
+			for (int bucketNo = 0; bucketNo < 7; ++bucketNo) if (bestLabel.SetIfBetter(hist.dowFreqs[bucketNo], nStateMembers, totalHist.dowFreqs[bucketNo], nAllInstances, eps, hist.dowFreqs.Len())) bestLabel.label = col.userFriendlyLabel + " = " + TTimeStamp::GetDowName(bucketNo + 1);
 		}
 	}
 }
@@ -1127,6 +1142,7 @@ PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PSta
 		}
 		vState->AddToObj("childStates", TJsonVal::NewArr(childStates));
 	}	
+	if (! decTree.Empty()) vState->AddToObj("decisionTree", decTree->SaveToJson(dataset));
 	return vState;
 }
 
@@ -1249,6 +1265,38 @@ void TModel::CalcStatePositions()
 			}
 		}
 		if (! anyChanges) break;
+	}
+}
+
+void TModel::BuildDecTrees(int maxDepth, double minEntropyToSplit, double minNormInfGainToSplit)
+{
+	const int nRows = dataset->nRows, nInitialStates = initialStates.Len();
+	for (const PStatePartition &scale : statePartitions)
+	{
+		// Prepare a mapping of initial states to aggregate states at this scale.
+		TIntV iniToAgg; iniToAgg.Gen(nInitialStates);
+		int nAggStates = scale->aggStates.Len(); iniToAgg.PutAll(-1);
+		for (int aggStateNo = 0; aggStateNo < nAggStates; ++aggStateNo)
+			for (int iniStateNo : scale->aggStates[aggStateNo]->initialStates) 
+				iniToAgg[iniStateNo] = aggStateNo;
+		// Build decision trees for all the aggregate states.
+		for (int aggStateNo = 0; aggStateNo < nAggStates; ++aggStateNo)
+		{
+			const PState &state = scale->aggStates[aggStateNo];
+			// Prepare a list of rows that belond to the state and a list of those that don't.
+			TIntV posList, negList; 
+			for (int rowNo = 0; rowNo < nRows; ++rowNo)
+			{
+				int iniStateNo = rowToInitialState[rowNo]; IAssert(iniStateNo >= 0);
+				int aggStateNo2 = iniToAgg[iniStateNo]; IAssert(aggStateNo >= 0);
+				(aggStateNo2 == aggStateNo ? posList : negList).Add(rowNo);
+			}
+			IAssert(posList.Len() == state->members.Len());
+			TBoolV attrToIgnore; attrToIgnore.Gen(dataset->cols.Len()); attrToIgnore.PutAll(false);
+			// Build the tree.
+			NotifyInfo("TModel::BuildDecTrees %d/%d\n", aggStateNo, scale->aggStates.Len());
+			state->decTree = TDecTreeNode::New(*dataset, posList, negList, attrToIgnore, maxDepth, minEntropyToSplit, minNormInfGainToSplit);
+		}
 	}
 }
 
@@ -1751,5 +1799,318 @@ void TStateAggScaleSelector::SelectScales(int nToSelect, TStatePartitionV& dest)
 		dest.Add(allPartitions[bestScale]);
 	}
 	std::sort(dest.begin(), dest.end(), [] (const PStatePartition &x, const PStatePartition &y) { return x->aggStates.Len() > y->aggStates.Len(); });
+}
+
+//-----------------------------------------------------------------------------
+//
+// TDecTreeNode
+//
+//-----------------------------------------------------------------------------
+
+// 'vals' must contain the values of this attribute; 'posList' and 'negList' are lists of indices (into 'vals')
+// of positive and negative instances, respectively.  This function finds the best split of the form "if the value
+// of this attribute is < thresh, go to the left subtree, otherwise go to the right subtree", and returns its
+// threshold and normalized information gain.  If no split was found, it returns 'false', otherwise 'true'.
+template<typename TDat>
+bool NumericSplitHelper(const TVec<TDat>& vals, const TIntV& posList, const TIntV& negList, TDat &bestThresh, double &bestNormInfGain)
+{
+	int nPos = posList.Len(), nNeg = negList.Len();
+	int nAll = nPos + nNeg;
+	// Sort the instances by the value of this attribute.  
+	typedef TTriple<TDat, bool, int> TTr; // the third element of the triple is the index of the instance, to ensure that the resulting sorted list is unique
+	TVec<TTr> v; v.Reserve(nAll);
+	for (int rowNo : posList) v.Add({vals[rowNo], true, rowNo});
+	for (int rowNo : negList) v.Add({vals[rowNo], false, rowNo});
+	v.Sort();
+	// Evaluate all possible positions of the split.
+	int nPosLeft = 0, nNegLeft = 0, nPosRight = nPos, nNegRight = nNeg;
+	double origEntropy = TDecTreeNode::Entropy(nPos, nNeg);
+	bestNormInfGain = -1; int bestLeft = -1;
+	for (int nLeft = 1; nLeft + 1 < nAll; ++nLeft)
+	{
+		if (v[nLeft - 1].Val2) nPosLeft++, nPosRight--; else nNegLeft++, nNegRight--; // update the distributions left/right of the split
+		if (v[nLeft - 1].Val1 == v[nLeft].Val1) continue; // we can't split between these two items since their value is identical
+		// Evaluate this split position.
+		int nRight = nAll - nLeft;
+		double pLeft = nLeft / double(nAll), pRight = nRight / double(nAll);
+		double splitCost = TDecTreeNode::Entropy(nLeft, nRight);
+		double newEntropy = pLeft * TDecTreeNode::Entropy(nPosLeft, nNegLeft) + pRight * TDecTreeNode::Entropy(nPosRight, nNegRight);
+		double infGain = origEntropy - newEntropy;
+		double normInfGain = infGain / splitCost;
+		if (normInfGain > bestNormInfGain) { bestNormInfGain = normInfGain; bestLeft = nLeft; }
+	}
+	if (bestLeft >= 0) { bestThresh = v[bestLeft].Val1; return true; }
+	else return false;
+}
+
+// 'counts[i]' must contain the number of positive/negative instances whose value is 'i'.
+// This function looks for the best split of the form "if thresh1 <= value of this attribute < thresh2,
+// go to the left subtree, otherwise go to the right subtree".  
+// Splits of this form are useful for such things as months, days of the week, or hours of the day.
+bool TimeSplitHelper(const TIntPrV& counts, double &bestNormInfGain, int &bestThreshFrom, int &bestThreshToBelow)
+{
+	int M = counts.Len(), nPos = 0, nNeg = 0; for (const auto &pr : counts) { nPos += pr.Val1; nNeg += pr.Val2; }
+	int nAll = nPos + nNeg;
+	double origEntropy = TDecTreeNode::Entropy(nPos, nNeg);
+	bestNormInfGain = -1; bool retVal = false;
+	for (int threshFrom = 0; threshFrom < M; ++threshFrom)
+	{
+		int nInPos = 0, nInNeg = 0, nOutPos = nPos, nOutNeg = nNeg;
+		for (int threshToBelow = threshFrom + 1; threshToBelow <= M; ++threshToBelow)
+		{
+			const auto &pr = counts[threshToBelow - 1];
+			nInPos += pr.Val1; nInNeg += pr.Val2; nOutPos -= pr.Val1; nOutNeg -= pr.Val2;
+			int nIn = nInPos + nInNeg, nOut = nOutPos + nOutNeg;
+			if (nIn <= 0 || nOut <= 0) continue; // not really a split
+			double splitCost = TDecTreeNode::Entropy(nIn, nOut);
+			double pIn = nIn / double(nAll), pOut = nOut / double(nAll);
+			double newEntropy = pIn * TDecTreeNode::Entropy(nInPos, nInNeg) + pOut * TDecTreeNode::Entropy(nOutPos, nOutNeg);
+			double infGain = origEntropy - newEntropy;
+			double normInfGain = infGain / splitCost;
+			if (normInfGain > bestNormInfGain) { bestNormInfGain = normInfGain; bestThreshFrom = threshFrom; bestThreshToBelow = threshToBelow; retVal = true; }
+		}
+	}
+	return retVal;
+}
+
+// Selects the best split and initializes the members of *this appropriately.
+// The 'attrToIgnore' vector can be used to tell the function to ignore certain attributes
+// (e.g. because they have already been used to split an ancestor of the current node).
+void TDecTreeNode::SelectBestSplit(const TDataset& dataset, const TIntV& posList, const TIntV& negList, const TBoolV& attrToIgnore, double &bestNormInfGain)
+{
+	nPos = posList.Len(); nNeg = negList.Len(); attrNo = -1; children.Clr();
+	bestNormInfGain = -1;
+	double origEntropy = Entropy(nPos, nNeg);
+	for (int candAttrNo = 0; candAttrNo < dataset.cols.Len(); ++candAttrNo)
+	{
+		if (attrToIgnore[candAttrNo]) continue;
+		const TDataColumn &col = dataset.cols[candAttrNo];
+		if (col.type == TAttrType::Categorical)
+		{
+			int nValues = 0;
+			if (col.subType == TAttrSubtype::Int) nValues = col.intKeyMap.Len();
+			else if (col.subType == TAttrSubtype::String) nValues = col.strKeyMap.Len();
+			else IAssert(false);
+			TIntPrV counts; counts.Gen(nValues); counts.PutAll({0, 0});
+			for (int rowNo : posList) counts[col.intVals[rowNo]].Val1 += 1;
+			for (int rowNo : negList) counts[col.intVals[rowNo]].Val2 += 1;
+			double splitCost = 0, newEntropy = 0;
+			for (TIntPr pr : counts) 
+			{
+				int nChild = pr.Val1 + pr.Val2; if (nChild <= 0) continue;
+				double pChild = nChild / double(nPos + nNeg); splitCost -= pChild * log(pChild);
+				newEntropy += Entropy(pr.Val1, pr.Val2) * pChild;
+			}
+			if (splitCost <= 1e-6) continue; // this doesn't seem to split anything, perhaps all instances have the same value of this attribute
+			double infGain = origEntropy - newEntropy;
+			double normInfGain = infGain / splitCost;
+			if (normInfGain > bestNormInfGain) { bestNormInfGain = normInfGain; attrNo = candAttrNo; }
+		}
+		else if (col.type == TAttrType::Numeric)
+		{
+			if (col.subType == TAttrSubtype::Int)
+			{
+				TInt thresh; double normInfGain;
+				if (! NumericSplitHelper(col.intVals, posList, negList, thresh, normInfGain)) continue;
+				if (normInfGain > bestNormInfGain) { bestNormInfGain = normInfGain; attrNo = candAttrNo; intThresh = thresh; }
+			}
+			if (col.subType == TAttrSubtype::Flt)
+			{
+				TFlt thresh; double normInfGain;
+				if (! NumericSplitHelper(col.fltVals, posList, negList, thresh, normInfGain)) continue;
+				if (normInfGain > bestNormInfGain) { bestNormInfGain = normInfGain; attrNo = candAttrNo; fltThresh = thresh; }
+			}
+			else IAssert(false);
+		}
+		else if (col.type == TAttrType::Time)
+		{
+			if (col.timeType != TTimeType::Time) continue;
+			TIntPrV hourCounts(24), dowCounts(7), monthCounts(12);
+			hourCounts.PutAll({0, 0}); dowCounts.PutAll({0, 0}); monthCounts.PutAll({0, 0});
+			for (int pass = 1; pass <= 2; ++pass) for (int rowNo : (pass == 1 ? posList : negList))
+			{
+				const TTimeStamp &ts = col.timeVals[rowNo]; IAssert(ts.type == TTimeType::Time);
+				TSecTm secTm(ts.sec);
+				auto &hc = hourCounts[secTm.GetHourN()], &dc = dowCounts[secTm.GetDayOfWeekN() - 1], &mc = monthCounts[secTm.GetMonthN() - 1];
+				if (pass == 1) hc.Val1 += 1, dc.Val1 += 1, mc.Val1 += 1; else hc.Val2 += 1, dc.Val2 += 1, mc.Val2 += 1;
+			}
+			double normInfGain; int th1, th2;
+			if (TimeSplitHelper(hourCounts, normInfGain, th1, th2)) if (normInfGain > bestNormInfGain) {
+				bestNormInfGain = normInfGain; attrNo = candAttrNo; timeUnit = TDecTreeTimeUnit::Hour; intThresh = th1; intThresh2 = th2; }
+			if (TimeSplitHelper(dowCounts, normInfGain, th1, th2)) if (normInfGain > bestNormInfGain) {
+				bestNormInfGain = normInfGain; attrNo = candAttrNo; timeUnit = TDecTreeTimeUnit::DayOfWeek; intThresh = th1; intThresh2 = th2; }
+			if (TimeSplitHelper(monthCounts, normInfGain, th1, th2)) if (normInfGain > bestNormInfGain) {
+				bestNormInfGain = normInfGain; attrNo = candAttrNo; timeUnit = TDecTreeTimeUnit::Month; intThresh = th1; intThresh2 = th2; }
+		}
+		else if (col.type == TAttrType::Text)
+		{
+			// ToDo: do we want to do something about text attributes in the decision trees?
+			continue;
+		}
+		else IAssert(false);
+	}
+}
+
+// Selects the best split for this node and builds the subtrees recursively.
+// Does not split the node if any of the following conditions are met:
+// if no split can be found; if maxDepth = 0; if the entropy at the 
+// current node is < minEntropyToSplit; if the normalized information
+// gain of the best split if < minNormInfGainToSplit.
+void TDecTreeNode::BuildSubtree(const TDataset& dataset, const TIntV& posList, const TIntV& negList, TBoolV& attrToIgnore, int maxDepth, double minEntropyToSplit, double minNormInfGainToSplit)
+{
+	nPos = posList.Len(); nNeg = negList.Len(); attrNo = -1; children.Clr();
+	double origEntropy = Entropy(nPos, nNeg); stats.entropyBeforeSplit = origEntropy; 
+	stats.entropyAfterSplit = origEntropy; stats.infGain = 0; stats.normInfGain = 0; stats.splitCost = 0;
+	NotifyInfo("BuildSubtree (depth %d) (%d pos, %d neg; entropy %.2f bits)\n", maxDepth, nPos, nNeg, origEntropy);
+	if (maxDepth == 0) return;
+	if (origEntropy < minEntropyToSplit)  return;
+	double bestNormInfGain = -1;
+	SelectBestSplit(dataset, posList, negList, attrToIgnore, bestNormInfGain);
+	if (attrNo < 0) return;
+	NotifyInfo("-> best normInfGain = %.4f\n", bestNormInfGain);
+	if (bestNormInfGain < minNormInfGainToSplit) { attrNo = -1; return; }
+	// Now we can actually split the instances.
+	// First determine how many children there will be.
+	const TDataColumn &col = dataset.cols[attrNo];
+	int nChildren = 0;
+	if (col.type == TAttrType::Numeric || col.type == TAttrType::Time) nChildren = 2;
+	else if (col.type == TAttrType::Categorical) {
+		if (col.subType == TAttrSubtype::Int) nChildren = col.intKeyMap.Len();
+		else if (col.subType == TAttrSubtype::String) nChildren = col.strKeyMap.Len();
+		else IAssert(false); }
+	else IAssert(false);
+	// Prepare the list of instances for each child.
+	TVec<TIntV> childPosLists(nChildren), childNegLists(nChildren);
+	for (int pass = 1; pass <= 2; ++pass) for (int rowNo : (pass == 1 ? posList : negList))
+	{
+		int childNo = -1;
+		if (col.type == TAttrType::Numeric) {
+			if (col.subType == TAttrSubtype::Int) childNo = (col.intVals[rowNo] < intThresh) ? 0 : 1;
+			else if (col.subType == TAttrSubtype::Flt) childNo = (col.fltVals[rowNo] < fltThresh) ? 0 : 1;
+			else IAssert(false); }
+		else if (col.type == TAttrType::Categorical) 
+			childNo = col.intVals[rowNo];
+		else if (col.type == TAttrType::Time) 
+		{
+			IAssert(col.timeType == TTimeType::Time);
+			const TTimeStamp &ts = col.timeVals[rowNo]; IAssert(ts.type == TTimeType::Time);
+			TSecTm secTm(ts.sec);
+			int value = -1;
+			if (timeUnit == TDecTreeTimeUnit::Hour) value = secTm.GetHourN();
+			else if (timeUnit == TDecTreeTimeUnit::DayOfWeek) value = secTm.GetDayOfWeekN() - 1;
+			else if (timeUnit == TDecTreeTimeUnit::Month) value = secTm.GetMonthN() - 1;
+			else IAssert(false);
+			if (intThresh < intThresh2) childNo = (intThresh <= value && value < intThresh2) ? 0 : 1;
+			else childNo = (intThresh <= value || value < intThresh2) ? 0 : 1;
+		}
+		else
+			IAssert(false);
+		(pass == 1 ? childPosLists : childNegLists)[childNo].Add(rowNo);
+	}
+	TChA buf; for (int childNo = 0; childNo < nChildren; ++childNo) buf += TStr::Fmt("  %d:%d", (int) childPosLists[childNo].Len(), (int) childNegLists[childNo].Len());
+	NotifyInfo("-> Split (%d children): %s\n", nChildren, buf.CStr());
+	// Generate the children.  Some of them may be null (if the attribute is categorical and no instances reaching
+	// this node had that value of that attribute).
+	bool bkp = attrToIgnore[attrNo]; 
+	if (col.type == TAttrType::Categorical) attrToIgnore[attrNo] = true;
+	children.Gen(nChildren);
+	for (int childNo = 0; childNo < nChildren; ++childNo)
+	{
+		const TIntV &childPosList = childPosLists[childNo], &childNegList = childNegLists[childNo];
+		if (childPosList.Empty() && childNegList.Empty()) continue;
+		PDecTreeNode child = new TDecTreeNode();
+		child->BuildSubtree(dataset, childPosList, childNegList, attrToIgnore, maxDepth - 1, minEntropyToSplit, minNormInfGainToSplit);
+		children[childNo] = child;
+	}
+	attrToIgnore[attrNo] = bkp;
+	// Calculate the statistics.
+	stats.entropyAfterSplit = 0; stats.splitCost = 0;
+	for (int childNo = 0; childNo < nChildren; ++childNo)
+	{
+		int nChildPos = childPosLists[childNo].Len(), nChildNeg = childNegLists[childNo].Len();
+		if (nChildPos + nChildNeg <= 0) continue;
+		double childEntropy = Entropy(nChildPos, nChildNeg);
+		double pChild = (nChildPos + nChildNeg) / double(nPos + nNeg);
+		stats.entropyAfterSplit += pChild * childEntropy;
+		stats.splitCost -= pChild * log(pChild);
+	}
+	stats.splitCost /= log(2.0);
+	stats.infGain = stats.entropyBeforeSplit - stats.entropyAfterSplit;
+	stats.normInfGain = stats.infGain / stats.splitCost;
+}
+
+template<typename TValueEncoder>
+void SuggestTimeSplitLabels(int minVal, int intThresh, int intThresh2, int maxValPlus1, TValueEncoder&& valEnc, TStr& leftStr, TStr& rightStr)
+{
+	IAssert(minVal <= intThresh); IAssert(intThresh < intThresh2); IAssert(intThresh2 <= maxValPlus1);
+	if (intThresh2 - intThresh > 1) leftStr = valEnc(intThresh) + ".." + valEnc(intThresh2 - 1);
+	else leftStr = valEnc(intThresh);
+	if (intThresh <= minVal) rightStr = (intThresh2 >= maxValPlus1) ? TStr::Fmt("") : (intThresh2 == maxValPlus1 - 1) ? valEnc(intThresh2) : (valEnc(intThresh2) + ".." + valEnc(maxValPlus1 - 1));
+	else if (intThresh2 >= maxValPlus1) rightStr = (intThresh <= minVal) ? TStr::Fmt("") : (intThresh == minVal + 1) ? valEnc(minVal) : (valEnc(minVal) + ".." + valEnc(intThresh - 1));
+	else rightStr = "not " + leftStr;
+}
+
+PJsonVal TDecTreeNode::SaveToJson(const TDataset& dataset) const
+{
+	PJsonVal nodeVal= TJsonVal::NewObj();
+	nodeVal->AddToObj("nPos", nPos);
+	nodeVal->AddToObj("nNeg", nNeg);
+	const int nChildren = children.Len();
+	TJsonValV childrenVals; childrenVals.Gen(nChildren);
+	for (int childNo = 0; childNo < nChildren; ++childNo) 
+	{
+		const PDecTreeNode &child = children[childNo]; if (child.Empty()) continue;
+		childrenVals[childNo] = children[childNo]->SaveToJson(dataset);
+	}
+	TStrV childLabels; childLabels.Gen(nChildren);
+	if (attrNo >= 0)
+	{
+		const TDataColumn &col = dataset.cols[attrNo];
+		TStr splitAttr = col.userFriendlyLabel; 
+		if (col.type == TAttrType::Time)
+		{
+			TStr leftStr, rightStr; 
+			if (timeUnit == TDecTreeTimeUnit::Hour) {
+				splitAttr = "Hour(" + splitAttr + ")";
+				SuggestTimeSplitLabels(0, intThresh, intThresh2, 24, [] (int hour) { return TInt::GetStr(hour); }, leftStr, rightStr); }
+			else if (timeUnit == TDecTreeTimeUnit::DayOfWeek) 
+				SuggestTimeSplitLabels(0, intThresh, intThresh2, 7, [] (int dow) { return TTimeStamp::GetDowName(dow + 1); }, leftStr, rightStr); 
+			else if (timeUnit == TDecTreeTimeUnit::Month) 
+				SuggestTimeSplitLabels(0, intThresh, intThresh2, 12, [] (int month) { return TTimeStamp::GetMonthName(month + 1); }, leftStr, rightStr); 
+			else IAssert(false);
+			IAssert(nChildren == 2); childLabels[0] = leftStr; childLabels[1] = rightStr;
+		}
+		else if (col.type == TAttrType::Numeric)
+		{
+			TStr splitVal; 
+			if (col.subType == TAttrSubtype::Int) splitVal = TStr::Fmt("%d", intThresh);
+			else if (col.subType == TAttrSubtype::Flt) splitVal = TStr::Fmt("%g", fltThresh);
+			else IAssert(false);
+			IAssert(nChildren == 2); childLabels[0] = "< " + splitVal; childLabels[1] = ">= " + splitVal;
+		}
+		else if (col.type == TAttrType::Categorical)
+		{
+			if (col.subType == TAttrSubtype::Int) {
+				IAssert(nChildren == col.intKeyMap.Len());
+				for (int childNo = 0; childNo < nChildren; ++childNo) childLabels[childNo] = TStr::Fmt("%d", col.intKeyMap.GetKey(childNo).Val); }
+			else if (col.subType == TAttrSubtype::String) {
+				IAssert(nChildren == col.strKeyMap.Len());
+				for (int childNo = 0; childNo < nChildren; ++childNo) childLabels[childNo] = col.strKeyMap.GetKey(childNo); }
+			else IAssert(false);
+		}
+		else
+			IAssert(false);
+		nodeVal->AddToObj("splitAttr", splitAttr);
+		for (int childNo = 0; childNo < nChildren; ++childNo) if (! childrenVals[childNo].Empty()) 
+			childrenVals[childNo]->AddToObj("splitLabel", childLabels[childNo]);
+		nodeVal->AddToObj("entropyAfterSplit", stats.entropyAfterSplit);
+		nodeVal->AddToObj("splitCost", stats.splitCost);
+		nodeVal->AddToObj("splitInfGain", stats.infGain);
+		nodeVal->AddToObj("splitNormInfGain", stats.normInfGain);
+	}
+	nodeVal->AddToObj("entropyBeforeSplit", stats.entropyBeforeSplit);
+	TJsonValV childrenVals2; for (const PJsonVal &childVal : childrenVals) if (! childVal.Empty()) childrenVals2.Add(childVal);
+	nodeVal->AddToObj("children", TJsonVal::NewArr(childrenVals2));
+	return nodeVal;
 }
 
