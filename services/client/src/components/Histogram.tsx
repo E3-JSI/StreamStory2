@@ -29,6 +29,11 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
         }
     }, [histogram, totalHistogram, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    function countDecimals(value: number) {
+        if (Math.floor(value) === value) return 0;
+        return value.toString().split('.')[1].length || 0;
+    }
+
     function renderHistogram(boundsFn: any, freqFn: any, totalFreqFn: any) {
         const margin = { top: 10, right: 30, bottom: 20, left: 50 };
         const width = (containerRef?.current?.offsetWidth || 150) - margin.left - margin.right;
@@ -55,12 +60,26 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
         const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);
 
         const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.2);
-        svg.append('g').attr('transform', `translate(0, ${height})`).call(
-            d3
-                .axisBottom(x)
-                // .tickValues(x.domain().filter((d, i) => !(i % 3)))
-                .tickSizeOuter(0),
-        );
+        svg.append('g')
+            .attr('transform', `translate(0, ${height})`)
+            .call(
+                d3
+                    .axisBottom(x)
+                    .tickValues(
+                        x
+                            .domain()
+                            .filter((d: any, i: number) => !(i % 3))
+                            .map((el: any) => {
+                                console.log('el=', el);
+                                return el;
+                            }),
+                    )
+                    .tickFormat((d: any) => {
+                        const nDecimals = countDecimals(d);
+                        return nDecimals === 0 ? d : d.toFixed(Math.min(2, nDecimals));
+                    })
+                    .tickSizeOuter(0),
+            );
 
         const totalArr: any[] = totalFreqFn().length ? totalFreqFn() : [];
         const maxCurr: number = d3.max(totalArr);
