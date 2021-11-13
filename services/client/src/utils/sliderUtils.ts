@@ -4,7 +4,8 @@ export function createSlider(
     theme: any,
     gSlider: any,
     x: any,
-    yWidth: number,
+    xStart: number,
+    yStart: number,
     currVal: any,
     vertical: boolean,
     showTicks: boolean,
@@ -14,7 +15,7 @@ export function createSlider(
 ) {
     const slider = gSlider.attr(
         'transform',
-        `translate(${10}, ${yWidth})${vertical ? 'rotate(-90)' : ''}`,
+        `translate(${xStart}, ${yStart})${vertical ? 'rotate(90)' : ''}`,
     );
 
     slider

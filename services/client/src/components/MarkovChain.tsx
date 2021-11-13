@@ -190,11 +190,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 handleOnStateSelected,
             );
             if (!initialized) {
+                const probStartX = 50;
+                const probStartY = height - 50;
+
                 createSlider(
                     darkTheme, // FIXME: another variable
                     gSliderProb,
                     xSliderProb,
-                    yWidth,
+                    probStartX,
+                    probStartY,
                     pThreshold,
                     false,
                     true,
@@ -203,11 +207,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     handleOnProbChanged,
                 );
 
+                const scaleStartX = 0 + margin.left + 20;
+                const scaleStartY = 0 + margin.right + 20;
+
                 createSlider(
                     darkTheme, // FIXME: another variable
                     gSliderScale,
                     ySliderScale,
-                    yWidth,
+                    scaleStartX,
+                    scaleStartY,
                     currScaleIx,
                     true,
                     false,
