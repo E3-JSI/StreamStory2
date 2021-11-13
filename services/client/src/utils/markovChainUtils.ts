@@ -1,5 +1,6 @@
 import React from 'react';
 import * as d3 from 'd3';
+import { easeQuadIn } from 'd3'
 import { ITransitionProps, LinkType } from '../types/charts';
 
 export function scale(s: any, value: any) {
@@ -230,7 +231,12 @@ export function createNodes(
                 .style("opacity", "0.9")
         })
         .on("mouseout", function (this: any) {
-            divTooltip.style("opacity", 0);
+            divTooltip.interrupt();
+            divTooltip
+                .transition()
+                .ease(easeQuadIn)
+                .duration(200)
+                .style("opacity", 0);
             d3.select(this).style("cursor", "default")
         })
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
