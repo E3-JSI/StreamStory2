@@ -230,7 +230,7 @@ export function createNodes(
                 .style('padding', '1.5em')
                 .style("word-wrap", "break-word")
                 .style("opacity", 0)
-                .html(`<div>
+                .html(`<div style="color:black">
                 <h3><span>${d.suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
                 </div>
                 `)
