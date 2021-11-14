@@ -195,10 +195,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             ).clamp(true);
 
             const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
-            const formatInt = d3.format('.0f'); // FIXME: move to another file
 
             createNodes(
-                theme, // FIXME: put another variable
+                theme,
                 graphData[currentScaleIx],
                 gNodes,
                 gLinks,
@@ -215,14 +214,14 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 const probStartY = height - 50;
 
                 createSlider(
-                    theme, // FIXME: another variable
+                    theme,
                     gSliderProb,
                     xSliderProb,
                     probStartX,
                     probStartY,
                     pThreshold,
                     false,
-                    true,
+                    false,
                     true,
                     format2Decimals,
                     handleOnProbChanged,
@@ -232,7 +231,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 const scaleStartY = 0 + margin.right + 20;
 
                 createSlider(
-                    theme, // FIXME: another variable
+                    theme,
                     gSliderScale,
                     ySliderScale,
                     scaleStartX,
@@ -241,7 +240,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     true,
                     false,
                     false,
-                    formatInt,
+                    null,
                     handleOnScaleChanged,
                 );
             }
