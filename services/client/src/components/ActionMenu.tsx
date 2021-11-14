@@ -13,6 +13,7 @@ import Typography from '@material-ui/core/Typography';
 import { deleteModel, updateModel, Model } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import useSnackbar from '../hooks/useSnackbar';
+import useSession from '../hooks/useSession';
 import ConfirmationDialog from './ConfirmationDialog';
 import TransHtml from './TransHtml';
 import PublicOffIcon from './icons/PublicOff';
@@ -54,6 +55,7 @@ function ActionMenu(
     ref: React.ForwardedRef<HTMLUListElement>,
 ) {
     const { t } = useTranslation();
+    const [{ currentModel }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
     const [dialogState, setDialogState] = useState(DialogState.None);
     const [dialogContent, setDialogContent] = useState<DialogContent | null>(null);
@@ -129,6 +131,9 @@ function ActionMenu(
 
             if (response.data.success) {
                 onModelUpdate(model, true);
+                setSession({
+                    currentModel: currentModel.filter((m) => m.id !== model.id),
+                });
                 showSnackbar({
                     message: t('model_successfully_deleted'),
                     severity: 'success',
