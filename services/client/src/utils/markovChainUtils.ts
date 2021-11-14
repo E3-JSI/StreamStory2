@@ -345,7 +345,7 @@ export function createMarkers(theme: any, data: any, gMarkers: any) {
                     .attr('id', (d: any) => `arrow_s${d.source}_t${d.target}`)
                     .attr('class', 'line_arrow')
                     .attr('viewBox', '0 -5 10 10')
-                    .attr('refX', 18)
+                    .attr('refX', 10)
                     .attr('refY', 0)
                     .attr('markerWidth', 8)
                     .attr('markerHeight', 8)

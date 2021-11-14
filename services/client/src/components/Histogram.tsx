@@ -1,9 +1,10 @@
-import { scaleOrdinal } from 'd3';
-import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
+import { scaleOrdinal, easeQuadIn } from 'd3';
+import React, { useRef, useEffect, useState } from 'react';
 
 const Histogram = ({ histogram, totalHistogram }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
     const [windowSize] = useState<any>({
         width: undefined,
         height: undefined,
@@ -46,6 +47,11 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             .append('g')
             .attr('transform', `translate(${margin.left},${margin.top})`);
 
+        // svg.append('rect')
+        //     .attr('width', width + margin.left + margin.right)
+        //     .attr('height', height + margin.top + margin.bottom)
+        //     .attr('fill', 'black');
+
         const subgroups = ['bluePart', 'greyPart'];
         const groups: any = boundsFn(histogram); // histogram.keys when categorical variable
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']); // 1st-blue, 2nd-grey
@@ -59,21 +65,15 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
         const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);
 
+        const divTooltip = d3.select(tooltipRef.current);
+
         const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.2);
         svg.append('g')
             .attr('transform', `translate(0, ${height})`)
             .call(
                 d3
                     .axisBottom(x)
-                    .tickValues(
-                        x
-                            .domain()
-                            .filter((d: any, i: number) => !(i % 3))
-                            .map((el: any) => {
-                                console.log('el=', el);
-                                return el;
-                            }),
-                    )
+                    .tickValues(x.domain().filter((d: any, i: number) => !(i % 3)))
                     .tickFormat((d: any) => {
                         const nDecimals = countDecimals(d);
                         return nDecimals === 0 ? d : d.toFixed(Math.min(2, nDecimals));
@@ -91,9 +91,10 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             .selectAll('g')
             .data(stackedData)
             .join('g')
+            .attr('class', (d: any) => d.key)
             .attr('fill', (d: any) => color(d.key) as any)
             .selectAll('rect')
-            .data((d) => d)
+            .data((d: any) => d)
             .join('rect')
             .attr('x', (d: any) => {
                 const val = x(d.data.group);
@@ -101,11 +102,50 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             })
             .attr('y', (d: any) => y(d[1]))
             .attr('height', (d: any) => y(d[0]) - y(d[1]))
-            .attr('width', x.bandwidth());
+            .attr('width', x.bandwidth())
+            .on('mouseover', function (this: any, event: any, d: any) {
+                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
+                const parentClass = d3.select(parentNode).attr('class');
+                if (parentClass === 'bluePart') {
+                    d3.select(this).style('cursor', 'pointer');
+                    d3.select(this).attr('filter', ' brightness(0.7)');
+                }
+            })
+            .on('mousemove', function (this: any, event: any, d: any) {
+                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
+                const parentClass = d3.select(parentNode).attr('class');
+                if (parentClass === 'bluePart') {
+                    divTooltip
+                        .style('position', 'absolute')
+                        .style('position', 'absolute')
+                        .style('background-color', 'black')
+                        .style('color', 'white')
+                        .style('border-radius', '5px')
+                        .style('padding', '10px')
+                        .style('top', `${event.pageY}px`)
+                        .style('left', `${event.pageX + 20}px`)
+                        .html(`(${d.data.bluePart})`)
+                        .style('opacity', 0)
+                        .transition()
+                        .duration(200)
+                        .style('opacity', '0.9');
+                }
+            })
+            .on('mouseout', function (this: any) {
+                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
+                const parentClass = d3.select(parentNode).attr('class');
+                if (parentClass === 'bluePart') {
+                    divTooltip.interrupt();
+                    divTooltip.transition().ease(easeQuadIn).duration(200).style('opacity', 0);
+                    d3.select(this).style('cursor', 'default');
+                    d3.select(this).attr('filter', ' brightness(1)');
+                }
+            });
     }
 
     return (
         <>
+            <div ref={tooltipRef} />
             <div ref={containerRef} style={{ backgroundColor: 'white' }} />
         </>
     );
