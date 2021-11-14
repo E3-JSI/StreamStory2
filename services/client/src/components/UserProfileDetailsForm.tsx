@@ -6,29 +6,26 @@ import TextField from '@material-ui/core/TextField';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import LockIcon from '@material-ui/icons/Lock';
 
-import { User } from '../api/users';
+import {
+    UpdateCurrentUserDetailsRequest,
+    UpdateCurrentUserDetailsResponse,
+    updateCurrentUserDetails,
+} from '../api/users';
 import { initMuiRegister } from '../utils/forms';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
 
-export interface FormRequestData {
-    name?: string;
-}
-
-export interface FormResponseData {
-    user?: User;
-    error?: FormErrors | string[] | string;
-}
-
-export type FormErrors = Record<string, never>;
+type FormRequestData = UpdateCurrentUserDetailsRequest;
+type FormResponseData = UpdateCurrentUserDetailsResponse;
+type FormErrors = Record<string, never>;
 
 function UserProfileDetailsForm(): JSX.Element {
     const { t } = useTranslation();
     const [{ user }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 
-    const form = useForm<FormRequestData>({
+    const form = useForm<Partial<FormRequestData>>({
         defaultValues: {
             name: user?.name,
         },
@@ -54,6 +51,7 @@ function UserProfileDetailsForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
+            action={updateCurrentUserDetails}
             onResponse={handleResponse}
         >
             <TextField

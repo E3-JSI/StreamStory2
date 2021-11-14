@@ -5,20 +5,16 @@ import { useTranslation } from 'react-i18next';
 import Alert from '@material-ui/lab/Alert';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 
+import { deleteCurrentUser, DeleteCurrentUserResponse } from '../api/users';
 import { submitForm } from '../utils/forms';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
 import ConfirmationDialog from './ConfirmationDialog';
 
-export type FormRequestData = Record<string, never>;
-
-export interface FormResponseData {
-    success?: boolean;
-    error?: string[] | string;
-}
-
-export type FormErrors = Record<string, never>;
+type FormRequestData = Record<string, never>;
+type FormResponseData = DeleteCurrentUserResponse;
+type FormErrors = Record<string, never>;
 
 function UserProfileDeleteAccountForm(): JSX.Element {
     const { t } = useTranslation();
@@ -60,7 +56,7 @@ function UserProfileDeleteAccountForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
-            method="delete"
+            action={deleteCurrentUser}
             onResponse={handleResponse}
             submitButton={{
                 children: t('delete'),

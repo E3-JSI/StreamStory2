@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useHistory, useParams } from 'react-router-dom';
 import { useTheme } from '@material-ui/core/styles';
@@ -10,7 +9,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Tooltip from '@material-ui/core/Tooltip';
 import CloseIcon from '@material-ui/icons/Close';
 
-import { Model as ModelType, ModelsResponse } from '../api/models';
+import { getModel, Model as ModelType } from '../api/models';
 import useMountEffect from '../hooks/useMountEffect';
 import useSession from '../hooks/useSession';
 import ModelVisualization from '../components/ModelVisualization';
@@ -36,9 +35,9 @@ function Model(): JSX.Element {
     const [selectedState, setSelectedState] = useState<any>();
 
     useMountEffect(() => {
-        async function getModel() {
+        async function loadModel() {
             try {
-                const response = await axios.get<ModelsResponse>(`/api/models/${id}`);
+                const response = await getModel(Number(id));
 
                 if (response.data.model) {
                     setSession({
@@ -53,7 +52,7 @@ function Model(): JSX.Element {
         }
 
         if (!model) {
-            getModel();
+            loadModel();
         }
     });
 

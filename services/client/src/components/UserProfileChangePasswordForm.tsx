@@ -3,24 +3,21 @@ import React, { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import {
+    changeCurrentUserPassword,
+    ChangeCurrentUserPasswordRequest,
+    ChangeCurrentUserPasswordResponse,
+} from '../api/users';
 import { Errors } from '../utils/errors';
 import { minPasswordLength, initMuiRegister } from '../utils/forms';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
 import PasswordField from './PasswordField';
 
-export interface FormRequestData {
-    oldPassword?: string;
-    newPassword?: string;
-    newPassword2?: string;
-}
+type FormRequestData = ChangeCurrentUserPasswordRequest;
+type FormResponseData = ChangeCurrentUserPasswordResponse;
 
-export interface FormResponseData {
-    success?: boolean;
-    error?: FormErrors | string[] | string;
-}
-
-export interface FormErrors extends Errors {
+interface FormErrors extends Errors {
     oldPassword?: string;
     newPassword?: string;
     newPassword2?: string;
@@ -36,7 +33,7 @@ function UserProfileChangePasswordForm(): JSX.Element {
         newPassword: '',
         newPassword2: '',
     };
-    const form = useForm<FormRequestData>({ defaultValues });
+    const form = useForm<Partial<FormRequestData>>({ defaultValues });
     const {
         formState: { errors },
         register,
@@ -58,6 +55,7 @@ function UserProfileChangePasswordForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
+            action={changeCurrentUserPassword}
             onResponse={handleResponse}
         >
             <PasswordField

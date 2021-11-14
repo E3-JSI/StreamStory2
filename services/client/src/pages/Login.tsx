@@ -1,10 +1,9 @@
 import React from 'react';
 
-import axios from 'axios';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-import { AuthResponse } from '../api/auth';
+import { activateAccount, logInWithOauth } from '../api/auth';
 import { getResponseErrors } from '../utils/errors';
 import { validationPatterns } from '../utils/forms';
 import config from '../config';
@@ -40,7 +39,7 @@ function Login(): JSX.Element {
         async function activate() {
             try {
                 setSession({ isPageLoading: true });
-                const response = await axios.post<AuthResponse>('/api/auth/activation', { token });
+                const response = await activateAccount({ token: token || '' });
                 setSession({ isPageLoading: false });
 
                 if (response.data.success) {
@@ -70,10 +69,10 @@ function Login(): JSX.Element {
         async function login(code: string, state: string) {
             try {
                 setSession({ isPageLoading: true });
-                const response = await axios.post<AuthResponse>('/api/auth/oauth', {
+                const response = await logInWithOauth({
                     code,
                     state,
-                    redirect_uri: `${siteUrl}/login/oauth`,
+                    redirectUri: `${siteUrl}/login/oauth`,
                 });
 
                 if (response.data.user) {

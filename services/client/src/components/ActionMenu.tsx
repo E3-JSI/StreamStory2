@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -11,9 +10,10 @@ import PauseIcon from '@material-ui/icons/Pause';
 import PublicIcon from '@material-ui/icons/Public';
 import Typography from '@material-ui/core/Typography';
 
-import { Model, ModelsResponse } from '../api/models';
+import { deleteModel, updateModel, Model } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import useSnackbar from '../hooks/useSnackbar';
+import useSession from '../hooks/useSession';
 import ConfirmationDialog from './ConfirmationDialog';
 import TransHtml from './TransHtml';
 import PublicOffIcon from './icons/PublicOff';
@@ -37,8 +37,8 @@ export interface ActionMenuProps extends MenuProps {
     online: boolean;
     active: boolean;
     public: boolean;
-    updateModel: (model: Model, remove?: boolean) => void;
-    toggleMenu: () => void;
+    onModelUpdate: (model: Model, remove?: boolean) => void;
+    onToggle: () => void;
 }
 
 function ActionMenu(
@@ -48,13 +48,14 @@ function ActionMenu(
         online: isOnline,
         active: isActive,
         public: isPublic,
-        updateModel,
-        toggleMenu,
+        onModelUpdate,
+        onToggle,
         ...rest
     }: ActionMenuProps,
     ref: React.ForwardedRef<HTMLUListElement>,
 ) {
     const { t } = useTranslation();
+    const [{ currentModel }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
     const [dialogState, setDialogState] = useState(DialogState.None);
     const [dialogContent, setDialogContent] = useState<DialogContent | null>(null);
@@ -94,8 +95,8 @@ function ActionMenu(
 
     async function toggleModelState(state: boolean) {
         try {
-            const response = await axios.put<ModelsResponse>(
-                `/api/models/${model.id}`,
+            const response = await updateModel(
+                model.id,
                 isOnline
                     ? {
                           active: state,
@@ -106,7 +107,7 @@ function ActionMenu(
             );
 
             if (response.data.model) {
-                updateModel(response.data.model as Model);
+                onModelUpdate(response.data.model as Model);
             }
         } catch (error) {
             const responseErrors = getResponseErrors(error, t);
@@ -124,12 +125,15 @@ function ActionMenu(
         }
     }
 
-    async function deleteModel() {
+    async function delModel() {
         try {
-            const response = await axios.delete<ModelsResponse>(`/api/models/${model.id}`);
+            const response = await deleteModel(model.id);
 
             if (response.data.success) {
-                updateModel(model, true);
+                onModelUpdate(model, true);
+                setSession({
+                    currentModel: currentModel.filter((m) => m.id !== model.id),
+                });
                 showSnackbar({
                     message: t('model_successfully_deleted'),
                     severity: 'success',
@@ -153,31 +157,31 @@ function ActionMenu(
     }
 
     function handleShareItemClick() {
-        toggleMenu();
+        onToggle();
         setDialogState(DialogState.Share);
         setDialogContent(dialogContents[DialogState.Share]);
     }
 
     function handleUnshareItemClick() {
-        toggleMenu();
+        onToggle();
         setDialogState(DialogState.Unshare);
         setDialogContent(dialogContents[DialogState.Unshare]);
     }
 
     function handleActivateItemClick() {
-        toggleMenu();
+        onToggle();
         setDialogState(DialogState.Activate);
         setDialogContent(dialogContents[DialogState.Activate]);
     }
 
     function handleDeactivateItemClick() {
-        toggleMenu();
+        onToggle();
         setDialogState(DialogState.Deactivate);
         setDialogContent(dialogContents[DialogState.Deactivate]);
     }
 
     function handleDeleteItemClick() {
-        toggleMenu();
+        onToggle();
         setDialogState(DialogState.Delete);
         setDialogContent(dialogContents[DialogState.Delete]);
     }
@@ -188,7 +192,7 @@ function ActionMenu(
         } else if (dialogState === DialogState.Unshare || dialogState === DialogState.Deactivate) {
             toggleModelState(false);
         } else if (dialogState === DialogState.Delete) {
-            deleteModel();
+            delModel();
         }
 
         setDialogState(DialogState.None);

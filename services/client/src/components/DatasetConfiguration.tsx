@@ -18,7 +18,7 @@ import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import DescriptionIcon from '@material-ui/icons/Description';
 
-import { DatasetAttribute, ModelsResponse } from '../api/models';
+import { deleteData, uploadData, DatasetAttribute } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import { formatDataSize } from '../utils/misc';
 import useSnackbar from '../hooks/useSnackbar';
@@ -35,7 +35,7 @@ enum UploadState {
     Failure,
 }
 
-export interface DatasetConfigProps {
+export interface DatasetConfigurationProps {
     onLoad: (name: string, attributes: DatasetAttribute[]) => void;
     onChange: (ready: boolean) => void;
 }
@@ -49,7 +49,7 @@ function getUploadSpeed(loaded: number, startTime: number): number {
     return loaded / dt;
 }
 
-function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
+function DatasetConfiguration({ onChange, onLoad }: DatasetConfigurationProps): JSX.Element {
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t } = useTranslation();
@@ -84,14 +84,8 @@ function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
         onChange(false);
 
         try {
-            const data = new FormData();
-            data.append('file', file);
-
             const uploadStartTime = Date.now();
-            const response = await axios.post<ModelsResponse>('/api/models/data', data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const response = await uploadData(file, {
                 cancelToken: new axios.CancelToken((c: Canceler) => {
                     cancelUpload.current = c;
                 }),
@@ -135,7 +129,7 @@ function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
         setIsRemoveFileDialogOpen(false);
 
         try {
-            const response = await axios.delete<ModelsResponse>('/api/models/data');
+            const response = await deleteData();
 
             if (response.data.success) {
                 setUploadState(UploadState.Ready);
@@ -324,4 +318,4 @@ function DatasetConfig({ onChange, onLoad }: DatasetConfigProps): JSX.Element {
     );
 }
 
-export default DatasetConfig;
+export default DatasetConfiguration;

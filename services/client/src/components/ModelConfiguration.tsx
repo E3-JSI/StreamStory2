@@ -17,31 +17,12 @@ import DualMultiselect from './DualMultiselect';
 import Multiselect from './Multiselect';
 import TransHtml from './TransHtml';
 
-export interface ModelFormRequestData {
-    online: boolean;
-    dataset: string;
-    selectedAttributes: string[];
-    timeAttribute: string;
-    timeUnit: string;
-    includeTimeAttribute: boolean;
-    categoricalAttributes: string[];
-    derivatives: string[];
-    clusteringAlgorithm: string;
-    numberOfStates?: number;
-    minNumberOfStates?: number;
-    maxNumberOfStates?: number;
-    stateRadius?: number;
-    hierarchyType: string;
-    ignoredAttributes: string[];
-    name: string;
-    description: string;
-}
-export interface ModelConfigProps {
+export interface ModelConfigurationProps {
     datasetName: string;
     datasetAttributes: DatasetAttribute[];
 }
 
-function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.Element {
+function ModelConfiguration({ datasetAttributes, datasetName }: ModelConfigurationProps): JSX.Element {
     const { t } = useTranslation();
     const {
         control,
@@ -574,4 +555,4 @@ function ModelConfig({ datasetAttributes, datasetName }: ModelConfigProps): JSX.
     );
 }
 
-export default ModelConfig;
+export default ModelConfiguration;

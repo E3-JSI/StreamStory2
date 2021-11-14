@@ -1,6 +1,6 @@
 import React from 'react';
 
-import axios, { AxiosResponse, Method } from 'axios';
+import { AxiosResponse } from 'axios';
 import { SubmitHandler, UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import Grid from '@material-ui/core/Grid';
@@ -12,6 +12,8 @@ import LoadingButton, { LoadingButtonProps } from './LoadingButton';
 
 import useStyles from './UserProfileForm.styles';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type UserProfileAction = (data?: any) => Promise<AxiosResponse<any>>;
 export type FormResponseHandler<FormResponseData, FormRequestData> = (
     response: AxiosResponse<FormResponseData>,
     requestData?: FormRequestData,
@@ -20,16 +22,20 @@ export type FormResponseHandler<FormResponseData, FormRequestData> = (
 export interface UserProfileFormProps<FormRequestData, FormResponseData> {
     children: React.ReactNode;
     form: UseFormReturn;
-    method?: Method;
+    action: UserProfileAction;
     submitButton?: LoadingButtonProps | null;
     onResponse: FormResponseHandler<FormResponseData, FormRequestData>;
 }
 
-function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends Errors>(
+function UserProfileForm<
+    FormRequestData,
+    FormResponseData,
+    FormErrors extends Errors,
+>(
     {
         children,
         form,
-        method = 'put',
+        action,
         submitButton = {},
         onResponse,
     }: UserProfileFormProps<FormRequestData, FormResponseData>,
@@ -52,13 +58,9 @@ function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends E
         // }
 
         try {
-            const response = await axios.request<FormResponseData>({
-                url: '/api/users/current',
-                method,
-                data,
-            });
+            const response = await (Object.keys(data).length ? action(data) : action());
 
-            onResponse(response, data as FormRequestData);
+            onResponse(response as AxiosResponse<FormResponseData>, data as FormRequestData);
         } catch (error) {
             // Handle form errors.
             const errors = getResponseErrors<FormErrors>(error, t);
