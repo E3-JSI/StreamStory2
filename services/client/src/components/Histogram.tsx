@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { scaleOrdinal, easeQuadIn } from 'd3';
 import React, { useRef, useEffect, useState } from 'react';
 
-const Histogram = ({ histogram, totalHistogram }: any) => {
+const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [windowSize] = useState<any>({
@@ -12,20 +12,49 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
     useEffect(() => {
         if (histogram && totalHistogram) {
+            let domain = [];
+            let freqFn = null;
+            let totalFreqFn = null;
+            let boundLen = 0;
             if (
                 histogram.attrName.toLowerCase() === 'time' ||
                 histogram.attrName.toLowerCase() === 'timestamp'
             ) {
-                const boundsFn = () =>
-                    Array.from(Array(totalHistogram.dayOfWeekFreqs.length), (_, i) => i);
-                const freqFn = (data: any) => data.dayOfWeekFreqs;
-                const totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
-                renderHistogram(boundsFn, freqFn, totalFreqFn);
+                if (timeType === 'dayOfWeek') {
+                    boundLen = totalHistogram.dayOfWeekFreqs.length;
+                    freqFn = (data: any) => data.dayOfWeekFreqs;
+                    totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
+                    domain = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                } else if (timeType === 'month') {
+                    boundLen = totalHistogram.monthFreqs.length;
+                    freqFn = (data: any) => data.monthFreqs;
+                    totalFreqFn = () => totalHistogram.monthFreqs;
+                    domain = [
+                        'Jan',
+                        'Feb',
+                        'Mar',
+                        'Apr',
+                        'May',
+                        'Jun',
+                        'Jul',
+                        'Aug',
+                        'Sep',
+                        'Oct',
+                        'Nov',
+                        'Dec',
+                    ];
+                } else {
+                    boundLen = totalHistogram.dayOfWeekFreqs.length;
+                    freqFn = (data: any) => data.dayOfWeekFreqs;
+                    totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
+                    domain = Array.from(Array(boundLen), (_, i) => i + 1);
+                }
+                renderHistogram(domain, freqFn, totalFreqFn);
             } else {
-                const boundsFn = (data: any) => data.bounds;
-                const freqFn = (data: any) => data.freqs;
-                const totalFreqFn = () => totalHistogram.freqs;
-                renderHistogram(boundsFn, freqFn, totalFreqFn);
+                domain = histogram.bounds;
+                freqFn = (data: any) => data.freqs;
+                totalFreqFn = () => totalHistogram.freqs;
+                renderHistogram(domain, freqFn, totalFreqFn);
             }
         }
     }, [histogram, totalHistogram, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -35,7 +64,7 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
         return value.toString().split('.')[1].length || 0;
     }
 
-    function renderHistogram(boundsFn: any, freqFn: any, totalFreqFn: any) {
+    function renderHistogram(domain: any, freqFn: any, totalFreqFn: any) {
         const margin = { top: 10, right: 30, bottom: 20, left: 50 };
         const width = (containerRef?.current?.offsetWidth || 150) - margin.left - margin.right;
         const height = 200 - margin.top - margin.bottom;
@@ -48,11 +77,11 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             .attr('transform', `translate(${margin.left},${margin.top})`);
 
         const subgroups = ['bluePart', 'greyPart'];
-        const groups: any = boundsFn(histogram); // histogram.keys when categorical variable
+        // const groups: any = boundsFn(histogram); // histogram.keys when categorical variable
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']); // 1st-blue, 2nd-grey
 
         const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => ({
-            group: boundsFn(histogram)[ix],
+            group: domain[ix],
             bluePart: freqFn(histogram)[ix],
             greyPart: totalFreqFn()[ix] - freqFn(histogram)[ix],
             total: totalFreqFn()[ix], // FIXME: debug only
@@ -62,16 +91,26 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
 
         const divTooltip = d3.select(tooltipRef.current);
 
-        const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.2);
+        const x = d3.scaleBand().domain(domain).range([0, width]).padding(0.2);
         svg.append('g')
             .attr('transform', `translate(0, ${height})`)
             .call(
                 d3
                     .axisBottom(x)
-                    .tickValues(x.domain().filter((d: any, i: number) => !(i % 3)))
+                    .tickValues(
+                        x.domain().filter((d: any, i: number) => {
+                            if (typeof d === 'number') {
+                                return !(i % 3);
+                            }
+                            return true;
+                        }),
+                    )
                     .tickFormat((d: any) => {
-                        const nDecimals = countDecimals(d);
-                        return nDecimals === 0 ? d : d.toFixed(Math.min(2, nDecimals));
+                        if (typeof d === 'number') {
+                            const nDecimals = countDecimals(d);
+                            return nDecimals === 0 ? d : d.toFixed(Math.min(2, nDecimals));
+                        }
+                        return d;
                     })
                     .tickSizeOuter(0),
             );

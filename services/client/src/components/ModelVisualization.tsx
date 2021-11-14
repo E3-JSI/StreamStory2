@@ -53,11 +53,11 @@ function ModelVisualization({
 
             <MarkovChain model={model} onStateSelected={onStateSelected} />
 
-            <Box p={2} overflow="auto" height={600}>
+            {/* <Box p={2} overflow="auto" height={600}>
                 <Typography component="pre" style={{ fontFamily: 'monospace' }}>
                     {JSON.stringify(model, null, 2)}
                 </Typography>
-            </Box>
+            </Box> */}
         </Paper>
     );
 }
