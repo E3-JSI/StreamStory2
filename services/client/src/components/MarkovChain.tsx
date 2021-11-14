@@ -169,7 +169,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 .zoom()
                 .scaleExtent([0, 5])
                 .on('zoom', (event: any) => {
-                    console.log('event=', event);
+                    // console.log('event=', event);
                     if (event) {
                         setCurrentScaleIx(Math.floor(event.transform.k));
                     }

@@ -134,8 +134,6 @@ export function createLinks(
                 selectLinkPath(update)
                     .attr('d', (d: any) => drawLineWithOffset(nodesMap, d));
 
-                console.log("selectLinkPathText(update)=", selectLinkPathText(update))
-
                 selectLinkPathText(update)
                     .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
                         const dSource = nodesMap[d.source].data()[0];
