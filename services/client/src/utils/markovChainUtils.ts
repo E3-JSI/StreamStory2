@@ -22,15 +22,10 @@ export function getGraphContainer(svg: any) {
 
 export function createSVG(
     container: React.MutableRefObject<any>,
-    theme: any,
     width: number,
     height: number,
     margin: any,
 ) {
-
-    //  scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
-
-
     const svg = d3
         .select(container.current)
         .append('svg')
@@ -111,14 +106,49 @@ export function createLinks(
                     drawLineWithOffset(nodesMap, d),
                 );
 
+                tmp
+                    .append('text')
+                    .attr('class', 'link_path_text')
+                    .attr('id', (d: any) => `path_text${d.source}t${d.target}`)
+                    .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.x;
+                    })
+                    .attr("y", (d: any, i: number) => {
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.y;
+                    })
+                    .attr('fill', theme.linkText.default.fill)
+                    .attr('text-anchor', 'middle')
+                    .attr('startOffset', '20%')
+                    .text((d: any) => formatLinkP(d.p));
+
                 tmp.call((entr: any) => entr.transition(entr).attr('opacity', 1));
                 return tmp;
             },
             (update: any) => {
-                selectLinkPath(update).attr('d', (d: any) =>
-                    drawLineWithOffset(nodesMap, d),
-                );
+                selectLinkPath(update)
+                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d));
 
+                console.log("selectLinkPathText(update)=", selectLinkPathText(update))
+
+                selectLinkPathText(update)
+                    .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.x;
+                    })
+                    .attr("y", (d: any, i: number) => {
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.y;
+                    })
                 update.call((updt: any) => updt.transition(tEnter).attr('opacity', 1));
 
                 return update;
@@ -128,25 +158,6 @@ export function createLinks(
                 return exit;
             },
         );
-    links
-        .append('text')
-        .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
-            const dSource = nodesMap[d.source].data()[0];
-            const dTarget = nodesMap[d.target].data()[0];
-            const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
-            return newCoords.x;
-        })
-        .attr("y", (d: any, i: number) => {
-
-            const dSource = nodesMap[d.source].data()[0];
-            const dTarget = nodesMap[d.target].data()[0];
-            const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
-            return newCoords.y;
-        })
-        .attr('fill', theme.linkText.default.fill)
-        .attr('text-anchor', 'middle')
-        .attr('startOffset', '20%')
-        .text((d: any) => formatLinkP(d.p));
 
     return links;
 }
@@ -383,8 +394,6 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
         .drag<SVGGElement, unknown>()
         .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
-            // d.x = event.x; // eslint-disable-line no-param-reassign
-            // d.y = event.y; // eslint-disable-line no-param-reassign
             const nodeGroup = d3.select(this);
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
             const transform = selectNodeLabel(nodeGroup).attr("transform");
@@ -392,6 +401,19 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
             const scaleStr = transform.substring(scaleIx, transform.length)
             selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y}) ${scaleStr}`)
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
+            selectAllLinkPathText(gLinks)
+                .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                    const dSource = nodesMap[d.source].data()[0];
+                    const dTarget = nodesMap[d.target].data()[0];
+                    const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                    return newCoords.x;
+                })
+                .attr("y", (d: any, i: number) => {
+                    const dSource = nodesMap[d.source].data()[0];
+                    const dTarget = nodesMap[d.target].data()[0];
+                    const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                    return newCoords.y;
+                })
         });
 }
 
@@ -530,6 +552,14 @@ export function selectAllLinkPaths(selection: any) {
 
 export function selectLinkPath(selection: any) {
     return selection.select('.link_path');
+}
+
+export function selectLinkPathText(selection: any) {
+    return selection.select('.link_path_text');
+}
+
+export function selectAllLinkPathText(selection: any) {
+    return selection.selectAll('.link_path_text');
 }
 
 export function selectNodeGroup(selection: any) {

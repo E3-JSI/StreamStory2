@@ -145,7 +145,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gSliderScale = null;
 
             if (!initialized) {
-                graph = createSVG(containerRef, theme, width, height, margin); // FIXME: hardcoded theme
+                graph = createSVG(containerRef, width, height, margin); // FIXME: hardcoded theme
                 gSliderProb = graph.append('g').attr('class', 'slider_prob');
                 gSliderScale = graph.append('g').attr('class', 'c');
                 graphContainer = createGraphContainer(graph, width, height, chart);
