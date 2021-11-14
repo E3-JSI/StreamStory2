@@ -130,15 +130,18 @@ export function createLinks(
         );
     links
         .append('text')
-        .attr("x", (d: any, i: number) => {
+        .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
             const dSource = nodesMap[d.source].data()[0];
             const dTarget = nodesMap[d.target].data()[0];
-            return (scale(x, dSource.x) + scale(x, dTarget.x)) / 2
+            const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+            return newCoords.x;
         })
         .attr("y", (d: any, i: number) => {
+
             const dSource = nodesMap[d.source].data()[0];
             const dTarget = nodesMap[d.target].data()[0];
-            return (scale(y, dSource.y) + scale(y, dTarget.y)) / 2
+            const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+            return newCoords.y;
         })
         .attr('fill', theme.linkText.default.fill)
         .attr('text-anchor', 'middle')
@@ -146,6 +149,17 @@ export function createLinks(
         .text((d: any) => formatLinkP(d.p));
 
     return links;
+}
+
+export function moveObj(sourceStateNo: number, targetStateNo: number, prcnt: number) {
+    const path: any = document.querySelector(`#path_s${sourceStateNo}t${targetStateNo}`) // dirty bug fix- with d3.select does not work
+    const pathLength = Math.floor(path.getTotalLength());
+    prcnt = (prcnt * pathLength) / 100; // eslint-disable-line no-param-reassign
+    // Get x and y values at a certain point in the line
+    const pt = path.getPointAtLength(prcnt);
+    pt.x = Math.round(pt.x);
+    pt.y = Math.round(pt.y);
+    return pt;
 }
 
 export function formatLinkP(p: number) {
