@@ -263,6 +263,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("class", "node_label")
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
+        .style('fill', theme.stateText.default.fill)
         .attr(
             "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")
@@ -605,48 +606,6 @@ export function uniqueIdScale(state: any, scaleIx: number) {
 
 export function pseudoUniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}`;
-}
-
-export function addCoordinatesToStates(scales: any, maxRadius: number, debug: boolean) {
-    const statesDict: any = {};
-    const labelSet = new Set();
-    scales
-        .flatMap((sc: any) => sc.states)
-        .forEach((state: any) => labelSet.add(state.suggestedLabel.label));
-
-    scales.forEach((sc: any, scaleIx: number) => {
-        sc.states.forEach((state: any, i: number) => {
-            state.x = -1; // eslint-disable-line no-param-reassign
-            state.y = -1; // eslint-disable-line no-param-reassign
-            state.r = maxRadius * state.stationaryProbability; // eslint-disable-line no-param-reassign
-            const key = uniqueId(state);
-
-            if (sc.areTheseInitialStates) {
-                const currAngle = (360 / sc.states.length) * i;
-                state.x = maxRadius * Math.sin((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
-                state.y = maxRadius * Math.cos((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
-                statesDict[key] = state;
-            } else if (!sc.areTheseInitialStates && !statesDict[key]) {
-                let xSum = 0;
-                let ySum = 0;
-                state.childStates.forEach((stateNo: number) => {
-                    const childState = scales[scaleIx - 1].states.find(
-                        (el: any) => el.stateNo === stateNo,
-                    );
-                    const childKey = uniqueId(childState);
-                    xSum += statesDict[childKey].x;
-                    ySum += statesDict[childKey].y;
-                });
-                state.x = xSum / state.childStates.length; // eslint-disable-line no-param-reassign
-                state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
-                statesDict[key] = state;
-            } else if (state.childStates.length === 1) {
-                state.x = statesDict[key].x // eslint-disable-line no-param-reassign
-                state.y = statesDict[key].y // eslint-disable-line no-param-reassign
-
-            }
-        });
-    });
 }
 
 export function createStateLinks(

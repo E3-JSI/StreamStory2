@@ -1,5 +1,7 @@
 import * as d3 from 'd3';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTheme } from '@material-ui/core/styles';
+
 import {
     createSVG,
     getSVG,
@@ -12,13 +14,13 @@ import {
     findMinMaxValues,
     createGraphData,
     addColorsToScaleStates,
-    addCoordinatesToStates,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
+    const useThemeLoaded = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
@@ -27,55 +29,63 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
-    const [theme, setTheme] = useState<any>();
 
-    const darkTheme = {
-        state: {
-            default: {
-                stroke: '#a0a0a0',
-                opacity: 0.9,
+    function createTheme() {
+        const themeCurr = {
+            state: {
+                default: {
+                    stroke: '#a0a0a0',
+                    opacity: 0.9,
+                },
+                selected: {
+                    stroke: '#337ab7',
+                    opacity: 0.9,
+                },
             },
-            selected: {
-                stroke: '#337ab7',
-                opacity: 0.9,
+            stateText: {
+                default: {
+                    // fill: uTheme.palette.text.primary,
+                    fill: 'black',
+                },
             },
-        },
-        link: {
-            default: {
-                stroke: '#a0a0a0',
+            link: {
+                default: {
+                    stroke: '#a0a0a0',
+                },
+                selected: {
+                    stroke: '#337ab7',
+                },
             },
-            selected: {
-                stroke: '#337ab7',
+            linkText: {
+                default: {
+                    fill: useThemeLoaded.palette.text.primary,
+                },
             },
-        },
-        linkText: {
-            default: {
-                fill: 'black',
+            marker: {
+                default: {
+                    stroke: '#a0a0a0',
+                    fill: '#a0a0a0',
+                },
+                selected: {
+                    stroke: '#337ab7',
+                    fill: '#337ab7',
+                },
             },
-        },
-        marker: {
-            default: {
-                stroke: '#a0a0a0',
-                fill: '#a0a0a0',
+            slider: {
+                default: {
+                    trackStrokeWidth: '8px',
+                    trackInsetStrokeWidth: '2px',
+                    opacity: 0.1,
+                },
+                mouseOver: {
+                    trackStrokeWidth: '10px',
+                    trackInsetStrokeWidth: '8px',
+                    opacity: 0.4,
+                },
             },
-            selected: {
-                stroke: '#337ab7',
-                fill: '#337ab7',
-            },
-        },
-        slider: {
-            default: {
-                trackStrokeWidth: '8px',
-                trackInsetStrokeWidth: '2px',
-                opacity: 0.1,
-            },
-            mouseOver: {
-                trackStrokeWidth: '10px',
-                trackInsetStrokeWidth: '8px',
-                opacity: 0.4,
-            },
-        },
-    };
+        };
+        return themeCurr;
+    }
 
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
@@ -96,7 +106,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             addColorsToScaleStates(model.model.scales);
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
-            setTheme(darkTheme);
             renderMarkovChain(graphData);
         }
     }, [model.model.scales]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -114,9 +123,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             setData(graphData);
             renderMarkovChain(data);
         }
-    }, [windowSize, pThreshold, currentScaleIx]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function renderMarkovChain(graphData: any): void {
+        const theme = createTheme();
+
+        console.log('theme.linkText.default.fill=', theme.linkText.default.fill);
+        console.log('useTheme.linkText.default.fill=', useThemeLoaded.palette.text.primary);
+        console.log('\n');
+
         const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
@@ -135,7 +150,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gSliderScale = null;
 
             if (!initialized) {
-                graph = createSVG(containerRef, darkTheme, width, height, margin); // FIXME: hardcoded theme
+                graph = createSVG(containerRef, theme, width, height, margin); // FIXME: hardcoded theme
                 gSliderProb = graph.append('g').attr('class', 'slider_prob');
                 gSliderScale = graph.append('g').attr('class', 'c');
                 graphContainer = createGraphContainer(graph, width, height, chart);
@@ -183,7 +198,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const formatInt = d3.format('.0f'); // FIXME: move to another file
 
             createNodes(
-                darkTheme, // FIXME: put another variable
+                theme, // FIXME: put another variable
                 graphData[currentScaleIx],
                 gNodes,
                 gLinks,
@@ -200,7 +215,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 const probStartY = height - 50;
 
                 createSlider(
-                    darkTheme, // FIXME: another variable
+                    theme, // FIXME: another variable
                     gSliderProb,
                     xSliderProb,
                     probStartX,
@@ -217,7 +232,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 const scaleStartY = 0 + margin.right + 20;
 
                 createSlider(
-                    darkTheme, // FIXME: another variable
+                    theme, // FIXME: another variable
                     gSliderScale,
                     ySliderScale,
                     scaleStartX,
@@ -230,16 +245,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     handleOnScaleChanged,
                 );
             }
-            createLinks(
-                darkTheme,
-                graphData[currentScaleIx],
-                gNodes,
-                gLinks,
-                x,
-                y,
-                TRANSITION_PROPS,
-            );
-            createMarkers(darkTheme, graphData[currentScaleIx], gMarkers);
+            createLinks(theme, graphData[currentScaleIx], gNodes, gLinks, x, y, TRANSITION_PROPS);
+            createMarkers(theme, graphData[currentScaleIx], gMarkers);
         }
     }
 
