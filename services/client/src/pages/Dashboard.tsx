@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Theme } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 
-import { Model, ModelsResponse } from '../api/models';
+import { getModels, Model } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import useMountEffect from '../hooks/useMountEffect';
 import useSnackbar from '../hooks/useSnackbar';
@@ -28,14 +27,14 @@ function Dashboard(): JSX.Element {
     const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
     useMountEffect(() => {
-        async function getModels() {
+        async function loadModels() {
             setIsLoading(true);
 
             try {
-                const response = await axios.get<ModelsResponse>('/api/models/');
+                const response = await getModels();
 
-                if (Array.isArray(response.data.model)) {
-                    setModels(response.data.model);
+                if (response.data.models) {
+                    setModels(response.data.models);
                 }
 
                 setIsLoading(false);
@@ -57,10 +56,10 @@ function Dashboard(): JSX.Element {
             }
         }
 
-        getModels();
+        loadModels();
     });
 
-    function updateModel(model: Model, remove?: boolean) {
+    function handleModelUpdate(model: Model, remove?: boolean) {
         const newModels = models.filter((m) => m.id !== model.id);
 
         if (!remove) {
@@ -88,7 +87,7 @@ function Dashboard(): JSX.Element {
                     showUserColumn={false}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
-                    updateModel={updateModel}
+                    onModelUpdate={handleModelUpdate}
                     gutterBottom
                 />,
                 <ModelList
@@ -101,7 +100,7 @@ function Dashboard(): JSX.Element {
                     showUserColumn={false}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
-                    updateModel={updateModel}
+                    onModelUpdate={handleModelUpdate}
                 />,
             ];
             break;
@@ -124,7 +123,7 @@ function Dashboard(): JSX.Element {
                     showUserColumn={false}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
-                    updateModel={updateModel}
+                    onModelUpdate={handleModelUpdate}
                     gutterBottom
                 />,
                 <ModelList
@@ -136,7 +135,7 @@ function Dashboard(): JSX.Element {
                     showUserColumn={isScreenWidthGteMd}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
-                    updateModel={updateModel}
+                    onModelUpdate={handleModelUpdate}
                 />,
             ];
             break;

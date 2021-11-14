@@ -1,6 +1,5 @@
 import React from 'react';
 
-import axios from 'axios';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Divider from '@material-ui/core/Divider';
@@ -12,7 +11,7 @@ import Typography from '@material-ui/core/Typography';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
-import { AuthResponse } from '../api/auth';
+import { logOut } from '../api/auth';
 import { User } from '../api/users';
 import { getResponseErrors } from '../utils/errors';
 import useSession from '../hooks/useSession';
@@ -48,7 +47,7 @@ function UserAccountMenu(
         toggleMenu();
 
         try {
-            const response = await axios.post<AuthResponse>('/api/auth/logout');
+            const response = await logOut();
 
             if (response.data.success) {
                 setSession({

@@ -11,6 +11,7 @@ RUN apt-get install -y build-essential
 RUN apt-get install -y git
 RUN apt-get install -y python2
 RUN apt-get install -y uuid-dev
+RUN apt-get install -y libgomp1
 
 # Build glib
 RUN git clone https://github.com/qminer/qminer.git

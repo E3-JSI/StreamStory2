@@ -8,28 +8,25 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Radio from '@material-ui/core/Radio';
 
-import { User } from '../api/users';
+import {
+    updateCurrentUserSettings,
+    UpdateCurrentUserSettingsRequest,
+    UpdateCurrentUserSettingsResponse,
+} from '../api/users';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import UserProfileForm, { FormResponseHandler } from './UserProfileForm';
 
-export interface FormRequestData {
-    theme?: string;
-}
-
-export interface FormResponseData {
-    user?: User;
-    error?: string[] | string;
-}
-
-export type FormErrors = Record<string, never>;
+type FormRequestData = UpdateCurrentUserSettingsRequest;
+type FormResponseData = UpdateCurrentUserSettingsResponse;
+type FormErrors = Record<string, never>;
 
 function UserProfileSettingsForm(): JSX.Element {
     const { t } = useTranslation();
     const [{ theme }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
 
-    const form = useForm<FormRequestData>({ defaultValues: { theme } });
+    const form = useForm<Partial<FormRequestData>>({ defaultValues: { theme } });
     const { control, reset } = form;
 
     const handleResponse: FormResponseHandler<FormResponseData, FormRequestData> = (
@@ -51,6 +48,7 @@ function UserProfileSettingsForm(): JSX.Element {
     return (
         <UserProfileForm<FormRequestData, FormResponseData, FormErrors>
             form={form}
+            action={updateCurrentUserSettings}
             onResponse={handleResponse}
         >
             <FormControl component="fieldset">

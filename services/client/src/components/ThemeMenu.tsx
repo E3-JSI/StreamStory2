@@ -1,6 +1,5 @@
 import React from 'react';
 
-import axios from 'axios';
 import Box from '@material-ui/core/Box';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -8,7 +7,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import Typography from '@material-ui/core/Typography';
 import CheckIcon from '@material-ui/icons/Check';
 
-import { User, UsersResponse } from '../api/users';
+import { updateCurrentUserSettings, User } from '../api/users';
 import { AppTheme } from '../contexts/SessionContext';
 import useSession from '../hooks/useSession';
 
@@ -44,7 +43,7 @@ function ThemeMenu(
         if (user) {
             // Save theme selection for logged in users.
             try {
-                const response = await axios.put<UsersResponse>('/api/users/current', {
+                const response = await updateCurrentUserSettings({
                     theme: newTheme,
                 });
 

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-import axios, { AxiosResponse, Method } from 'axios';
+import { AxiosResponse } from 'axios';
 import { Link as RouterLink, useHistory, useParams } from 'react-router-dom';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +21,20 @@ import GitHubIcon from '@material-ui/icons/GitHub';
 import VerifiedUserIcon from '@material-ui/icons/VerifiedUser';
 
 import config from '../config';
-import { User } from '../api/users';
+import {
+    initPasswordReset,
+    InitPasswordResetRequest,
+    InitPasswordResetResponse,
+    logIn,
+    LogInRequest,
+    LogInResponse,
+    register as registerUser,
+    RegisterRequest,
+    RegisterResponse,
+    resetPassword,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
+} from '../api/auth';
 import { cleanProps } from '../utils/misc';
 import { validationPatterns, minPasswordLength, initMuiRegister } from '../utils/forms';
 import { Errors, getResponseErrors } from '../utils/errors';
@@ -41,8 +54,6 @@ export type UserAccountFormVariant =
     | 'password-reset-init'
     | 'password-reset';
 
-export type ResponseHandler = (response: AxiosResponse<FormResponseData>) => void;
-
 export interface UserAccountFormProps {
     variant: UserAccountFormVariant;
 }
@@ -51,26 +62,30 @@ export interface UserAccountFormUrlParams {
     token?: string;
 }
 
-export interface FormRequestData {
+type FormRequestData =
+    | InitPasswordResetRequest
+    | LogInRequest
+    | RegisterRequest
+    | ResetPasswordRequest;
+
+type FormResponseData =
+    | InitPasswordResetResponse
+    | LogInResponse
+    | RegisterResponse
+    | ResetPasswordResponse;
+
+export type ResponseHandler = (response: AxiosResponse<FormResponseData>) => void;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type UserAccountAction = (data: any) => Promise<AxiosResponse<any>>;
+
+interface FormErrors extends Errors {
     email?: string;
     password?: string;
     password2?: string;
-    remember?: boolean;
 }
 
-export interface FormResponseData {
-    user?: User;
-    success?: boolean;
-    error?: FormErrors;
-}
-
-export interface FormErrors extends Errors {
-    email?: string;
-    password?: string;
-    password2?: string;
-}
-
-export interface AltLink {
+interface AltLink {
     url: string;
     title: string;
 }
@@ -106,8 +121,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
 
     let title = '';
     let description = '';
-    let url = '';
-    let method: Method = 'post';
+    let action: UserAccountAction;
     let actionName = '';
     let altLink: AltLink | null = null;
     let handleResponse: ResponseHandler;
@@ -115,13 +129,13 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
     switch (variant) {
         case 'registration':
             title = t('registration');
-            url = '/api/auth/registration';
+            action = registerUser;
             actionName = t('register');
             altLink = {
                 url: '/login',
                 title: t('already_have_an_account'),
             };
-            handleResponse = (response) => {
+            handleResponse = (response: AxiosResponse<RegisterResponse>) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
@@ -136,14 +150,13 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
 
         case 'password-reset':
             title = t('password_reset');
-            url = '/api/auth/password';
-            method = 'put';
+            action = resetPassword;
             actionName = t('reset_password');
             altLink = {
                 url: '/password-reset',
                 title: t('reset_link_expired'),
             };
-            handleResponse = (response) => {
+            handleResponse = (response: AxiosResponse<ResetPasswordResponse>) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
@@ -160,13 +173,13 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
         case 'password-reset-init':
             title = t('forgot_password');
             description = t('send_request_for_password_reset');
-            url = '/api/auth/password';
+            action = initPasswordReset;
             actionName = t('send');
             altLink = {
                 url: '/login',
                 title: t('back_to_login'),
             };
-            handleResponse = (response) => {
+            handleResponse = (response: AxiosResponse<InitPasswordResetResponse>) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
@@ -182,13 +195,13 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
         case 'login':
         default:
             title = t('login');
-            url = '/api/auth/login';
+            action = logIn;
             actionName = t('log_in');
             altLink = {
                 url: '/registration',
                 title: t('dont_have_an_account'),
             };
-            handleResponse = (response) => {
+            handleResponse = (response: AxiosResponse<LogInResponse>) => {
                 if (response.data.user) {
                     setSession({ user: response.data.user });
                 }
@@ -202,11 +215,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
         // }
 
         try {
-            const response = await axios.request<FormResponseData>({
-                url,
-                method,
-                data,
-            });
+            const response = await action(data);
 
             handleResponse(response);
         } catch (error) {

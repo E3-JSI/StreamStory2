@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 
-import axios from 'axios';
 import { BrowserRouter as Router, Switch } from 'react-router-dom';
 import { CssBaseline, useMediaQuery } from '@material-ui/core';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
@@ -13,7 +12,7 @@ import PasswordReset from './pages/PasswordReset';
 import Registration from './pages/Registration';
 import UserProfile from './pages/UserProfile';
 
-import { AuthResponse } from './api/auth';
+import { getAuthStatus } from './api/auth';
 import useMountEffect from './hooks/useMountEffect';
 import useSession from './hooks/useSession';
 import PageRoute from './components/PageRoute';
@@ -35,9 +34,9 @@ function App(): JSX.Element {
 
     // Sync user/login status.
     useMountEffect(() => {
-        async function getStatus() {
+        async function loadStatus() {
             try {
-                const response = await axios.get<AuthResponse>('/api/auth/status');
+                const response = await getAuthStatus();
 
                 if (response.data.user) {
                     setSession({ user: response.data.user });
@@ -51,7 +50,7 @@ function App(): JSX.Element {
             }
         }
 
-        getStatus();
+        loadStatus();
     });
 
     return (

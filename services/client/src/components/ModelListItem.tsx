@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 
-import axios from 'axios';
 import clsx from 'clsx';
 import { Link as RouterLink } from 'react-router-dom';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -31,7 +30,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import TimelineIcon from '@material-ui/icons/Timeline';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 
-import { Model } from '../api/models';
+import { updateModel, Model } from '../api/models';
 import { initMuiRegister } from '../utils/forms';
 import { Errors, getResponseErrors } from '../utils/errors';
 import useSession from '../hooks/useSession';
@@ -44,6 +43,12 @@ import UpdateDisabledIcon from './icons/UpdateDisabled';
 
 import useStyles from './ModelListItem.styles';
 
+export type DescriptionFormData = Pick<Model, 'description'>;
+
+export interface DescriptionFormErrors extends Errors {
+    description?: string;
+}
+
 export interface ModelListItemProps {
     model: Model;
     selected: boolean;
@@ -51,24 +56,9 @@ export interface ModelListItemProps {
     searchTerm?: string;
     showUserColumn?: boolean;
     showDateColumn?: boolean;
-    updateModel: (model: Model, remove?: boolean) => void;
+    onModelUpdate: (model: Model, remove?: boolean) => void;
     onItemClick: (event: React.MouseEvent, modelId: number) => void;
 }
-
-export interface FormRequestData {
-    description: string;
-}
-
-export interface FormResponseData {
-    model?: Model;
-    error?: FormErrors;
-}
-
-export interface FormErrors extends Errors {
-    description?: string;
-}
-
-export type ErrorKey = keyof FormRequestData;
 
 function ModelListItem({
     model,
@@ -77,7 +67,7 @@ function ModelListItem({
     searchTerm = '',
     showUserColumn,
     showDateColumn,
-    updateModel,
+    onModelUpdate,
     onItemClick,
 }: ModelListItemProps): JSX.Element {
     const classes = useStyles();
@@ -98,7 +88,7 @@ function ModelListItem({
         register,
         reset,
         setError,
-    } = useForm<FormRequestData>({
+    } = useForm<DescriptionFormData>({
         defaultValues,
     });
     const muiRegister = initMuiRegister(register);
@@ -122,16 +112,16 @@ function ModelListItem({
         setIsMoreMenuOpen((value) => !value);
     }
 
-    const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
+    const handleSubmit: SubmitHandler<DescriptionFormData> = async (data) => {
         // if (isSubmitting) {
         //     return;
         // }
 
         try {
-            const response = await axios.put<FormResponseData>(`/api/models/${model.id}`, data);
+            const response = await updateModel(model.id, data);
 
             if (response.data.model) {
-                updateModel(response.data.model);
+                onModelUpdate(response.data.model);
                 showSnackbar({
                     message: t('description_successfully_saved'),
                     severity: 'success',
@@ -144,7 +134,7 @@ function ModelListItem({
             }
         } catch (error) {
             // Handle form errors.
-            const responseErrors = getResponseErrors<FormErrors>(error, t);
+            const responseErrors = getResponseErrors<DescriptionFormErrors>(error, t);
 
             if (Array.isArray(responseErrors)) {
                 const message = responseErrors;
@@ -158,7 +148,7 @@ function ModelListItem({
             } else if (responseErrors !== undefined) {
                 Object.keys(responseErrors).forEach((name, i) => {
                     setError(
-                        name as keyof FormRequestData,
+                        name as keyof DescriptionFormData,
                         {
                             type: 'manual',
                             message: responseErrors[name],
@@ -286,8 +276,8 @@ function ModelListItem({
                                 online={isOnline}
                                 active={model.active}
                                 public={model.public}
-                                updateModel={updateModel}
-                                toggleMenu={toggleMoreMenu}
+                                onModelUpdate={onModelUpdate}
+                                onToggle={toggleMoreMenu}
                                 onClose={toggleMoreMenu}
                                 // keepMounted
                             />

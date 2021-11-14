@@ -199,7 +199,7 @@ export async function getModels(req: Request, res: Response, next: NextFunction)
     try {
         const modelList = await models.get(user.id, true);
         res.status(200).json({
-            model: modelList.map((model) => getModelResponse(model, true)),
+            models: modelList.map((model) => getModelResponse(model, true)),
         });
     } catch (error) {
         next(error);

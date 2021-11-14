@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-import axios from 'axios';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
@@ -29,14 +28,13 @@ import CloseIcon from '@material-ui/icons/Close';
 import SearchIcon from '@material-ui/icons/Search';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
-import { Model } from '../api/models';
+import { createModel, Model, ModelConfiguration } from '../api/models';
 import { DialogOnCloseEvent, DialogOnCloseReasonExt } from '../types/dialog';
 import { Errors, getResponseErrors } from '../utils/errors';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import AddModelDialog from './AddModelDialog';
 import ModelListItem from './ModelListItem';
-import { ModelFormRequestData } from './ModelConfig';
 import AlertPopup from './AlertPopup';
 
 import useStyles from './ModelList.styles';
@@ -44,11 +42,6 @@ import useStyles from './ModelList.styles';
 export type Order = Exclude<SortDirection, false>;
 
 export type SortableKey = keyof Omit<Model, 'online' | 'active' | 'public' | 'model'>;
-
-export interface ModelFormResponseData {
-    model?: Model;
-    error?: Errors | string[] | string;
-}
 
 export interface HeadCell {
     id: SortableKey;
@@ -69,7 +62,7 @@ export interface ModelListProps {
     gutterBottom?: boolean;
     showUserColumn?: boolean;
     showDateColumn?: boolean;
-    updateModel: (model: Model, remove?: boolean) => void;
+    onModelUpdate: (model: Model, remove?: boolean) => void;
 }
 
 function compareDescending<T>(a: T, b: T, orderBy: keyof T) {
@@ -118,7 +111,7 @@ function ModelList({
     gutterBottom,
     showUserColumn,
     showDateColumn,
-    updateModel,
+    onModelUpdate,
 }: ModelListProps): JSX.Element {
     const classes = useStyles();
     const muiTheme = useTheme();
@@ -131,7 +124,7 @@ function ModelList({
     const [isRowOpen, setIsRowOpen] = useState(0);
     const [search, setSearch] = useState<string | null>(null);
     const [addModelDialogState, setAddModelDialogState] = useState(0);
-    const [modelFormData, setModelFormData] = useState<ModelFormRequestData | null>(null);
+    const [modelFormData, setModelFormData] = useState<ModelConfiguration | null>(null);
     const modelForm = useForm({
         mode: 'onChange',
         shouldUnregister: true,
@@ -242,7 +235,7 @@ function ModelList({
         }
     }
 
-    const handleModelFormSubmit: SubmitHandler<ModelFormRequestData> = async (data) => {
+    const handleModelFormSubmit: SubmitHandler<ModelConfiguration> = async (data) => {
         setAddModelDialogState((state) => state + 1);
 
         // if (modelForm.formState.isSubmitting) {
@@ -252,11 +245,11 @@ function ModelList({
         setModelFormData(data);
 
         try {
-            const response = await axios.post<ModelFormResponseData>(`/api/models/`, data);
+            const response = await createModel(data);
             setModelFormData(null);
 
             if (response.data.model) {
-                updateModel(response.data.model);
+                onModelUpdate(response.data.model);
                 showSnackbar({
                     message: t('model_successfully_added'),
                     severity: 'success',
@@ -467,7 +460,7 @@ function ModelList({
                                     searchTerm={search || ''}
                                     showUserColumn={showUserColumn}
                                     showDateColumn={showDateColumn}
-                                    updateModel={updateModel}
+                                    onModelUpdate={onModelUpdate}
                                     onItemClick={handleRowClick}
                                 />
                             );

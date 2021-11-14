@@ -16,8 +16,8 @@ import CloseIcon from '@material-ui/icons/Close';
 
 import { DatasetAttribute } from '../api/models';
 import { DialogOnCloseExt } from '../types/dialog';
-import ModelConfig from './ModelConfig';
-import DatasetConfig from './DatasetConfig';
+import ModelConfiguration from './ModelConfiguration';
+import DatasetConfiguration from './DatasetConfiguration';
 
 import useStyles from './AddModelDialog.styles';
 
@@ -79,12 +79,12 @@ function AddModelDialog({ open, title, onClose, ...other }: AddModelDialogProps)
             </DialogTitle>
             <DialogContent className={classes.content} dividers>
                 <Box className={classes.config}>
-                    <DatasetConfig
+                    <DatasetConfiguration
                         onChange={handleDatasetConfigChange}
                         onLoad={handleDatasetLoad}
                     />
                     {isDatasetConfigReady && (
-                        <ModelConfig
+                        <ModelConfiguration
                             datasetName={datasetName}
                             datasetAttributes={datasetAttributes}
                         />
@@ -92,16 +92,6 @@ function AddModelDialog({ open, title, onClose, ...other }: AddModelDialogProps)
                 </Box>
             </DialogContent>
             <DialogActions>
-                {/* <Button
-                    type="button"
-                    variant="contained"
-                    onClick={() => {
-                        console.log('Attributes', datasetAttributes);
-                        console.log('Form', getValues());
-                    }}
-                >
-                    Values
-                </Button> */}
                 <Button color="primary" onClick={handleCloseClick}>
                     {t('cancel')}
                 </Button>
