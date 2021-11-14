@@ -20,7 +20,6 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 histogram.attrName.toLowerCase() === 'time' ||
                 histogram.attrName.toLowerCase() === 'timestamp'
             ) {
-                console.log('if');
                 if (timeType === 'dayOfWeek') {
                     boundLen = totalHistogram.dayOfWeekFreqs.length;
                     freqFn = (data: any) => data.dayOfWeekFreqs;
@@ -51,13 +50,8 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                     domain = Array.from(Array(boundLen), (_, i) => i + 1);
                 }
             } else {
-                console.log('else');
                 domain = histogram.bounds;
                 freqFn = (data: any) => data.freqs;
-                console.log('##########################');
-                console.log('totalHistogram=', totalHistogram);
-                console.log('totalHistogram.freqs=', totalHistogram.freqs);
-                console.log('##########################');
                 totalFreqFn = () => totalHistogram.freqs;
             }
             renderHistogram(domain, freqFn, totalFreqFn);
@@ -83,24 +77,11 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
 
         const subgroups = ['bluePart', 'greyPart'];
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']); // 1st-blue, 2nd-grey
-
-        console.log('===========================');
-        console.log('start: groupedData, len=', freqFn(histogram).length);
-        const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => {
-            console.log('ix=', ix);
-            console.log('freqFn(histogram)=', freqFn(histogram));
-            console.log('totalFreqFn()=', totalFreqFn());
-            console.log('\n');
-
-            return {
-                group: domain[ix],
-                bluePart: freqFn(histogram)[ix],
-                greyPart: totalFreqFn()[ix] - freqFn(histogram)[ix],
-            };
-        });
-        console.log('end: groupedData');
-        console.log('===========================');
-        console.log('\n');
+        const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => ({
+            group: domain[ix],
+            bluePart: freqFn(histogram)[ix],
+            greyPart: totalFreqFn()[ix] - freqFn(histogram)[ix],
+        }));
         const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);
         const divTooltip = d3.select(tooltipRef.current);
 
@@ -112,7 +93,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                     .axisBottom(x)
                     .tickValues(
                         x.domain().filter((d: any, i: number) => {
-                            if (typeof d === 'number') {
+                            if (timeType == null) {
                                 return !(i % 3);
                             }
                             return true;

@@ -91,6 +91,7 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                 <Histogram
                     histogram={histogram}
                     totalHistogram={totalHistogram}
+                    timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
                     key={selectedState?.stateNo + Math.random()}
                     />
 
