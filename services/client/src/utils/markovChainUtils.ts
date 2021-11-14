@@ -402,15 +402,15 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
             selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y}) ${scaleStr}`)
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
             selectAllLinkPathText(gLinks)
-                .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
-                    const dSource = nodesMap[d.source].data()[0];
-                    const dTarget = nodesMap[d.target].data()[0];
+                .attr("x", function (this: any, dCurr: any) { // eslint-disable-line prefer-arrow-callback
+                    const dSource = nodesMap[dCurr.source].data()[0];
+                    const dTarget = nodesMap[dCurr.target].data()[0];
                     const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                     return newCoords.x;
                 })
-                .attr("y", (d: any, i: number) => {
-                    const dSource = nodesMap[d.source].data()[0];
-                    const dTarget = nodesMap[d.target].data()[0];
+                .attr("y", (dCurr: any, i: number) => {
+                    const dSource = nodesMap[dCurr.source].data()[0];
+                    const dTarget = nodesMap[dCurr.target].data()[0];
                     const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                     return newCoords.y;
                 })
