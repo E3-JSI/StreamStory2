@@ -75,13 +75,18 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
             .append('g')
             .attr('transform', `translate(${margin.left},${margin.top})`);
 
-        const subgroups = ['bluePart', 'greyPart'];
+        const subgroups = timeType == null ? ['bluePart', 'greyPart'] : ['bluePart'];
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']); // 1st-blue, 2nd-grey
-        const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => ({
-            group: domain[ix],
-            bluePart: freqFn(histogram)[ix],
-            greyPart: totalFreqFn()[ix] - freqFn(histogram)[ix],
-        }));
+        const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => {
+            const rez: any = {};
+            rez.group = domain[ix];
+            rez.bluePart = freqFn(histogram)[ix];
+
+            if (timeType == null) {
+                rez.greyPart = totalFreqFn()[ix] - freqFn(histogram)[ix];
+            }
+            return rez;
+        });
         const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);
         const divTooltip = d3.select(tooltipRef.current);
 

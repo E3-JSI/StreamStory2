@@ -86,7 +86,6 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                 {t('coordinates')}
             </TabPanel>
             <TabPanel value={tabValue} index={2} prefix={stateTabPrefix}>
-                {t('time')}
 
                 <Histogram
                     histogram={histogram}
@@ -95,6 +94,8 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                     key={selectedState?.stateNo + Math.random()}
                     />
 
+                <h4>Hour of Day</h4>
+
                 <Histogram
                     histogram={histogram}
                     totalHistogram={totalHistogram}
@@ -102,12 +103,17 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                     key={selectedState?.stateNo + Math.random()}
                     />
 
+                <h4>Day of Week</h4>
+
                 <Histogram
                     histogram={histogram}
                     totalHistogram={totalHistogram}
                     timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
                     key={selectedState?.stateNo + Math.random()}
                     />
+
+               <h4>Month</h4>
+
             </TabPanel>
             <TabPanel value={tabValue} index={3} prefix={stateTabPrefix}>
                 {t('explanation_tree')}

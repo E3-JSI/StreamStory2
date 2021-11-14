@@ -127,11 +127,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function renderMarkovChain(graphData: any): void {
         const theme = createTheme();
-
-        console.log('theme.linkText.default.fill=', theme.linkText.default.fill);
-        console.log('useTheme.linkText.default.fill=', useThemeLoaded.palette.text.primary);
-        console.log('\n');
-
         const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
