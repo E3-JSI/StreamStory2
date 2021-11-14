@@ -159,7 +159,14 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                         .style('padding', '10px')
                         .style('top', `${event.pageY}px`)
                         .style('left', `${event.pageX + 20}px`)
-                        .html(`(${d.data.bluePart})`)
+                        .html(() => {
+                            const prob = d.data.bluePart / histogram.freqSum;
+                            const nDecimals = countDecimals(prob);
+                            const probFormated =
+                                nDecimals === 0 ? prob : prob.toFixed(Math.min(4, nDecimals));
+
+                            return `${probFormated} (${d.data.bluePart})`;
+                        })
                         .style('opacity', 0)
                         .transition()
                         .duration(200)
