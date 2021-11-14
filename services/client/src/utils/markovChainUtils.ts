@@ -146,7 +146,7 @@ export function createLinks(
             const dTarget = nodesMap[d.target].data()[0];
             return (scale(y, dSource.y) + scale(y, dTarget.y)) / 2
         })
-        .attr('fill', 'white')
+        .attr('fill', theme.linkText.default.fill)
         .attr('text-anchor', 'middle')
         .attr('startOffset', '20%')
         .text((d: any) => formatLinkP(d.p));
@@ -252,6 +252,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
 
     const lineHeight = 40; // FIXME: hardcoded
     const linesDict: any = {}

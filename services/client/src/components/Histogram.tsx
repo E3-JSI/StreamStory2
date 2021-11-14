@@ -108,7 +108,11 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
                 const parentClass = d3.select(parentNode).attr('class');
                 if (parentClass === 'bluePart') {
                     d3.select(this).style('cursor', 'pointer');
-                    d3.select(this).attr('filter', ' brightness(0.7)');
+                    // d3.select(this).attr('filter', ' brightness(0.7)');
+                    d3.select(this).style(
+                        'filter',
+                        ' brightness(0.7) drop-shadow(0px 0px 0.5px rgba(0, 0, 0, .5))',
+                    );
                 }
             })
             .on('mousemove', function (this: any, event: any, d: any) {
@@ -138,7 +142,11 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
                     divTooltip.interrupt();
                     divTooltip.transition().ease(easeQuadIn).duration(200).style('opacity', 0);
                     d3.select(this).style('cursor', 'default');
-                    d3.select(this).attr('filter', ' brightness(1)');
+                    // d3.select(this).attr('filter', ' brightness(1)');
+                    d3.select(this).style(
+                        'filter',
+                        'brightness(1) drop-shadow(0px 0px 0px rgba(0, 0, 0, 0))',
+                    );
                 }
             });
     }
