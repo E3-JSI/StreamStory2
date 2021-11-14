@@ -27,7 +27,7 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
     const stateTabPrefix = 'model-state';
 
     useEffect(() => {
-        if(selectedState) {
+        if(selectedState != null) {
             const histIx = selectedState.histograms.findIndex((hist:any)=> ((hist.attrName.toLowerCase() === 'time') || (hist.attrName.toLowerCase() === 'timestamp')));
            const currHist = selectedState.histograms[histIx];
             const totalHist = model?.model?.totalHistograms[histIx];
@@ -38,7 +38,6 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
             if(currHist) {
                 setHistogram(currHist);
             }
-        
         }
        
     }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -87,7 +86,9 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
             </TabPanel>
             <TabPanel value={tabValue} index={2} prefix={stateTabPrefix}>
 
-                <Histogram
+
+                {selectedState &&  <>
+                    <Histogram
                     histogram={histogram}
                     totalHistogram={totalHistogram}
                     timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
@@ -113,6 +114,9 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                     />
 
                <h4>Month</h4>
+
+                </>
+                }
 
             </TabPanel>
             <TabPanel value={tabValue} index={3} prefix={stateTabPrefix}>
