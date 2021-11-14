@@ -30,8 +30,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const [theme, setTheme] = useState<any>();
 
     const darkTheme = {
-        // backgroundColor: '#272b30',
-        backgroundColor: 'white',
         state: {
             default: {
                 stroke: '#a0a0a0',
