@@ -47,11 +47,6 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
             .append('g')
             .attr('transform', `translate(${margin.left},${margin.top})`);
 
-        // svg.append('rect')
-        //     .attr('width', width + margin.left + margin.right)
-        //     .attr('height', height + margin.top + margin.bottom)
-        //     .attr('fill', 'black');
-
         const subgroups = ['bluePart', 'greyPart'];
         const groups: any = boundsFn(histogram); // histogram.keys when categorical variable
         const color = scaleOrdinal(subgroups, ['#5bc0de', '#555555']); // 1st-blue, 2nd-grey
@@ -154,7 +149,7 @@ const Histogram = ({ histogram, totalHistogram }: any) => {
     return (
         <>
             <div ref={tooltipRef} />
-            <div ref={containerRef} style={{ backgroundColor: 'white' }} />
+            <div ref={containerRef} />
         </>
     );
 };
