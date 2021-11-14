@@ -6,15 +6,15 @@ Send a HTTP POST request to the StreamStory2 server with `/buildModel` as the pa
 
 It should contain the following sub-objects:
 
-- `dataSource` - specifies how and where to get training data.
-- `config` - describes the attributes and the transformations to be applied to them.
+- `dataSource`: specifies how and where to get training data.
+- `config`: describes the attributes and the transformations to be applied to them.
 
 ## The `dataSource` object
 
 The `dataSource` object should contain the following attributes:
 
-- `dataSource.type` - a string value, currently either `"file"` (the training data is to be read from a file) or `"internal"` (the training data is included in the input JSON object).
-- `dataSource.format` - a string value, currently either `"json"` or `"csv"`.
+- `type`: a string value, currently either `"file"` (the training data is to be read from a file) or `"internal"` (the training data is included in the input JSON object).
+- `format`: a string value, currently either `"json"` or `"csv"`.
 
 If `type == "file"`, the name of the file containing the training data must be provided in the `dataSource.fileName` attribute.  The file must be accessible under this name from the server's point of view.  Its format should be as indicated by the `datasource.format` value.
 
@@ -24,10 +24,14 @@ If `type == "internal"`, the training data must be provided in the reuqest itsel
 
 The `config` object should contain the following values and attributes:
 
-- `config.numInitialStates` - an integer specifying the number of initial states that the data points are clustered into.
-- `config.numHistogramBuckets` - the number of buckets in each of the histograms that are returned in the response object to show the distribution of attribute values in each state.  The default value is 10.
-- `config.attributes` - an array of objects describing the attributes of the input data.
-- `config.ops` - an array of objects describing the operations that are to be applied to the input data before the clustering into initial states.  Examples of such operations include: applying a linear transformation to an attribute; adding a time-shifted copy of an attribute; adding a categorical attribute representing the day-of-week based on the timestamp of the same instance; etc.
+- `numInitialStates`: an integer specifying the number of initial states that the data points are clustered into.
+- `numHistogramBuckets`: the number of buckets in each of the histograms that are returned in the response object to show the distribution of attribute values in each state.  The default value is 10.
+- `attributes`: an array of objects describing the attributes of the input data.
+- `ops`: an array of objects describing the operations that are to be applied to the input data before the clustering into initial states.  Examples of such operations include: applying a linear transformation to an attribute; adding a time-shifted copy of an attribute; adding a categorical attribute representing the day-of-week based on the timestamp of the same instance; etc.
+- Optional settings that control the construction of decision trees for each state:
+  - `decTree_maxDepth`: the maximum depth of the decision tree; a negative value means that the depth of the tree is not limited.  Default: 3.
+  - `decTree_minEntropyToSplit`: a node is not going to be split further if its entropy is less than this many bits.  The default value is the entropy of the distribution (*p*, 1 - *p*), where *p* = 1 / (3 * `numInitialStates`).
+  - `decTree_minNormInfGainToSplit`: a node is not going to be split further if the normalized information gain of the best split is less than this value.  Default: 0.
 
 ### Attribute specification
 
@@ -100,6 +104,7 @@ A state object contains the following attributes:
   - `nCoveredInState`, `nNotCoveredInState`: the number of instances that belong to this state and do/don't match the label.
   - `nCoveredOutsideState`, `nNotCoveredOutsideState`: the number of instances that don't belong to this state and do/don't match the label.
   - `logOddsRatio`: the logarithm of the odds-ratio calculated from the above values.  The caller may wish to use this to decide whether to display the suggested label at all; if `logOddsRatio` is low, the suggested label might be considered misleading or useless, and a generic label (e.g. based on `stateNo`) might be preferred instead.
+- `decisionTree`: an object representing (the root node of) a decision tree that can be used to predict/describe whether a datapoint should belong to this state or not.  For the structure of the decision tree nodes, see a subsequent section.
 
 ### Structure of a histogram object
 
@@ -119,3 +124,22 @@ The JSON object representing a histogram contains the following properties:
 - `bounds`: an array of numbers, where `bounds[i]` and `bounds[i + 1]` are the lower and upper bounds of the `i`th bucket, respectively (the lower bound is inclusive, the upper is exclusive, except for the last bucket where both are inclusive).  This property is present only if the attribute to which this histogram refers is a numerical one.
 - `keys`: an array of values such that `freqs[i]` is the number of datapoints belonging to the current state and having `keys[i]` are the value of the current attribute.  This property is present only if the attribute to which the histogram refers is a numerical one.  The elements of `keys` may be integers or strings, depending on the attribute's `subType`.
 - `dayOfWeekFreqs`, `monthFreqs`, `hourFreqs`: present only if the attribute to which this histogram refers is a timestamp.  These properties are arrays of 7, 12 and 24 integers, respectively, giving the number of datapoints belonging to the present state whose timestamp belongs to a particular day of week, month of the year, or hour of the day, respectively.  `dayOfWeekFreqs[0]` refers to Sunday, `monthFreqs[0]` to January, `hourFreqs[0]` to all moments in time from midnight (inclusive) to 1 AM (exclusive), etc.
+
+### Structure of a decision tree node object
+
+A decision tree node object contains the following attributes:
+
+- `nPos`, `nNeg`: the number of datapoints that that reach the present node when being classified down the tree and that belong (for `nPos`) or don't belong (for `nNeg`) to the state with which this decision tree is associated.
+- `splitAttr`: present only if the node is not a leaf.  This is the user-friendly label of the data column whose values are used to split the datapoints that reach this node amongst the children of this node.  Each child has an attribute named `splitLabel` which describes the value (or range of values) which causes a datapoint to be assigned to that particular child.
+- `splitLabel`: used in combination with the `splitAttr` of the **parent** node.  See the description of `splitAttr`.  The root note has no `splitLabel` attribute.
+- `children`: an array of objects representing the children of this node.  If the present node is a leaf, the `children` array is empty.
+
+It also contains a few statistics that could in principle be calculated by the caller from `nPos` and `nNeg` of this node and its children, but which are included here for convenience.  In the following discussion, let `nPos[i]` and `nNeg[i]` stand for the `nPos` and `nNeg` values of the `i`'th child; let `P[i] = (nPos[i] + nNeg[i]) / (nPos + nNeg)` be the probability of the `i`'th child; let `h(p) = - p log2(p)` and let `H(a, b) = h(a / (a + b)) + h(b / (a + b))`.
+
+- `entropyBeforeSplit`: the entropy of this node, in bits.  This is equal to `H(nPos, nNeg)`.
+- `splitCost`: the cost of the split used in this node, in bits.  This is equal to the sum of `h(P[i])` over all the children `i`.
+- `entropyAfterSplit`: the sum of `P[i] H(nPos[i], nNeg[i])` over all the children `i`.
+- `infGain`: the difference `entropyBeforeSplit - entropyAfterSplit`, in bits.
+- `normInfGain`: the ratio `infGain / splitCost`.
+
+In leaf nodes, only `entropyBeforeSplit` is present.

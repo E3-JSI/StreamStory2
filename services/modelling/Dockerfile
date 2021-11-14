@@ -39,6 +39,10 @@ WORKDIR /app
 COPY --from=build-stage /app/ss2 /app
 COPY --from=build-stage /app/src/UnicodeDef.bin /app
 
+# Install production dependencies
+RUN apt-get update
+RUN apt-get install -y libgomp1
+
 # Run service
 EXPOSE 8096
 ENTRYPOINT ["./ss2", "-port:8096", "-logfile:modelling.log"]

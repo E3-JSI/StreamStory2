@@ -8,9 +8,9 @@ import Avatar from '@material-ui/core/Avatar';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
-import CardActionArea from '@material-ui/core/CardActionArea';
+// import CardActionArea from '@material-ui/core/CardActionArea';
 import CardContent from '@material-ui/core/CardContent';
-import CardMedia from '@material-ui/core/CardMedia';
+// import CardMedia from '@material-ui/core/CardMedia';
 import Container from '@material-ui/core/Container';
 import Dialog from '@material-ui/core/Dialog';
 import Grid from '@material-ui/core/Grid';
@@ -256,7 +256,7 @@ function Home(): JSX.Element {
                     </Grid>
                 </Container>
             </Section>
-            <Section className={classes.examplesSection}>
+            {/* <Section className={classes.examplesSection}>
                 <Container maxWidth="lg">
                     <SectionName gutterBottom>Examples</SectionName>
                     <SectionTitle gutterBottom>
@@ -341,8 +341,8 @@ function Home(): JSX.Element {
                         </Grid>
                     </Grid>
                 </Container>
-            </Section>
-            <Section bgColor="secondary" className={classes.contactSection}>
+            </Section> */}
+            <Section className={classes.contactSection}>
                 <Container maxWidth="lg">
                     <SectionName gutterBottom>Contact</SectionName>
                     <SectionTitle gutterBottom>Get in touch</SectionTitle>

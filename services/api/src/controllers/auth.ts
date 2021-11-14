@@ -97,7 +97,7 @@ export async function logInWithOauth(
             data: querystring.encode({
                 grant_type: 'authorization_code',
                 code: req.body.code,
-                redirect_uri: req.body.redirect_uri,
+                redirect_uri: req.body.redirectUri,
                 client_id: clientId,
                 client_secret: clientSecret,
             }),
