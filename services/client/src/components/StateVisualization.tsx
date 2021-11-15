@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import Box, { BoxProps } from '@material-ui/core/Box';
@@ -10,17 +10,38 @@ import Tab from './Tab';
 import TabPanel, { getTabA11yProps } from './TabPanel';
 
 import useStyles from './StateVisualization.styles';
+import Histogram from './Histogram';
 
 export interface StateVisualizationProps extends BoxProps {
     model?: Model;
+    selectedState?:any;
 }
 
-function StateVisualization({ /* model, */ ...other }: StateVisualizationProps): JSX.Element {
+function StateVisualization({ model, selectedState, ...other }: StateVisualizationProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
-
+    const [histogram, setHistogram] = useState<any>();
+    const [totalHistogram, setTotalHistogram] = useState<any>();
+    
     const stateTabPrefix = 'model-state';
+
+    useEffect(() => {
+        if(selectedState != null) {
+            const histIx = selectedState.histograms.findIndex((hist:any)=> ((hist.attrName.toLowerCase() === 'time') || (hist.attrName.toLowerCase() === 'timestamp')));
+           const currHist = selectedState.histograms[histIx];
+            const totalHist = model?.model?.totalHistograms[histIx];
+            setTotalHistogram(totalHist);
+            
+            console.log("currHist=",currHist);
+    
+            if(currHist) {
+                setHistogram(currHist);
+            }
+        }
+       
+    }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
+
 
     function handleTabChange(event: React.ChangeEvent<Record<string, never>>, newValue: number) {
         setTabValue(newValue);
@@ -64,7 +85,39 @@ function StateVisualization({ /* model, */ ...other }: StateVisualizationProps):
                 {t('coordinates')}
             </TabPanel>
             <TabPanel value={tabValue} index={2} prefix={stateTabPrefix}>
-                {t('time')}
+
+
+                {selectedState &&  <>
+                    <Histogram
+                    histogram={histogram}
+                    totalHistogram={totalHistogram}
+                    timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
+                    key={selectedState?.stateNo + Math.random()}
+                    />
+
+                <h4>Hour of Day</h4>
+
+                <Histogram
+                    histogram={histogram}
+                    totalHistogram={totalHistogram}
+                    timeType={"dayOfWeek"}  // eslint-disable-line react/jsx-curly-brace-presence
+                    key={selectedState?.stateNo + Math.random()}
+                    />
+
+                <h4>Day of Week</h4>
+
+                <Histogram
+                    histogram={histogram}
+                    totalHistogram={totalHistogram}
+                    timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
+                    key={selectedState?.stateNo + Math.random()}
+                    />
+
+               <h4>Month</h4>
+
+                </>
+                }
+
             </TabPanel>
             <TabPanel value={tabValue} index={3} prefix={stateTabPrefix}>
                 {t('explanation_tree')}

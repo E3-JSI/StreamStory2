@@ -95,7 +95,7 @@ function Model(): JSX.Element {
                                 />
                             </Grid>
                             <Grid item>
-                                <StateVisualization model={model} />
+                                <StateVisualization model={model} selectedState={selectedState} />
                             </Grid>
                         </Grid>
                     </Grid>

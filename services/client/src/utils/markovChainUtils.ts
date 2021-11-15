@@ -1,5 +1,6 @@
 import React from 'react';
 import * as d3 from 'd3';
+import { easeQuadIn } from 'd3'
 import { ITransitionProps, LinkType } from '../types/charts';
 
 export function scale(s: any, value: any) {
@@ -21,15 +22,10 @@ export function getGraphContainer(svg: any) {
 
 export function createSVG(
     container: React.MutableRefObject<any>,
-    theme: any,
     width: number,
     height: number,
     margin: any,
 ) {
-
-    //  scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
-
-
     const svg = d3
         .select(container.current)
         .append('svg')
@@ -40,12 +36,6 @@ export function createSVG(
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
-
-    svg
-        .append("rect")
-        .attr('width', width - margin.left - margin.right)
-        .attr('height', height - margin.top - margin.bottom)
-        .attr("fill", theme.backgroundColor)
 
     return svg;
 }
@@ -116,14 +106,47 @@ export function createLinks(
                     drawLineWithOffset(nodesMap, d),
                 );
 
+                tmp
+                    .append('text')
+                    .attr('class', 'link_path_text')
+                    .attr('id', (d: any) => `path_text${d.source}t${d.target}`)
+                    .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.x;
+                    })
+                    .attr("y", (d: any, i: number) => {
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.y;
+                    })
+                    .attr('fill', theme.linkText.default.fill)
+                    .attr('text-anchor', 'middle')
+                    .attr('startOffset', '20%')
+                    .text((d: any) => formatLinkP(d.p));
+
                 tmp.call((entr: any) => entr.transition(entr).attr('opacity', 1));
                 return tmp;
             },
             (update: any) => {
-                selectLinkPath(update).attr('d', (d: any) =>
-                    drawLineWithOffset(nodesMap, d),
-                );
+                selectLinkPath(update)
+                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d));
 
+                selectLinkPathText(update)
+                    .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.x;
+                    })
+                    .attr("y", (d: any, i: number) => {
+                        const dSource = nodesMap[d.source].data()[0];
+                        const dTarget = nodesMap[d.target].data()[0];
+                        const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                        return newCoords.y;
+                    })
                 update.call((updt: any) => updt.transition(tEnter).attr('opacity', 1));
 
                 return update;
@@ -133,24 +156,19 @@ export function createLinks(
                 return exit;
             },
         );
-    links
-        .append('text')
-        .attr("x", (d: any, i: number) => {
-            const dSource = nodesMap[d.source].data()[0];
-            const dTarget = nodesMap[d.target].data()[0];
-            return (scale(x, dSource.x) + scale(x, dTarget.x)) / 2
-        })
-        .attr("y", (d: any, i: number) => {
-            const dSource = nodesMap[d.source].data()[0];
-            const dTarget = nodesMap[d.target].data()[0];
-            return (scale(y, dSource.y) + scale(y, dTarget.y)) / 2
-        })
-        .attr('fill', 'white')
-        .attr('text-anchor', 'middle')
-        .attr('startOffset', '20%')
-        .text((d: any) => formatLinkP(d.p));
 
     return links;
+}
+
+export function moveObj(sourceStateNo: number, targetStateNo: number, prcnt: number) {
+    const path: any = document.querySelector(`#path_s${sourceStateNo}t${targetStateNo}`) // dirty bug fix- with d3.select does not work
+    const pathLength = Math.floor(path.getTotalLength());
+    prcnt = (prcnt * pathLength) / 100; // eslint-disable-line no-param-reassign
+    // Get x and y values at a certain point in the line
+    const pt = path.getPointAtLength(prcnt);
+    pt.x = Math.round(pt.x);
+    pt.y = Math.round(pt.y);
+    return pt;
 }
 
 export function formatLinkP(p: number) {
@@ -221,7 +239,7 @@ export function createNodes(
                 .style('padding', '1.5em')
                 .style("word-wrap", "break-word")
                 .style("opacity", 0)
-                .html(`<div>
+                .html(`<div style="color:black">
                 <h3><span>${d.suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
                 </div>
                 `)
@@ -230,7 +248,12 @@ export function createNodes(
                 .style("opacity", "0.9")
         })
         .on("mouseout", function (this: any) {
-            divTooltip.style("opacity", 0);
+            divTooltip.interrupt();
+            divTooltip
+                .transition()
+                .ease(easeQuadIn)
+                .duration(200)
+                .style("opacity", 0);
             d3.select(this).style("cursor", "default")
         })
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
@@ -246,6 +269,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
 
     const lineHeight = 40; // FIXME: hardcoded
     const linesDict: any = {}
@@ -262,6 +286,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("class", "node_label")
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
+        .style('fill', theme.stateText.default.fill)
         .attr(
             "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")
@@ -339,7 +364,7 @@ export function createMarkers(theme: any, data: any, gMarkers: any) {
                     .attr('id', (d: any) => `arrow_s${d.source}_t${d.target}`)
                     .attr('class', 'line_arrow')
                     .attr('viewBox', '0 -5 10 10')
-                    .attr('refX', 18)
+                    .attr('refX', 10)
                     .attr('refY', 0)
                     .attr('markerWidth', 8)
                     .attr('markerHeight', 8)
@@ -367,8 +392,6 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
         .drag<SVGGElement, unknown>()
         .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
-            // d.x = event.x; // eslint-disable-line no-param-reassign
-            // d.y = event.y; // eslint-disable-line no-param-reassign
             const nodeGroup = d3.select(this);
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
             const transform = selectNodeLabel(nodeGroup).attr("transform");
@@ -376,6 +399,19 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
             const scaleStr = transform.substring(scaleIx, transform.length)
             selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y}) ${scaleStr}`)
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
+            selectAllLinkPathText(gLinks)
+                .attr("x", function (this: any, dCurr: any) { // eslint-disable-line prefer-arrow-callback
+                    const dSource = nodesMap[dCurr.source].data()[0];
+                    const dTarget = nodesMap[dCurr.target].data()[0];
+                    const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                    return newCoords.x;
+                })
+                .attr("y", (dCurr: any, i: number) => {
+                    const dSource = nodesMap[dCurr.source].data()[0];
+                    const dTarget = nodesMap[dCurr.target].data()[0];
+                    const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
+                    return newCoords.y;
+                })
         });
 }
 
@@ -516,6 +552,14 @@ export function selectLinkPath(selection: any) {
     return selection.select('.link_path');
 }
 
+export function selectLinkPathText(selection: any) {
+    return selection.select('.link_path_text');
+}
+
+export function selectAllLinkPathText(selection: any) {
+    return selection.selectAll('.link_path_text');
+}
+
 export function selectNodeGroup(selection: any) {
     return selection.select('.node_group');
 }
@@ -604,48 +648,6 @@ export function uniqueIdScale(state: any, scaleIx: number) {
 
 export function pseudoUniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}`;
-}
-
-export function addCoordinatesToStates(scales: any, maxRadius: number, debug: boolean) {
-    const statesDict: any = {};
-    const labelSet = new Set();
-    scales
-        .flatMap((sc: any) => sc.states)
-        .forEach((state: any) => labelSet.add(state.suggestedLabel.label));
-
-    scales.forEach((sc: any, scaleIx: number) => {
-        sc.states.forEach((state: any, i: number) => {
-            state.x = -1; // eslint-disable-line no-param-reassign
-            state.y = -1; // eslint-disable-line no-param-reassign
-            state.r = maxRadius * state.stationaryProbability; // eslint-disable-line no-param-reassign
-            const key = uniqueId(state);
-
-            if (sc.areTheseInitialStates) {
-                const currAngle = (360 / sc.states.length) * i;
-                state.x = maxRadius * Math.sin((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
-                state.y = maxRadius * Math.cos((Math.PI * 2 * currAngle) / 360) + maxRadius; // eslint-disable-line no-param-reassign
-                statesDict[key] = state;
-            } else if (!sc.areTheseInitialStates && !statesDict[key]) {
-                let xSum = 0;
-                let ySum = 0;
-                state.childStates.forEach((stateNo: number) => {
-                    const childState = scales[scaleIx - 1].states.find(
-                        (el: any) => el.stateNo === stateNo,
-                    );
-                    const childKey = uniqueId(childState);
-                    xSum += statesDict[childKey].x;
-                    ySum += statesDict[childKey].y;
-                });
-                state.x = xSum / state.childStates.length; // eslint-disable-line no-param-reassign
-                state.y = ySum / state.childStates.length; // eslint-disable-line no-param-reassign
-                statesDict[key] = state;
-            } else if (state.childStates.length === 1) {
-                state.x = statesDict[key].x // eslint-disable-line no-param-reassign
-                state.y = statesDict[key].y // eslint-disable-line no-param-reassign
-
-            }
-        });
-    });
 }
 
 export function createStateLinks(
