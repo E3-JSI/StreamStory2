@@ -3,11 +3,10 @@
     "mailer": {
         "service": "gmail",
         "auth": {
-            "type": "OAuth2",
-            "user": "streamstoryai@gmail.com",
-            "clientId": "332841367753-03m6gm74kiffbafj5laftissrl0olugi.apps.googleusercontent.com",
-            "clientSecret": "$MAILER_CLIENT_SECRET",
-            "refreshToken": "$MAILER_REFRESH_TOKEN"
+            "auth": {
+                "user": "streamstoryai@gmail.com",
+                "pass": "$MAILER_PASS"
+            }
         }
     }
 }
