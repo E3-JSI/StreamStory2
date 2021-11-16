@@ -1,5 +1,4 @@
-import React from 'react';
-
+import React, {useState, useEffect} from 'react';
 import { useTranslation } from 'react-i18next';
 import { styled } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
@@ -26,10 +25,40 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
     const classes = useStyles();
     const { t } = useTranslation();
 
+    const [histograms, setHistograms] = useState<any>([]);
+    const [totalHistograms, setTotalHistograms] = useState<any>([]);
 
-    if(selectedState) {
-        console.log("selectedState=", selectedState.suggestedLabel.label)
-    }
+    useEffect(()=> {
+        if(selectedState) {
+            console.log("selectedState=", selectedState.suggestedLabel.label)
+            const histIndices = selectedState.histograms
+            .map((hist:any, ix:any) => ((hist.attrName.toLowerCase() !== 'time') && (hist.attrName.toLowerCase() !== 'timestamp')) ? ix: null)
+            .filter((el:any)=> el!= null);
+
+            const hists:any[] =[]
+            const totalHists:any[] =[]
+
+
+            for(let i = 0; i<  histIndices.length; i++) {
+
+                if(model && model.model && model.model.totalHistograms) {
+                    const index = histIndices[i];
+                    hists.push(selectedState.histograms[index]);
+                    totalHists.push(model.model.totalHistograms[index]);
+               } else {
+                   console.log("problem!!")
+               }
+            }
+
+            console.log("hists=", hists)
+            console.log("totalHists=", totalHists)
+
+            setHistograms(hists);
+            setTotalHistograms(totalHists)
+        }
+    
+    }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
     const Item = styled(Paper)(({ theme }) => ({
         ...theme.typography.body2,
@@ -97,27 +126,27 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                             </Grid>
                         </Grid>
                     </form>
-                    {selectedState.histograms?.length && (
+                    {(histograms.length && totalHistograms.length) ? (
                         <Box>
                             <Typography className={classes.attributesTitle} component="h3">
                                 {t('attributes')}
                             </Typography>
                             <Grid container spacing={2}>
-                                {selectedState.histograms.map((histogram: any, i: number) => (
+                                {histograms.map((histogram: any, i: number) => (
                                     <Grid key={histogram.attrName} item xs={6}>
                                         <Item>
-                                            <h2>{histogram.attrName}</h2>
                                             <Histogram
                                                 histogram={histogram}
-                                                totalHistogram={model?.model?.totalHistograms[i]}
+                                                totalHistogram={totalHistograms[i]}
                                                 key={selectedState.stateNo + Math.random()}
-                                            />
+                                                />
+                                                <h4>{histogram.attrName}</h4>
                                         </Item>
                                     </Grid>
                                 ))}
                             </Grid>
                         </Box>
-                    )}
+                    ): <></>}
                 </Box>
             )}
         </Paper>
