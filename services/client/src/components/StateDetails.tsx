@@ -110,7 +110,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                                     {t('cancel')}
                                 </Button>
                             </Grid> */}
-                            <Grid item>
+                            {/* <Grid item>
                                 <LoadingButton
                                     type="submit"
                                     variant="contained"
@@ -123,7 +123,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                                 >
                                     {t('save')}
                                 </LoadingButton>
-                            </Grid>
+                            </Grid> */}
                         </Grid>
                     </form>
                     {(histograms.length && totalHistograms.length) ? (
