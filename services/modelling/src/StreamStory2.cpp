@@ -287,13 +287,21 @@ bool TCsvReader::ReadLine(TSIn& SIn, TStrV& dest, int rowNo)
 {
 	dest.Clr();
 	if (SIn.Eof()) return false;
+	// Empty line?
+	char ch = SIn.PeekCh();
+	if (ch == '\x0a') { SIn.GetCh(); return true; }
+	else if (ch == '\x0d') { 
+		SIn.GetCh(); if (! SIn.Eof() && SIn.PeekCh() == '\x0a') SIn.GetCh(); 
+		return true; }
+	// Read the values.
 	int colNo = 0; TChA buf;
 	while (true)
 	{
+		// Read the next value.
 		if (! ReadValue(SIn, buf, rowNo, ++colNo)) return false;
 		dest.Add(TStr(buf));
 		if (SIn.Eof()) return true;
-		char ch = SIn.PeekCh();
+		ch = SIn.PeekCh();
 		// Eat the separator.
 		if (separator.IsChIn(ch)) { SIn.GetCh(); continue; }
 		// ...or the EOL.
@@ -570,15 +578,18 @@ bool TDataset::ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& file
 	for (int colIdx = 0; colIdx < nCols; ++colIdx) cols[colIdx].ClrVals();
 	// Read the headers;
 	if (SIn.Eof()) { errors.Add(TStr::Fmt("[%s] Error in CSV data: the file is empty.", fileName.CStr())); return false; }
-	int rowNo = 1; TStrV headers, values;
+	int rowNo = 0; TStrV headers, values;
 	TCsvReader reader { fieldSep };
-	if (! reader.ReadLine(SIn, headers, rowNo)) { errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
+	while (true) {
+		++rowNo; if (! reader.ReadLine(SIn, headers, rowNo)) { errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
+		if (! headers.Empty()) break; }
 	TDatasetCsvFeeder feeder { *this, fileName };
 	if (! feeder.SetHeaders(headers, rowNo, errors)) return false;
 	// Process the rest of the data.
 	while (! SIn.Eof())
 	{
 		++rowNo; if (! reader.ReadLine(SIn, values, rowNo)) { errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
+		if (values.Empty()) continue; // skip empty lines
 		if (! feeder.AddRow(values, rowNo, errors)) return false;
 	}
 	NotifyInfo("TDataset::ReadDataFromCsv: %d rows, %d/%d columns.\n", nRows - 1, int(headers.Len()), nCols);
@@ -1548,21 +1559,45 @@ void TStatePartition::CalcCentersUsingSvd(const TDataset& dataset)
 		if (pass == 0) { centroidMx.Gen(nDim, nStates); centroidMx.PutAll(0); }
 		else IAssert(nDim2 == nDim);
 	}
-	// Center its rows.
-	TFullMatrix X1(centroidMx, true); TLinAlgTransform::CenterRows(X1.GetMat());
-	// Perform a thin SVD decomposition.
-	TMatVecMatTr svd = X1.Svd(2);
-	// We got X = U S V', where X is nDim * nStates, U is nDim * 2, S is 2 * 2 and diagonal,
-	// and V' is 2 * nStates; hence V is nStates * 2.  The columns of S * V' are a good two-dimensional
-	// representation of our states.
-	IAssert(svd.Val2.Len() == 2);
-	double s0 = svd.Val2[0], s1 = svd.Val2[1]; 
-	auto V = svd.Val3.GetMat(); IAssert(V.GetRows() == nStates); IAssert(V.GetCols() == 2);
-	for (int stateNo = 0; stateNo < nStates; ++stateNo)
+	if (nDim == 1)
 	{
-		TState &state = *aggStates[stateNo];
-		state.xCenter = s0 * V(stateNo, 0);
-		state.yCenter = s1 * V(stateNo, 1);
+		// If we have just one attribute, we can't use SVD to project it into two dimensions.
+		// Instead we'll use the attribute as a polar angle and project the states along 
+		// the edge of a unit circle.
+		double minVal = 0, maxVal = 0;
+		for (int stateNo = 0; stateNo < nStates; ++stateNo)
+		{
+			double val = centroidMx(0, stateNo);
+			if (stateNo == 0 || val < minVal) minVal = val;
+			if (stateNo == 0 || val > maxVal) maxVal = val;
+		}
+		double valRange = (maxVal - minVal) * nStates / double(TInt::GetMx(nStates - 1, 1));
+		for (int stateNo = 0; stateNo < nStates; ++stateNo)
+		{
+			double val = centroidMx(0, stateNo);
+			double angle = (valRange < 1e-8) ? 0 : ((val - minVal) / valRange * 2 * TMath::Pi);
+			TState &state = *aggStates[stateNo];
+			state.xCenter = cos(angle); state.yCenter = sin(angle);
+		}
+	}
+	else
+	{
+		// Center its rows.
+		TFullMatrix X1(centroidMx, true); TLinAlgTransform::CenterRows(X1.GetMat());
+		// Perform a thin SVD decomposition.
+		TMatVecMatTr svd = X1.Svd(2);
+		// We got X = U S V', where X is nDim * nStates, U is nDim * 2, S is 2 * 2 and diagonal,
+		// and V' is 2 * nStates; hence V is nStates * 2.  The columns of S * V' are a good two-dimensional
+		// representation of our states.
+		IAssert(svd.Val2.Len() == 2);
+		double s0 = svd.Val2[0], s1 = svd.Val2[1]; 
+		auto V = svd.Val3.GetMat(); IAssert(V.GetRows() == nStates); IAssert(V.GetCols() == 2);
+		for (int stateNo = 0; stateNo < nStates; ++stateNo)
+		{
+			TState &state = *aggStates[stateNo];
+			state.xCenter = s0 * V(stateNo, 0);
+			state.yCenter = s1 * V(stateNo, 1);
+		}
 	}
 	// Make sure that the states do not cover too much of the screen area.
 	// Instead of shrinking the states, we'll disperse them.
