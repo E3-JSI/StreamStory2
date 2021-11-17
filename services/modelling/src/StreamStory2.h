@@ -181,8 +181,10 @@ public:
 	TOpDescV ops;
 	int numInitialStates;
 	int numHistogramBuckets;
+	double distWeightOutliers;
+	bool ignoreConversionErrors;
 	TDecTreeConfig decTreeConfig;
-	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); }
+	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); ignoreConversionErrors = true; distWeightOutliers = 0.05; }
 	bool InitFromJson(const PJsonVal& val, TStrV& errors);
 protected:
 	bool AddAttrsFromOps(TStrV& errors);
@@ -230,6 +232,7 @@ public:
 		if (type == TAttrType::Time) timeVals.Gen(nRows);
 		// ToDO: more?
 	}
+	double GetDefaultDistWeight(double propOutliersToIgnore) const;
 };
 
 class TCentroidComponent;
@@ -413,6 +416,30 @@ public:
 	void CalcCentersUsingSvd(const TDataset& dataset); // assumes that centroids and statProbs are already available; doesn't try to avoid overlaps
 };
 
+class TConvertedValue;
+typedef TVec<TConvertedValue> TConvertedValueV;
+
+class TConvertedValue
+{
+public:
+	int intVal;
+	double fltVal;
+	TStr strVal;
+	TTimeStamp tsVal;
+};
+
+class TConversionProgress
+{
+public:
+	TStrV& errors;
+	bool ignoreErrors;
+	int maxErrorsToReport = 30;
+	int nErrorsReported = 0, nErrorsSuppressed = 0;
+	int nRowsIgnored = 0;
+	TConversionProgress(TStrV& errors_, bool ignoreErrors_) : errors(errors_), ignoreErrors(ignoreErrors_) { }
+};
+
+class TDataset;
 typedef TPt<TDataset> PDataset;
 
 class TDataset
@@ -425,11 +452,12 @@ public:
 	TDataColumnV cols;
 	PModelConfig config;
 	void InitColsFromConfig(const PModelConfig& config_);
-	bool ReadDataFromJsonArray(const PJsonVal &jsonData, TStrV& errors);
-	bool ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& fileName, TStrV& errors);
+	bool ReadDataFromJsonArray(const PJsonVal &jsonData, TConversionProgress &convProg);
+	bool ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& fileName, TConversionProgress &convProg);
 	// jsonSpec must be a JSON object corresponding to the 'dataSource' attribute of a JSON request.
 	bool ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& errors);
 	bool ApplyOps(TStrV& errors); // applies ops from 'config'
+	void CalcDefaultDistWeights(); // should be called after ApplyOps
 	double RowDist2(int row1, int row2) const;
 	double RowCentrDist2(int rowNo, const TCentroidComponentV& centroid) const;
 	double RowCentrDist2(int rowNo, const PState& state) const { return RowCentrDist2(rowNo, state->centroid); }
@@ -437,6 +465,9 @@ public:
 	double CentrDist2(const TCentroidComponentV& centroid1, const TCentroidComponentV& centroid2) const;
 	double CentrDist2(const TState& state1, const TState& state2) const { return CentrDist2(state1.centroid, state2.centroid); }
 	double CentrDist2(const PState& state1, const PState& state2) const { return CentrDist2(state1->centroid, state2->centroid); }
+	void AddRow(const TConvertedValueV& values);
+protected:
+	bool AddRowFromJson(const PJsonVal &jsonRow, int jsonRowIdx, TConversionProgress& convProg);
 };
 
 class TModel;
@@ -538,6 +569,7 @@ public:
 bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing, int defaultValue, int& value, const TStr& whereForErrorMsg, TStrV& errList);
+bool Json_GetObjBool(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool defaultValue, bool& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjKey(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, PJsonVal& value, const TStr& whereForErrorMsg, TStrV& errList);
 
 #endif // __STREAMSTORY2_H_DEFINED__

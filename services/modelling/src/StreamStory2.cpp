@@ -35,6 +35,19 @@ bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing,
 	return true;
 }
 
+bool Json_GetObjBool(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool defaultValue, bool& value, const TStr& whereForErrorMsg, TStrV& errList)
+{
+	if (jsonVal.Empty()) { errList.Add("Unexpected empty value in " + whereForErrorMsg + "."); return false; }
+	if (! jsonVal->IsObj()) { errList.Add("Unexpected non-object value in " + whereForErrorMsg + "."); return false; }
+	if (! jsonVal->IsObjKey(key))
+		if (allowMissing) { value = defaultValue; return true; }
+		else { errList.Add(TStr("Missing value \"") + key + "\" in " + whereForErrorMsg + "."); return false; }
+	const PJsonVal& val = jsonVal->GetObjKey(key);
+	if (val.Empty()) { errList.Add(TStr("Unexpected null value of \"") + key + "\" in " + whereForErrorMsg + "."); return false; }
+	if (! val->IsBool()) { errList.Add(TStr("The value of \"") + key + "\" in " + whereForErrorMsg + " should be a boolean."); return false; }
+	value = val->GetBool(); return true;
+}
+
 bool Json_GetObjKey(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, PJsonVal& value, const TStr& whereForErrorMsg, TStrV& errList)
 {
 	if (jsonVal.Empty()) { errList.Add("Unexpected empty value in " + whereForErrorMsg + "."); return false; }
@@ -138,7 +151,7 @@ bool TAttrDesc::InitFromJson(const PJsonVal& jsonVal, const TStr& whatForErrMsg,
 		// ToDo: maybe warn about the possibility of a lossy conversion if subType = string, the format string has '%f' and timeType == int.
 	}
 	//
-	if (! Json_GetObjNum(jsonVal, "distWeight", true, 1, distWeight, whatForErrMsg, errList)) return false;
+	if (! Json_GetObjNum(jsonVal, "distWeight", true, std::numeric_limits<double>::quiet_NaN(), distWeight, whatForErrMsg, errList)) return false;
 	return true;
 }
 
@@ -151,6 +164,8 @@ bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
 	if (! Json_GetObjInt(val, "numInitialStates", true, -1, numInitialStates, "model config", errList)) return false;
 	// ToDo: the alternative to numInitialStates is to specify the radius and use DP-means.
 	if (! Json_GetObjInt(val, "numHistogramBuckets", true, 10, numHistogramBuckets, "model config", errList)) return false;
+	if (! Json_GetObjBool(val, "ignoreConversionErrors", true, true, ignoreConversionErrors, "model config", errList)) return false;
+	if (! Json_GetObjNum(val, "distWeightOutliers", true, 0.05, distWeightOutliers, "model config", errList)) return false;
 	if (! Json_GetObjInt(val, "decTree_maxDepth", true, 3, decTreeConfig.maxDepth, "model config", errList)) return false;
 	if (! Json_GetObjNum(val, "decTree_minEntropyToSplit", true, TDecTreeNode::Entropy(1, 3 * numInitialStates - 1), decTreeConfig.minEntropyToSplit, "model config", errList)) return false;
 	if (! Json_GetObjNum(val, "decTree_minNormInfGainToSplit", true, -1, decTreeConfig.minNormInfGainToSplit, "model config", errList)) return false;
@@ -267,6 +282,44 @@ bool StrPTime_HomeGrown(const char *s, const char *format, TSecTm &secTm, int &n
 
 //-----------------------------------------------------------------------------
 //
+// TDataColumn
+//
+//-----------------------------------------------------------------------------
+
+template<typename TDat> 
+double GetVariance(TVec<TDat> v, double propOutliersToIgnore) 
+{
+	v.Sort(); int n = v.Len(), nToIgnore = int(n * propOutliersToIgnore);
+	if (nToIgnore < 0) nToIgnore = 0; 
+	if (nToIgnore > n) nToIgnore = n;
+	int L = nToIgnore / 2; int D = n - (nToIgnore - L);
+	double sum = 0, sum2 = 0; int m = D - L;
+	for (int i = L; i < D; ++i) { double x = v[i]; sum += x; sum2 += x * x; }
+	NotifyInfo("GetVariance(%d; %g to ignore -> %d used): min[0] = %g, first[%d] = %g, last[%d] = %g, max[%d] = %g\n",
+		n, propOutliersToIgnore, m, double(v[0]), L, double(v[L]), D - 1, double(v[D]), n - 1, double(v[n - 1]));
+	// V = (1/m) sum_i (x_i - xAvg)^2 = (1/m) sum_i (x_i^2 + xAvg^2 - 2 xAvg x_i)
+	// = (1/m) sum_i x_i^2 + (1/m) sum_i xAvg^2 - (2/m) sum_i xAvg x_i
+	// = (1/m) sum_i x_i^2 + xAvg^2 - 2 xAvg^2
+	// = (1/m) sum_i x_i^2 - xAvg^2
+	if (m <= 0) return 0;
+	double avg = sum / double(m);
+	double variance = (sum2 / double(m)) - avg * avg;
+	return variance;
+}
+
+double TDataColumn::GetDefaultDistWeight(double propOutliersToIgnore) const
+{
+	if (type != TAttrType::Numeric) return 1;
+	double variance = 0;
+	if (subType == TAttrSubtype::Flt) variance = GetVariance(fltVals, propOutliersToIgnore);
+	else if (subType == TAttrSubtype::Int) variance = GetVariance(intVals, propOutliersToIgnore);
+	else IAssert(false);
+	if (variance < 1e-6) return 1;
+	else return 1.0 / variance;
+}
+
+//-----------------------------------------------------------------------------
+//
 // TCsvReader 
 //
 //-----------------------------------------------------------------------------
@@ -366,7 +419,7 @@ public:
 	// Initializes 'dataColToCsvCol'.
 	bool SetHeaders(const TStrV& headers, int rowNo, TStrV& errors);
 	// Parses 'values' and adds them to the end of each column in 'dataset.cols'.
-	bool AddRow(const TStrV& values, int rowNo, TStrV& errors);
+	bool AddRow(const TStrV& values, int rowNo, TConversionProgress& convProg);
 };
 
 bool TDatasetCsvFeeder::SetHeaders(const TStrV& headers, int rowNo, TStrV& errors)
@@ -391,59 +444,51 @@ bool TDatasetCsvFeeder::SetHeaders(const TStrV& headers, int rowNo, TStrV& error
 	return retVal;
 }
 
-bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TStrV& errors)
+bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TConversionProgress& convProg)
 {
+#define ON_ERROR(x) { \
+		if (convProg.nErrorsReported >= convProg.maxErrorsToReport) convProg.nErrorsSuppressed++; \
+		else { convProg.nErrorsReported++; convProg.errors.Add((x)); } \
+		convProg.nRowsIgnored++; return convProg.ignoreErrors; } 
 	const int nCols = dataset.cols.Len();
+	TConvertedValueV convVals; convVals.Gen(nCols);
 	for (int colNo = 0; colNo < nCols; ++colNo)
 	{
 		TDataColumn &col = dataset.cols[colNo];
 		int csvColNo = dataColToCsvCol[colNo];
-		if (csvColNo < 0 || csvColNo >= values.Len()) { errors.Add(TStr::Fmt("[%s] Error in CSV data (row %d): this row has %d values, attribute \"%s\" should be in column %d based on headers.", fileName.CStr(), rowNo, int(values.Len()), col.name.CStr(), csvColNo + 1)); return false; } 
+		if (csvColNo < 0 || csvColNo >= values.Len()) ON_ERROR(TStr::Fmt("[%s] Error in CSV data (row %d): this row has %d values, attribute \"%s\" should be in column %d based on headers.", fileName.CStr(), rowNo, int(values.Len()), col.name.CStr(), csvColNo + 1));
 		const TStr& value = values[csvColNo];
+		TConvertedValue &cv = convVals[colNo];
 		//
 		if (col.type == TAttrType::Numeric && (col.subType == TAttrSubtype::Flt || col.subType == TAttrSubtype::Int))
 		{
-			if (col.subType == TAttrSubtype::Flt) {
-				double x; if (1 != sscanf(value.CStr(), "%lf", &x)) { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not a floating-point number."); return false; } 
-				col.fltVals.Add(x); }
-			else if (col.subType == TAttrSubtype::Int) {
-				int x; if (1 != sscanf(value.CStr(), "%d", &x)) { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); return false; } 
-				col.intVals.Add(x); }
+			if (col.subType == TAttrSubtype::Flt) { if (1 != sscanf(value.CStr(), "%lf", &cv.fltVal)) ON_ERROR("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not a floating-point number."); }
+			else if (col.subType == TAttrSubtype::Int) { if (1 != sscanf(value.CStr(), "%d", &cv.intVal)) ON_ERROR("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); }
 			else IAssert(false);
 		}
 		else if (col.type == TAttrType::Categorical)
 		{
-			if (col.subType == TAttrSubtype::String) {
-				TStr key = value;
-				int keyId = col.strKeyMap.GetKeyId(key);
-				if (! IsValidId(keyId)) { keyId = col.strKeyMap.AddKey(key); col.strKeyMap[keyId] = 1; }
-				else ++col.strKeyMap[keyId].Val;
-				col.intVals.Add(keyId); }
-			else if (col.subType == TAttrSubtype::Int) {
-				int key; if (1 != sscanf(value.CStr(), "%d", &key)) { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); return false; }
-				int keyId = col.intKeyMap.GetKeyId(key);
-				if (! IsValidId(keyId)) { keyId = col.intKeyMap.AddKey(key); col.intKeyMap[keyId] = 1; }
-				else ++col.intKeyMap[key].Val;
-				col.intVals.Add(keyId); }
+			if (col.subType == TAttrSubtype::String) cv.strVal = value; 
+			else if (col.subType == TAttrSubtype::Int) { if (1 != sscanf(value.CStr(), "%d", &cv.intVal)) ON_ERROR("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); }
 			else IAssert(false);
 		}
 		else if (col.type == TAttrType::Time)
 		{
-			TTimeStamp ts; 
+			TTimeStamp &ts = cv.tsVal; 
 			if (col.subType == TAttrSubtype::String) {
-				TSecTm secTm; int ns; if (! StrPTime_HomeGrown(value.CStr(), col.formatStr.CStr(), secTm, ns)) { errors.Add(TStr::Fmt("Error parsing data[%d].\"%s\" = \"%s\" as a datetime value with the format \"%s\".", rowNo - 1, col.sourceName.CStr(), value.CStr(), col.formatStr.CStr())); return false; }
+				TSecTm secTm; int ns; if (! StrPTime_HomeGrown(value.CStr(), col.formatStr.CStr(), secTm, ns)) ON_ERROR(TStr::Fmt("Error parsing data[%d].\"%s\" = \"%s\" as a datetime value with the format \"%s\".", rowNo - 1, col.sourceName.CStr(), value.CStr(), col.formatStr.CStr())); 
 				if (col.timeType == TTimeType::Time) ts.SetTime(secTm.GetAbsSecs(), ns);
 				else if (col.timeType == TTimeType::Int) ts.SetInt(secTm.GetAbsSecs()); 
 				else if (col.timeType == TTimeType::Flt) ts.SetFlt(secTm.GetAbsSecs() + double(ns) / 1e9);
 				else IAssert(false); }
 			else if (col.subType == TAttrSubtype::Int) {
-				intmax_t intVal; if (1 != sscanf(value.CStr(), "%jd", &intVal))  { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); return false; }
+				intmax_t intVal; if (1 != sscanf(value.CStr(), "%jd", &intVal)) ON_ERROR("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not an integer."); 
 				if (col.timeType == TTimeType::Time) ts.SetTime(intVal, 0);
 				else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
 				else if (col.timeType == TTimeType::Flt) ts.SetFlt((double) intVal);
 				else IAssert(false); }
 			else if (col.subType == TAttrSubtype::Flt) {
-				double x; if (1 != sscanf(value.CStr(), "%lf", &x))  { errors.Add("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not a floating-point number."); return false; }
+				double x; if (1 != sscanf(value.CStr(), "%lf", &x)) ON_ERROR("The value of data[" + TInt::GetStr(rowNo - 1) + "].\"" + col.sourceName + "\" is not a floating-point number."); 
 				double fx = floor(x);
 				int64_t intVal = (int64_t) fx; int ns = int((x - fx) * 1e9);
 				if (ns < 0) ns = 0; else if (ns >= 1000000000) { ns -= 1000000000; ++intVal; }
@@ -452,7 +497,6 @@ bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TStrV& errors)
 				else if (col.timeType == TTimeType::Flt) ts.SetFlt(x);
 				else IAssert(false); }
 			else IAssert(false);
-			col.timeVals.Add(ts);
 		}
 		else if (col.type == TAttrType::Text)
 		{
@@ -461,8 +505,9 @@ bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TStrV& errors)
 		}
 		else IAssert(false);
 	}
-	dataset.nRows += 1;
+	dataset.AddRow(convVals);
 	return true;
+#undef ON_ERROR
 }
 
 //-----------------------------------------------------------------------------
@@ -470,6 +515,47 @@ bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TStrV& errors)
 // TDataset
 //
 //-----------------------------------------------------------------------------
+
+void TDataset::AddRow(const TConvertedValueV& values)
+{
+	const int nCols = cols.Len(); Assert(values.Len() == nCols);
+	for (int colNo = 0; colNo < nCols; ++colNo)
+	{
+		TDataColumn &col = cols[colNo]; const TConvertedValue &cv = values[colNo];
+		//
+		if (col.type == TAttrType::Numeric) {
+			if (col.subType == TAttrSubtype::Flt) col.fltVals.Add(cv.fltVal); 
+			else if (col.subType == TAttrSubtype::Int) col.intVals.Add(cv.intVal);
+			else IAssert(false); }
+		else if (col.type == TAttrType::Categorical)
+		{
+			if (col.subType == TAttrSubtype::String) {
+				const TStr& key = cv.strVal;
+				int keyId = col.strKeyMap.GetKeyId(key);
+				if (! IsValidId(keyId)) { keyId = col.strKeyMap.AddKey(key); col.strKeyMap[keyId] = 1; }
+				else ++col.strKeyMap[keyId].Val;
+				col.intVals.Add(keyId); }
+			else if (col.subType == TAttrSubtype::Int) {
+				int key = cv.intVal;
+				int keyId = col.intKeyMap.GetKeyId(key);
+				if (! IsValidId(keyId)) { keyId = col.intKeyMap.AddKey(key); col.intKeyMap[keyId] = 1; }
+				else ++col.intKeyMap[key].Val;
+				col.intVals.Add(keyId); }
+			else IAssert(false);
+		}
+		else if (col.type == TAttrType::Time)
+		{
+			col.timeVals.Add(cv.tsVal);
+		}
+		else if (col.type == TAttrType::Text)
+		{
+			// ToDo.
+			IAssert(false);
+		}
+		else IAssert(false);
+	}
+	nRows += 1;
+}
 
 void TDataset::InitColsFromConfig(const PModelConfig& config_)
 {
@@ -484,113 +570,119 @@ void TDataset::InitColsFromConfig(const PModelConfig& config_)
 	}
 }
 
-bool TDataset::ReadDataFromJsonArray(const PJsonVal &jsonData, TStrV& errors)
+bool TDataset::AddRowFromJson(const PJsonVal &jsonRow, int jsonRowIdx, TConversionProgress& convProg)
 {
-	if (jsonData.Empty()) { errors.Add("Empty JSON data value."); return false; }
-	if (! jsonData->IsArr()) { errors.Add("The JSON data value must be an array."); return false; }
+#define ON_ERROR(x) { \
+		if (convProg.nErrorsReported >= convProg.maxErrorsToReport) convProg.nErrorsSuppressed++; \
+		else { convProg.nErrorsReported++; convProg.errors.Add((x)); } \
+		convProg.nRowsIgnored++; return convProg.ignoreErrors; } 
+	if (jsonRow.Empty()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "] is missing."); 
+	if (! jsonRow->IsObj()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "] must be an object."); 
+	const int nCols = cols.Len();
+	TConvertedValueV convVals; convVals.Gen(nCols);
+	for (int colIdx = 0; colIdx < nCols; ++colIdx)
+	{
+		TDataColumn &col = cols[colIdx]; TConvertedValue &cv = convVals[colIdx];
+		if (! jsonRow->IsObjKey(col.sourceName)) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is missing."); 
+		PJsonVal val = jsonRow->GetObjKey(col.sourceName); if (val.Empty()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is empty."); 
+		if (col.type == TAttrType::Numeric)
+		{
+			if (! val->IsNum()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not a number."); 
+			// ToDo: add support for the conversion of strings to ints/floats?
+			double x = val->GetNum();
+			if (col.subType == TAttrSubtype::Flt) cv.fltVal = x;
+			else if (col.subType == TAttrSubtype::Int) {
+				int y = (int) floor(x); if (x != y) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not an integer."); 
+				cv.intVal = y; }
+			else IAssert(false);
+		}
+		else if (col.type == TAttrType::Categorical)
+		{
+			if (col.subType == TAttrSubtype::String) {
+				if (! val->IsStr()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not a string."); 
+				cv.strVal = val->GetStr(); }
+			else if (col.subType == TAttrSubtype::Int) {
+				if (! val->IsNum()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not a number."); 
+				double x = val->GetNum(); int key = (int) floor(x); if (key != x) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is a number but not an integer."); 
+				// ToDo: add support for the conversion of strings to ints?
+				cv.intVal = key; }
+			else IAssert(false);
+		}
+		else if (col.type == TAttrType::Time)
+		{
+			TTimeStamp &ts = cv.tsVal;
+			if (col.subType == TAttrSubtype::String) {
+				if (! val->IsStr()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not a string."); 
+				TStr s = val->GetStr();
+				TSecTm secTm; int ns; if (! StrPTime_HomeGrown(s.CStr(), col.formatStr.CStr(), secTm, ns)) ON_ERROR(TStr::Fmt("Error parsing data[%d].\"%s\" = \"%s\" as a datetime value with the format \"%s\".", int(jsonRowIdx), col.sourceName.CStr(), s.CStr(), col.formatStr.CStr())); 
+				if (col.timeType == TTimeType::Time) ts.SetTime(secTm.GetAbsSecs(), ns);
+				else if (col.timeType == TTimeType::Int) ts.SetInt(secTm.GetAbsSecs()); 
+				else if (col.timeType == TTimeType::Flt) ts.SetFlt(secTm.GetAbsSecs() + double(ns) / 1e9);
+				else IAssert(false); }
+			else if (col.subType == TAttrSubtype::Int) {
+				if (! val->IsNum()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not a number."); 
+				double x = val->GetNum(); int64_t intVal = (int64_t) floor(x); if (intVal != x) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is a number but not an integer."); 
+				if (col.timeType == TTimeType::Time) ts.SetTime(intVal, 0);
+				else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
+				else if (col.timeType == TTimeType::Flt) ts.SetFlt((double) intVal);
+				else IAssert(false); }
+			else if (col.subType == TAttrSubtype::Flt) {
+				if (! val->IsNum()) ON_ERROR("The value of data[" + TInt::GetStr(jsonRowIdx) + "].\"" + col.sourceName + "\" is not a number."); 
+				double x = val->GetNum(); double fx = floor(x);
+				int64_t intVal = (int64_t) fx; int ns = int((x - fx) * 1e9);
+				if (ns < 0) ns = 0; else if (ns >= 1000000000) { ns -= 1000000000; ++intVal; }
+				if (col.timeType == TTimeType::Time) ts.SetTime(intVal, ns);
+				else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
+				else if (col.timeType == TTimeType::Flt) ts.SetFlt(x);
+				else IAssert(false); }
+			else IAssert(false);
+		}
+		else if (col.type == TAttrType::Text)
+		{
+			// ToDo.
+			IAssert(false);
+		}
+		else IAssert(false);
+	}
+	AddRow(convVals); return true;
+#undef ON_ERROR
+}
+
+bool TDataset::ReadDataFromJsonArray(const PJsonVal &jsonData, TConversionProgress& convProg)
+{
+	if (jsonData.Empty()) { convProg.errors.Add("Empty JSON data value."); return false; }
+	if (! jsonData->IsArr()) { convProg.errors.Add("The JSON data value must be an array."); return false; }
 	const int nCols = cols.Len(); nRows = jsonData->GetArrVals();
-	NotifyInfo("TDataset::ReadDataFromJsonArray: %d rows, %d columns.\n", nRows, nCols);
-	for (int colIdx = 0; colIdx < nCols; ++colIdx) cols[colIdx].Gen(nRows);
+	NotifyInfo("TDataset::ReadDataFromJsonArray: %d rows (if no errors), %d columns.\n", nRows, nCols);
+	for (int colIdx = 0; colIdx < nCols; ++colIdx) cols[colIdx].ClrVals(); // (nRows);
 	for (int rowIdx = 0; rowIdx < nRows; ++rowIdx)
 	{
 		PJsonVal jsonRow = jsonData->GetArrVal(rowIdx);
-		if (jsonRow.Empty()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "] is missing."); return false; }
-		if (! jsonRow->IsObj()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "] must be an object."); return false; }
-		for (int colIdx = 0; colIdx < nCols; ++colIdx)
-		{
-			TDataColumn &col = cols[colIdx];
-			if (! jsonRow->IsObjKey(col.sourceName)) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is missing."); return false; }
-			PJsonVal val = jsonRow->GetObjKey(col.sourceName); if (val.Empty()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is empty."); return false; }
-			if (col.type == TAttrType::Numeric && (col.subType == TAttrSubtype::Flt || col.subType == TAttrSubtype::Int))
-			{
-				if (! val->IsNum()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a number."); return false; }
-				// ToDo: add support for the conversion of strings to ints/floats?
-				double x = val->GetNum();
-				if (col.subType == TAttrSubtype::Flt) col.fltVals[rowIdx] = x;
-				else if (col.subType == TAttrSubtype::Int) {
-					int y = (int) floor(x); if (x != y) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not an integer."); return false; }
-					col.intVals[rowIdx] = y; }
-				else IAssert(false);
-			}
-			else if (col.type == TAttrType::Categorical)
-			{
-				if (col.subType == TAttrSubtype::String) {
-					if (! val->IsStr()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a string."); return false; }
-					TStr key = val->GetStr();
-					int keyId = col.strKeyMap.GetKeyId(key);
-					if (! IsValidId(keyId)) { keyId = col.strKeyMap.AddKey(key); col.strKeyMap[keyId] = 1; }
-					else ++col.strKeyMap[keyId].Val;
-					col.intVals[rowIdx] = keyId; }
-				else if (col.subType == TAttrSubtype::Int) {
-					if (! val->IsNum()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a number."); return false; }
-					double x = val->GetNum(); int key = (int) floor(x); if (key != x) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is a number but not an integer."); return false; }
-					// ToDo: add support for the conversion of strings to ints?
-					int keyId = col.intKeyMap.GetKeyId(key);
-					if (! IsValidId(keyId)) { keyId = col.intKeyMap.AddKey(key); col.intKeyMap[keyId] = 1; }
-					else ++col.intKeyMap[key].Val;
-					col.intVals[rowIdx] = keyId; }
-				else IAssert(false);
-			}
-			else if (col.type == TAttrType::Time)
-			{
-				TTimeStamp &ts = col.timeVals[rowIdx];
-				if (col.subType == TAttrSubtype::String) {
-					if (! val->IsStr()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a string."); return false; }
-					TStr s = val->GetStr();
-					TSecTm secTm; int ns; if (! StrPTime_HomeGrown(s.CStr(), col.formatStr.CStr(), secTm, ns)) { errors.Add(TStr::Fmt("Error parsing data[%d].\"%s\" = \"%s\" as a datetime value with the format \"%s\".", int(rowIdx), col.sourceName.CStr(), s.CStr(), col.formatStr.CStr())); return false; }
-					if (col.timeType == TTimeType::Time) ts.SetTime(secTm.GetAbsSecs(), ns);
-					else if (col.timeType == TTimeType::Int) ts.SetInt(secTm.GetAbsSecs()); 
-					else if (col.timeType == TTimeType::Flt) ts.SetFlt(secTm.GetAbsSecs() + double(ns) / 1e9);
-					else IAssert(false); }
-				else if (col.subType == TAttrSubtype::Int) {
-					if (! val->IsNum()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a number."); return false; }
-					double x = val->GetNum(); int64_t intVal = (int64_t) floor(x); if (intVal != x) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is a number but not an integer."); return false; }
-					if (col.timeType == TTimeType::Time) ts.SetTime(intVal, 0);
-					else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
-					else if (col.timeType == TTimeType::Flt) ts.SetFlt((double) intVal);
-					else IAssert(false); }
-				else if (col.subType == TAttrSubtype::Flt) {
-					if (! val->IsNum()) { errors.Add("The value of data[" + TInt::GetStr(rowIdx) + "].\"" + col.sourceName + "\" is not a number."); return false; }
-					double x = val->GetNum(); double fx = floor(x);
-					int64_t intVal = (int64_t) fx; int ns = int((x - fx) * 1e9);
-					if (ns < 0) ns = 0; else if (ns >= 1000000000) { ns -= 1000000000; ++intVal; }
-					if (col.timeType == TTimeType::Time) ts.SetTime(intVal, ns);
-					else if (col.timeType == TTimeType::Int) ts.SetInt(intVal); 
-					else if (col.timeType == TTimeType::Flt) ts.SetFlt(x);
-					else IAssert(false); }
-				else IAssert(false);
-			}
-			else if (col.type == TAttrType::Text)
-			{
-				// ToDo.
-				IAssert(false);
-			}
-			else IAssert(false);
-		}
+		if (! AddRowFromJson(jsonRow, rowIdx, convProg)) return false;
 	}
 	return true;
 }
 
-bool TDataset::ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& fileName, TStrV& errors)
+bool TDataset::ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& fileName, TConversionProgress &convProg)
 {
 	// Clear the data.
 	const int nCols = cols.Len(); 
 	for (int colIdx = 0; colIdx < nCols; ++colIdx) cols[colIdx].ClrVals();
 	// Read the headers;
-	if (SIn.Eof()) { errors.Add(TStr::Fmt("[%s] Error in CSV data: the file is empty.", fileName.CStr())); return false; }
+	if (SIn.Eof()) { convProg.errors.Add(TStr::Fmt("[%s] Error in CSV data: the file is empty.", fileName.CStr())); return false; }
 	int rowNo = 0; TStrV headers, values;
 	TCsvReader reader { fieldSep };
 	while (true) {
-		++rowNo; if (! reader.ReadLine(SIn, headers, rowNo)) { errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
+		++rowNo; if (! reader.ReadLine(SIn, headers, rowNo)) { convProg.errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
 		if (! headers.Empty()) break; }
 	TDatasetCsvFeeder feeder { *this, fileName };
-	if (! feeder.SetHeaders(headers, rowNo, errors)) return false;
+	if (! feeder.SetHeaders(headers, rowNo, convProg.errors)) return false;
 	// Process the rest of the data.
 	while (! SIn.Eof())
 	{
-		++rowNo; if (! reader.ReadLine(SIn, values, rowNo)) { errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
+		++rowNo; if (! reader.ReadLine(SIn, values, rowNo)) { convProg.errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
 		if (values.Empty()) continue; // skip empty lines
-		if (! feeder.AddRow(values, rowNo, errors)) return false;
+		if (! feeder.AddRow(values, rowNo, convProg)) return false;
 	}
 	NotifyInfo("TDataset::ReadDataFromCsv: %d rows, %d/%d columns.\n", nRows - 1, int(headers.Len()), nCols);
 	return true;
@@ -599,6 +691,7 @@ bool TDataset::ReadDataFromCsv(TSIn& SIn, const TStr& fieldSep, const TStr& file
 bool TDataset::ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& errors)
 {
 	TStr type; if (! Json_GetObjStr(jsonSpec, "type", false, "", type, "dataSource", errors)) return false; 
+	TConversionProgress convProg { errors, config->ignoreConversionErrors };
 	if (type == "file")
 	{
 		TStr format; if (! Json_GetObjStr(jsonSpec, "format", true, "", format, "dataSource", errors)) return false; 
@@ -618,14 +711,14 @@ bool TDataset::ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& e
 			bool ok = false; TStr msgStr;
 			PJsonVal jsonData = TJsonVal::GetValFromSIn(SIn, ok, msgStr);
 			if (! ok) { errors.Add(msgStr); return false; }
-			return this->ReadDataFromJsonArray(jsonData, errors);
+			if (! this->ReadDataFromJsonArray(jsonData, convProg)) return false;
 		}
 		else if (format == "csv")
 		{
 			TStr fieldSep; if (! Json_GetObjStr(jsonSpec, "fieldSep", true, ",", fieldSep, "dataSource", errors)) return true;
 			PSIn SIn = TFIn::New(fileName);
 			if (SIn.Empty()) { errors.Add("Error opening \"" + fileName + "\"."); return false; }
-			return this->ReadDataFromCsv(*SIn, fieldSep, fileName, errors);
+			if (! this->ReadDataFromCsv(*SIn, fieldSep, fileName, convProg)) return false;
 		}
 		else { errors.Add("Unsupported value of dataSource[format]: \"" + format + "\"."); return false; }
 	}
@@ -634,14 +727,15 @@ bool TDataset::ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& e
 		TStr format; if (! Json_GetObjStr(jsonSpec, "format", true, "", format, "dataSource", errors)) return false; 
 		PJsonVal vData; if (! Json_GetObjKey(jsonSpec, "data", false, false, vData, "dataSource", errors)) return false;
 		const TStr fileName = "<internal>";
-		if (format == "json") return this->ReadDataFromJsonArray(vData, errors);
+		if (format == "json") {
+			if (! this->ReadDataFromJsonArray(vData, convProg)) return false; }
 		else if (format == "csv")
 		{
 			TStr fieldSep; if (! Json_GetObjStr(jsonSpec, "fieldSep", true, ",", fieldSep, "dataSource", errors)) return true;
 			if (vData->IsStr()) 
 			{ 
 				PSIn SIn = TStrIn::New(vData->GetStr(), false);
-				return this->ReadDataFromCsv(*SIn, fieldSep, fileName, errors); 
+				if (! this->ReadDataFromCsv(*SIn, fieldSep, fileName, convProg)) return false;
 			}
 			else if (vData->IsArr())
 			{
@@ -661,10 +755,9 @@ bool TDataset::ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& e
 					{
 						if (! reader.ReadLine(*SIn, v, rowNo)) { errors.Add(TStr::Fmt("[%s] %s", fileName.CStr(), reader.errMsg.CStr())); return false; }
 						if (rowNo == 1) { nHeaders = v.Len(); if (! feeder.SetHeaders(v, rowNo, errors)) return false; }
-						else { ++nDataRows; if (! feeder.AddRow(v, rowNo, errors)) return false; }
+						else { ++nDataRows; if (! feeder.AddRow(v, rowNo, convProg)) return false; }
 						++rowNo;
 					}
-
 				}
 				NotifyInfo("TDataset::ReadDataFromCsv: %d rows (%d elements in the internal string vector), %d/%d columns.\n", nDataRows, nElts, nHeaders, nCols);
 			}
@@ -678,6 +771,8 @@ bool TDataset::ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& e
 	{
 		errors.Add("Unsupported value of dataSource[type]: \"" + type + "\"."); return false;
 	}
+	if (convProg.nErrorsSuppressed > 0) errors.Add(TStr::Fmt("%d more conversion errors were encountered but not reported here.", convProg.nErrorsSuppressed));
+	if (convProg.nRowsIgnored > 0) errors.Add(TStr::Fmt("A total of %d input rows were ignored due to conversion errors or missing values.", convProg.nRowsIgnored));
 	return true;
 }
 
@@ -685,6 +780,15 @@ bool TDataset::ApplyOps(TStrV& errors)
 {
 	// ToDo. 
 	return true;
+}
+
+void TDataset::CalcDefaultDistWeights() 
+{ 
+	for (TDataColumn& col : cols) if (isnan(col.distWeight)) 
+	{
+		col.distWeight = col.GetDefaultDistWeight(config->distWeightOutliers); 
+		NotifyInfo("TDataset::CalcDefaultDistWeights: setting distWeight of \"%s\" to %g.\n", col.name.CStr(), col.distWeight);
+	}
 }
 
 double TDataset::RowDist2(int row1, int row2) const
@@ -1512,6 +1616,20 @@ PJsonVal TStatePartition::SaveToJson(const TDataset& dataset, bool areTheseIniti
 	return vPartition;
 }
 
+void PrintMatrix(const TFltVV& mx, const TStr& intro)
+{
+	int nRows = mx.GetRows(), nCols = mx.GetCols();
+	printf("%s (%d rows * %d cols) = \n", intro.CStr(), nRows, nCols);
+	for (int i = 0; i < nRows; ++i)
+	{
+		printf("  [");
+		for (int j = 0; j < nCols; ++j)
+			printf("  %10.3g", mx(i, j).Val);
+		printf(" ]\n");
+	}
+	fflush(stdout);
+}
+
 void TStatePartition::CalcCentersUsingSvd(const TDataset& dataset)
 {
 	// First, calculate a (dense) centroid matrix; each state gets one column.
@@ -1582,8 +1700,11 @@ void TStatePartition::CalcCentersUsingSvd(const TDataset& dataset)
 	}
 	else
 	{
+		enum { verbose = false };
+		if (verbose) PrintMatrix(centroidMx, "centroidMx");
 		// Center its rows.
 		TFullMatrix X1(centroidMx, true); TLinAlgTransform::CenterRows(X1.GetMat());
+		if (verbose) PrintMatrix(X1.GetMat(), "X1");
 		// Perform a thin SVD decomposition.
 		TMatVecMatTr svd = X1.Svd(2);
 		// We got X = U S V', where X is nDim * nStates, U is nDim * 2, S is 2 * 2 and diagonal,
@@ -1592,6 +1713,8 @@ void TStatePartition::CalcCentersUsingSvd(const TDataset& dataset)
 		IAssert(svd.Val2.Len() == 2);
 		double s0 = svd.Val2[0], s1 = svd.Val2[1]; 
 		auto V = svd.Val3.GetMat(); IAssert(V.GetRows() == nStates); IAssert(V.GetCols() == 2);
+		if (verbose) PrintMatrix(svd.Val1.GetMat(), "U");
+		if (verbose) PrintMatrix(V, "V");
 		for (int stateNo = 0; stateNo < nStates; ++stateNo)
 		{
 			TState &state = *aggStates[stateNo];
