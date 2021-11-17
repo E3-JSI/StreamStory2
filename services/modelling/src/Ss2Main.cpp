@@ -162,6 +162,7 @@ public:
 		if (! dataset->ReadDataFromJsonDataSourceSpec(req.inJson->GetObjKey("dataSource"), req.errList)) { req.status = "error"; return false; }
 		if (! dataset->ApplyOps(req.errList)) { req.status = "error"; return false; }
 		if (dataset->nRows < config->numInitialStates) { req.status = "error"; req.errList.Add(TStr::Fmt("Not enough data (%d initial states were requested, %d rows are available).", config->numInitialStates, dataset->nRows)); return false; }
+		dataset->CalcDefaultDistWeights();
 		// Build the model.
 		PModel model = new TModel(dataset);
 		TKMeansRunner::BuildInitialStates(*model);
@@ -191,7 +192,7 @@ public:
 int TestBuildModelRequest()
 {
 	TJsonRequest req;
-	if (req.InitInJsonFromFile("call.json")) TBuildModelFun::ProcessRequest(req);
+	if (req.InitInJsonFromFile("call-braila.json")) TBuildModelFun::ProcessRequest(req);
 	TStr resultStr = req.FinalizeResponse();
 	FILE *f = fopen("callResult.json", "wt");
 	fprintf(f, "%s\n", resultStr.CStr());

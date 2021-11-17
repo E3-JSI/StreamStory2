@@ -26,6 +26,8 @@ The `config` object should contain the following values and attributes:
 
 - `numInitialStates`: an integer specifying the number of initial states that the data points are clustered into.
 - `numHistogramBuckets`: the number of buckets in each of the histograms that are returned in the response object to show the distribution of attribute values in each state.  The default value is 10.
+- `ignoreConversionErrors`: a boolean value specifying how to deal with conversion errors (and missing values) when reading the input data.  If `true`, any input row containing a conversion error is skipped and the processing continues with the next row; if `false`, processing is aborted on the first error (and no model is built).  The default value is `true`.
+- `distWeightOutliers`: when calculating the value of `distWeight` for attributes that do not have a `distWeight` defined explicitly in their attribute specification, the variance of the attribute is calculated over all the values of this attribute except the highest and lowest `distWeightOutliers / 2 * 100` percent of them, the idea being that these might be outliers that would skew the result too much.  The default value is `distWeightOutliers = 0.05`, meaning that the highest and lowest 2.5% of the values of an attribute are ignored when calculating its variance for the purposes of calculating the default `distWeight` of that attribute.
 - `attributes`: an array of objects describing the attributes of the input data.
 - `ops`: an array of objects describing the operations that are to be applied to the input data before the clustering into initial states.  Examples of such operations include: applying a linear transformation to an attribute; adding a time-shifted copy of an attribute; adding a categorical attribute representing the day-of-week based on the timestamp of the same instance; etc.
 - Optional settings that control the construction of decision trees for each state:
@@ -37,9 +39,10 @@ The `config` object should contain the following values and attributes:
 
 Each attribute (a.k.a. field or column) of the input dataset must be described by an object containing the following values:
 
-- `name` - the name of the attribute
-- `sourceName` - optional (if missing, the same value as `name` is used).  This is the name under which the attribute appears in the input data.  If the input data is in the CSV format, this name appears in the header of the corresponding column.  If the input data is in the JSON format, this name is used to represent this attribute in the JSON objects that represent individual data points.
-- `label` - optional (if missing, the same value as `name` is used).  This is a user-friendly label for this attribute.  This might eventually be used in string descriptions/representations in the model, constructed by the server and intended to be visible to the end-user.  
+- `name`: the name of the attribute
+- `sourceName`: optional (if missing, the same value as `name` is used).  This is the name under which the attribute appears in the input data.  If the input data is in the CSV format, this name appears in the header of the corresponding column.  If the input data is in the JSON format, this name is used to represent this attribute in the JSON objects that represent individual data points.
+- `label`: optional (if missing, the same value as `name` is used).  This is a user-friendly label for this attribute.  This might eventually be used in string descriptions/representations in the model, constructed by the server and intended to be visible to the end-user.  
+- `distWeight`: the weight of this attribute for the purposes of distance calculations: `d(x, y) = sum_i w_i (x_i - y_i)^2`, where `w_i` is the `distWeight` of the `i`'th attribute.  This attribute is optional; if absent, `1 / (variance of this attribute)` is used as the default, which is equivalent to rescaling each attribute so that it has a standard deviation of 1.
 
 - `type` - the type of this attribute; may be `"time"`, `"numeric"`, `"categorical"` or `"text"`.
 - `subType` - together with `type`, this defines how the values of this attribute are represented in the input data.  Possible values are `"string"`, `"float"`, `"int"`.  If omitted, a default value is used depending on `type` (if `type` is `"numeric"`, the default `subType` is `"float"`, otherwise it's `"string"`).
@@ -131,7 +134,7 @@ A decision tree node object contains the following attributes:
 
 - `nPos`, `nNeg`: the number of datapoints that that reach the present node when being classified down the tree and that belong (for `nPos`) or don't belong (for `nNeg`) to the state with which this decision tree is associated.
 - `splitAttr`: present only if the node is not a leaf.  This is the user-friendly label of the data column whose values are used to split the datapoints that reach this node amongst the children of this node.  Each child has an attribute named `splitLabel` which describes the value (or range of values) which causes a datapoint to be assigned to that particular child.
-- `splitLabel`: used in combination with the `splitAttr` of the **parent** node.  See the description of `splitAttr`.  The root note has no `splitLabel` attribute.
+- `splitLabel`: used in combination with the `splitAttr` of the **parent** node.  See the description of `splitAttr`.  The root node has no `splitLabel` attribute.
 - `children`: an array of objects representing the children of this node.  If the present node is a leaf, the `children` array is empty.
 
 It also contains a few statistics that could in principle be calculated by the caller from `nPos` and `nNeg` of this node and its children, but which are included here for convenience.  In the following discussion, let `nPos[i]` and `nNeg[i]` stand for the `nPos` and `nNeg` values of the `i`'th child; let `P[i] = (nPos[i] + nNeg[i]) / (nPos + nNeg)` be the probability of the `i`'th child; let `h(p) = - p log2(p)` and let `H(a, b) = h(a / (a + b)) + h(b / (a + b))`.
