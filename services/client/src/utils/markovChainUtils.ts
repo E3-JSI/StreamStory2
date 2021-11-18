@@ -137,7 +137,7 @@ export function createLinks(
             },
             (update: any) => {
                 selectLinkPath(update)
-                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d));
+                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d)).attr('stroke', theme.link.default.stroke);
 
                 selectLinkPathText(update)
                     .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
@@ -376,7 +376,10 @@ export function createMarkers(theme: any, data: any, gMarkers: any) {
                     .attr('orient', 'auto')
                     .attr('stroke', theme.marker.default.stroke)
                     .attr('fill', theme.marker.default.fill),
-            (update: any) => update,
+            (update: any) => update.select(".line_arrow")
+                .attr('stroke', theme.marker.default.stroke)
+                .attr('fill', theme.marker.default.fill)
+            ,
             (exit: any) => exit.remove(),
         );
     markers.append('svg:path').attr('d', 'M0,-5L10,0L0,5');
