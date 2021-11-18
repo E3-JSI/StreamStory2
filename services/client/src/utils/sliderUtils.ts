@@ -91,9 +91,6 @@ export function createSlider(
 
 export function updateSlider(h: any, slider: any, onSliderValChange: any, x: any, showCurrVal: any, format: any) {
     onSliderValChange(h);
-
-    console.log("h=", h)
-
     slider.select(".handle").attr('cx', x(h));
     slider.select(".label").attr('x', x(h)).text(showCurrVal ? format(h) : '');
 }

@@ -164,11 +164,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gNodes = graphContainer.select('g.nodes');
                 gMarkers = graphContainer.select('g.markers');
             }
-
             let direction = 1; // FIXME: not elegant solution
-
-            console.log('currScaleIx=', currentScaleIx);
-
             const zoom = d3
                 .zoom<any, any>()
                 .scaleExtent([0, 20])
