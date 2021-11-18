@@ -16,7 +16,7 @@ import {
     addColorsToScaleStates,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
-import { createSlider } from '../utils/sliderUtils';
+import { createSlider, updateSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
@@ -126,6 +126,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function renderMarkovChain(graphData: any): void {
+        const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
+
         const theme = createTheme();
         const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
@@ -142,12 +144,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gLinks = null;
             let gMarkers = null;
             let gSliderProb = null;
-            let gSliderScale = null;
+            let gSliderScale: any = null;
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin); // FIXME: hardcoded theme
                 gSliderProb = graph.append('g').attr('class', 'slider_prob');
-                gSliderScale = graph.append('g').attr('class', 'c');
+                gSliderScale = graph.append('g').attr('class', 'slider_scale');
                 graphContainer = createGraphContainer(graph, width, height, chart);
                 gLinks = graphContainer.append('g').attr('class', 'links');
                 gNodes = graphContainer.append('g').attr('class', 'nodes');
@@ -179,6 +181,18 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
                     if (Math.floor(event.transform.k) % 1 === 0) {
                         setCurrentScaleIx(scaleIxNew);
+
+                        // const slider = gSliderScale.select('.track');
+                        const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
+
+                        updateSlider(
+                            scaleIxNew,
+                            gSliderScale,
+                            handleOnScaleChanged,
+                            xSliderProb,
+                            false,
+                            format2Decimals,
+                        );
                     }
                 });
 
@@ -199,8 +213,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 [0, model.model.scales.length - 1],
                 [yWidth, 0],
             ).clamp(true);
-
-            const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
 
             createNodes(
                 theme,
