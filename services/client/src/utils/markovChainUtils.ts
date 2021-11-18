@@ -397,7 +397,7 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
         .drag<SVGGElement, unknown>()
         .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
-            const nodeGroup = d3.select(this);
+            const nodeGroup = d3.select(this).raise();
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
             const transform = selectNodeLabel(nodeGroup).attr("transform");
             const scaleIx = transform.indexOf("scale")
