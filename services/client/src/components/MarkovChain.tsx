@@ -163,19 +163,24 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gMarkers = graphContainer.select('g.markers');
             }
 
+            graph.select('.zoom_rect').call(
+                d3
+                    .zoom<any, any>()
+                    .scaleExtent([0, 20])
+                    .wheelDelta((event: any) => {
+                        const scaleIxNew = (event.deltaY > 0 ? 1 : -1) + currentScaleIx;
+                        console.log('prevScale=', currentScaleIx, ', scaleNew=', scaleIxNew);
+
+                        if (scaleIxNew >= 0 && scaleIxNew <= 5) {
+                            setCurrentScaleIx(scaleIxNew);
+                        }
+                        return (
+                            event.deltaY *
+                            (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) // eslint-disable-line  no-nested-ternary
+                        );
+                    }),
+            );
             graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.8)`); // FIXME: hardcoded scale
-
-            const zoom = d3
-                .zoom()
-                .scaleExtent([0, 5])
-                .on('zoom', (event: any) => {
-                    // console.log('event=', event);
-                    if (event) {
-                        setCurrentScaleIx(Math.floor(event.transform.k));
-                    }
-                });
-
-            graphContainer.call(zoom);
 
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);

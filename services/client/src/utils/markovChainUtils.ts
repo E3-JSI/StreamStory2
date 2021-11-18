@@ -24,18 +24,23 @@ export function createSVG(
     container: React.MutableRefObject<any>,
     width: number,
     height: number,
-    margin: any,
-) {
+    margin: any) {
     const svg = d3
         .select(container.current)
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
         .append('g')
         .attr('class', 'graph')
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    svg
+        .append("rect")
+        .attr("class", "zoom_rect")
+        .attr('width', width - margin.left - margin.right)
+        .attr('height', height - margin.top - margin.bottom)
+        .attr("fill", "green")
+        .attr("opacity", "0.1")
 
     return svg;
 }
