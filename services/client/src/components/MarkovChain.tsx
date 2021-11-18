@@ -167,6 +167,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             let direction = 1; // FIXME: not elegant solution
 
+            console.log('currScaleIx=', currentScaleIx);
+
             const zoom = d3
                 .zoom<any, any>()
                 .scaleExtent([0, 20])
@@ -181,18 +183,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
                     if (Math.floor(event.transform.k) % 1 === 0) {
                         setCurrentScaleIx(scaleIxNew);
-
-                        // const slider = gSliderScale.select('.track');
-                        const xSliderProb = createLinearScale([0, 1], [0, xWidth]).clamp(true);
-
-                        updateSlider(
-                            scaleIxNew,
-                            gSliderScale,
-                            handleOnScaleChanged,
-                            xSliderProb,
-                            false,
-                            format2Decimals,
-                        );
+                        const val = scaleIxNew;
+                        const ySliderScale = createLinearScale(
+                            [0, model.model.scales.length - 1],
+                            [yWidth, 0],
+                        ).clamp(true);
+                        gSliderScale.select('.handle').attr('cx', ySliderScale(val));
+                        gSliderScale.select('.label').attr('x', ySliderScale(val));
                     }
                 });
 
