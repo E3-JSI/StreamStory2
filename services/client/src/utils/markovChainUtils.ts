@@ -24,18 +24,22 @@ export function createSVG(
     container: React.MutableRefObject<any>,
     width: number,
     height: number,
-    margin: any,
-) {
+    margin: any) {
     const svg = d3
         .select(container.current)
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
         .append('g')
         .attr('class', 'graph')
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+    svg
+        .append("rect")
+        .attr("class", "zoom_rect")
+        .attr('width', width - margin.left - margin.right)
+        .attr('height', height - margin.top - margin.bottom)
+        .attr("fill", "white")
 
     return svg;
 }
@@ -132,7 +136,7 @@ export function createLinks(
             },
             (update: any) => {
                 selectLinkPath(update)
-                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d));
+                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d)).attr('stroke', theme.link.default.stroke);
 
                 selectLinkPathText(update)
                     .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
@@ -354,13 +358,12 @@ function measureWidth(text: string) {
 
 export function createMarkers(theme: any, data: any, gMarkers: any) {
     const markers = gMarkers
-        .append('svg:defs')
-        .selectAll('marker')
+        .selectAll(".line_arrow")
         .data(data.links, (d: any) => `link_s${d.source}t${d.target}`)
         .join(
             (enter: any) =>
                 enter
-                    .append('svg:marker')
+                    .append('marker')
                     .attr('id', (d: any) => `arrow_s${d.source}_t${d.target}`)
                     .attr('class', 'line_arrow')
                     .attr('viewBox', '0 -5 10 10')
@@ -370,11 +373,13 @@ export function createMarkers(theme: any, data: any, gMarkers: any) {
                     .attr('markerHeight', 8)
                     .attr('orient', 'auto')
                     .attr('stroke', theme.marker.default.stroke)
-                    .attr('fill', theme.marker.default.fill),
-            (update: any) => update,
+                    .attr('fill', theme.marker.default.fill)
+                    .append('svg:path').attr('d', 'M0,-5L10,0L0,5'),
+            (update: any) => update
+                .attr('stroke', theme.marker.default.stroke)
+                .attr('fill', theme.marker.default.fill),
             (exit: any) => exit.remove(),
         );
-    markers.append('svg:path').attr('d', 'M0,-5L10,0L0,5');
     return markers;
 }
 
@@ -392,7 +397,7 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
         .drag<SVGGElement, unknown>()
         .subject((event: any) => ({ x: event.x, y: event.y }))
         .on('drag', function (this: any, event: any, d: any) {
-            const nodeGroup = d3.select(this);
+            const nodeGroup = d3.select(this).raise();
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
             const transform = selectNodeLabel(nodeGroup).attr("transform");
             const scaleIx = transform.indexOf("scale")

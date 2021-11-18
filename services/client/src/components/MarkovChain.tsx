@@ -16,7 +16,7 @@ import {
     addColorsToScaleStates,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
-import { createSlider } from '../utils/sliderUtils';
+import { createSlider, updateSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
@@ -126,6 +126,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function renderMarkovChain(graphData: any): void {
+        const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
+
         const theme = createTheme();
         const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
@@ -142,12 +144,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             let gLinks = null;
             let gMarkers = null;
             let gSliderProb = null;
-            let gSliderScale = null;
+            let gSliderScale: any = null;
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin); // FIXME: hardcoded theme
                 gSliderProb = graph.append('g').attr('class', 'slider_prob');
-                gSliderScale = graph.append('g').attr('class', 'c');
+                gSliderScale = graph.append('g').attr('class', 'slider_scale');
                 graphContainer = createGraphContainer(graph, width, height, chart);
                 gLinks = graphContainer.append('g').attr('class', 'links');
                 gNodes = graphContainer.append('g').attr('class', 'nodes');
@@ -162,20 +164,36 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 gNodes = graphContainer.select('g.nodes');
                 gMarkers = graphContainer.select('g.markers');
             }
-
-            graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.8)`); // FIXME: hardcoded scale
-
+            let direction = 1; // FIXME: not elegant solution
             const zoom = d3
-                .zoom()
-                .scaleExtent([0, 5])
+                .zoom<any, any>()
+                .scaleExtent([0, 20])
+                .wheelDelta((event: any) => {
+                    direction = event.deltaY > 0 ? 1 : -1;
+                    return (
+                        event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) // eslint-disable-line  no-nested-ternary
+                    );
+                })
                 .on('zoom', (event: any) => {
-                    // console.log('event=', event);
-                    if (event) {
-                        setCurrentScaleIx(Math.floor(event.transform.k));
+                    const scaleIxNew = currentScaleIx + direction;
+
+                    if (Math.floor(event.transform.k) % 1 === 0) {
+                        setCurrentScaleIx(scaleIxNew);
+                        const val = scaleIxNew;
+                        const ySliderScale = createLinearScale(
+                            [0, model.model.scales.length - 1],
+                            [yWidth, 0],
+                        ).clamp(true);
+                        gSliderScale.select('.handle').attr('cx', ySliderScale(val));
+                        gSliderScale.select('.label').attr('x', ySliderScale(val));
                     }
                 });
 
-            graphContainer.call(zoom);
+            graph.select('.zoom_rect').call(zoom);
+            gNodes.call(zoom);
+            gLinks.call(zoom);
+
+            graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.8)`); // FIXME: hardcoded scale
 
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
             const y = createLinearScale([boundary.y.max, boundary.y.min], [yWidth, 0]);
@@ -188,8 +206,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 [0, model.model.scales.length - 1],
                 [yWidth, 0],
             ).clamp(true);
-
-            const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
 
             createNodes(
                 theme,

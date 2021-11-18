@@ -48,7 +48,7 @@ export function createSlider(
             d3
                 .drag()
                 .on('start', function (this: any) { return d3.select(this).interrupt(); })
-                .on('drag', (event: any) => { update(x.invert(event.x)); })
+                .on('drag', (event: any) => { updateSlider(x.invert(event.x), slider, onSliderValChange, x, showCurrVal, format); })
             // .on('end', (event: any) => { console.log('end') })
         )
         .on("mouseover", function (this: any) { handleOnMouseOver.call(this, theme) })
@@ -86,13 +86,13 @@ export function createSlider(
         .text(showCurrVal ? x.domain()[0] : '')
         .attr('transform', `translate(${0}, -25)`);
 
-    update(currVal);
+    updateSlider(currVal, slider, onSliderValChange, x, showCurrVal, format);
+}
 
-    function update(h: any) {
-        onSliderValChange(h);
-        handle.attr('cx', x(h));
-        label.attr('x', x(h)).text(showCurrVal ? format(h) : '');
-    }
+export function updateSlider(h: any, slider: any, onSliderValChange: any, x: any, showCurrVal: any, format: any) {
+    onSliderValChange(h);
+    slider.select(".handle").attr('cx', x(h));
+    slider.select(".label").attr('x', x(h)).text(showCurrVal ? format(h) : '');
 }
 
 function handleOnMouseOver(this: any, theme: any) {
