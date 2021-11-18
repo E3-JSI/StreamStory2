@@ -165,25 +165,27 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
             let direction = 1; // FIXME: not elegant solution
 
-            graph.select('.zoom_rect').call(
-                d3
-                    .zoom<any, any>()
-                    .scaleExtent([0, 20])
-                    .wheelDelta((event: any) => {
-                        direction = event.deltaY > 0 ? 1 : -1;
-                        return (
-                            event.deltaY *
-                            (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) // eslint-disable-line  no-nested-ternary
-                        );
-                    })
-                    .on('zoom', (event: any) => {
-                        const scaleIxNew = currentScaleIx + direction;
+            const zoom = d3
+                .zoom<any, any>()
+                .scaleExtent([0, 20])
+                .wheelDelta((event: any) => {
+                    direction = event.deltaY > 0 ? 1 : -1;
+                    return (
+                        event.deltaY * (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) // eslint-disable-line  no-nested-ternary
+                    );
+                })
+                .on('zoom', (event: any) => {
+                    const scaleIxNew = currentScaleIx + direction;
 
-                        if (Math.floor(event.transform.k) % 1 === 0) {
-                            setCurrentScaleIx(scaleIxNew);
-                        }
-                    }),
-            );
+                    if (Math.floor(event.transform.k) % 1 === 0) {
+                        setCurrentScaleIx(scaleIxNew);
+                    }
+                });
+
+            graph.select('.zoom_rect').call(zoom);
+            gNodes.call(zoom);
+            gLinks.call(zoom);
+
             graphContainer.attr('transform', `translate(${chart.left},${chart.top}) scale(0.8)`); // FIXME: hardcoded scale
 
             const x = createLinearScale([boundary.x.min, boundary.x.max], [0, xWidth]);
