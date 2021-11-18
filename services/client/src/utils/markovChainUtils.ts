@@ -359,13 +359,12 @@ function measureWidth(text: string) {
 
 export function createMarkers(theme: any, data: any, gMarkers: any) {
     const markers = gMarkers
-        .append('svg:defs')
-        .selectAll('marker')
+        .selectAll(".line_arrow")
         .data(data.links, (d: any) => `link_s${d.source}t${d.target}`)
         .join(
             (enter: any) =>
                 enter
-                    .append('svg:marker')
+                    .append('marker')
                     .attr('id', (d: any) => `arrow_s${d.source}_t${d.target}`)
                     .attr('class', 'line_arrow')
                     .attr('viewBox', '0 -5 10 10')
@@ -375,14 +374,13 @@ export function createMarkers(theme: any, data: any, gMarkers: any) {
                     .attr('markerHeight', 8)
                     .attr('orient', 'auto')
                     .attr('stroke', theme.marker.default.stroke)
-                    .attr('fill', theme.marker.default.fill),
-            (update: any) => update.select(".line_arrow")
+                    .attr('fill', theme.marker.default.fill)
+                    .append('svg:path').attr('d', 'M0,-5L10,0L0,5'),
+            (update: any) => update
                 .attr('stroke', theme.marker.default.stroke)
-                .attr('fill', theme.marker.default.fill)
-            ,
+                .attr('fill', theme.marker.default.fill),
             (exit: any) => exit.remove(),
         );
-    markers.append('svg:path').attr('d', 'M0,-5L10,0L0,5');
     return markers;
 }
 
