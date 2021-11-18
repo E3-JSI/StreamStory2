@@ -26,14 +26,21 @@ The `config` object should contain the following values and attributes:
 
 - `numInitialStates`: an integer specifying the number of initial states that the data points are clustered into.
 - `numHistogramBuckets`: the number of buckets in each of the histograms that are returned in the response object to show the distribution of attribute values in each state.  The default value is 10.
-- `ignoreConversionErrors`: a boolean value specifying how to deal with conversion errors (and missing values) when reading the input data.  If `true`, any input row containing a conversion error is skipped and the processing continues with the next row; if `false`, processing is aborted on the first error (and no model is built).  The default value is `true`.
-- `distWeightOutliers`: when calculating the value of `distWeight` for attributes that do not have a `distWeight` defined explicitly in their attribute specification, the variance of the attribute is calculated over all the values of this attribute except the highest and lowest `distWeightOutliers / 2 * 100` percent of them, the idea being that these might be outliers that would skew the result too much.  The default value is `distWeightOutliers = 0.05`, meaning that the highest and lowest 2.5% of the values of an attribute are ignored when calculating its variance for the purposes of calculating the default `distWeight` of that attribute.
 - `attributes`: an array of objects describing the attributes of the input data.
 - `ops`: an array of objects describing the operations that are to be applied to the input data before the clustering into initial states.  Examples of such operations include: applying a linear transformation to an attribute; adding a time-shifted copy of an attribute; adding a categorical attribute representing the day-of-week based on the timestamp of the same instance; etc.
+
 - Optional settings that control the construction of decision trees for each state:
   - `decTree_maxDepth`: the maximum depth of the decision tree; a negative value means that the depth of the tree is not limited.  Default: 3.
   - `decTree_minEntropyToSplit`: a node is not going to be split further if its entropy is less than this many bits.  The default value is the entropy of the distribution (*p*, 1 - *p*), where *p* = 1 / (3 * `numInitialStates`).
   - `decTree_minNormInfGainToSplit`: a node is not going to be split further if the normalized information gain of the best split is less than this value.  Default: 0.
+
+- `ignoreConversionErrors`: a boolean value specifying how to deal with conversion errors (and missing values) when reading the input data.  If `true`, any input row containing a conversion error is skipped and the processing continues with the next row; if `false`, processing is aborted on the first error (and no model is built).  The default value is `true`.
+- `distWeightOutliers`: when calculating the value of `distWeight` for attributes that do not have a `distWeight` defined explicitly in their attribute specification, the variance of the attribute is calculated over all the values of this attribute except the highest and lowest `distWeightOutliers / 2 * 100` percent of them, the idea being that these might be outliers that would skew the result too much.  The default value is `distWeightOutliers = 0.05`, meaning that the highest and lowest 2.5% of the values of an attribute are ignored when calculating its variance for the purposes of calculating the default `distWeight` of that attribute.
+
+The following options are enabled by default but can be set to `false` to reduce the size of the output and the processing time:
+- `includeHistograms`: a boolean value specifying whether histograms should be calculated and included in the result object.  (Default value: `true`.)
+- `includeDecisionTrees`: a boolean value specifying whether decision trees should be calculated and included in the result object.  (Default value: `true`.)
+- `includeStateHistory`: a boolean value specifying whether the state history should be calculated and included in the result object.  (Default value: `true`.)
 
 ### Attribute specification
 
@@ -78,6 +85,7 @@ The model object contains the following attributes:
 
 - `scales`: an array of objects, one for each scale in the multi-scale hierarchical model.
 - `totalHistograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst all the datapoints of the dataset.  
+- `stateHistoryTimes` and `stateHistoryInitialStates`: two arrays which, taken together, indicate that the measurements whose time `t` falls into the range `stateHistoryTimes[i] <= t < stateHistoryTimes[i + 1]` belong to initial state `stateHistoryInitialStates[i]`.  
 
 For the structure of the objects representing scales and histograms, see the subsequent sections.
 

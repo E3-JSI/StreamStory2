@@ -165,6 +165,9 @@ bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
 	// ToDo: the alternative to numInitialStates is to specify the radius and use DP-means.
 	if (! Json_GetObjInt(val, "numHistogramBuckets", true, 10, numHistogramBuckets, "model config", errList)) return false;
 	if (! Json_GetObjBool(val, "ignoreConversionErrors", true, true, ignoreConversionErrors, "model config", errList)) return false;
+	if (! Json_GetObjBool(val, "includeDecisionTrees", true, true, includeDecisionTrees, "model config", errList)) return false;
+	if (! Json_GetObjBool(val, "includeHistograms", true, true, includeHistograms, "model config", errList)) return false;
+	if (! Json_GetObjBool(val, "includeStateHistory", true, true, includeStateHistory, "model config", errList)) return false;
 	if (! Json_GetObjNum(val, "distWeightOutliers", true, 0.05, distWeightOutliers, "model config", errList)) return false;
 	if (! Json_GetObjInt(val, "decTree_maxDepth", true, 3, decTreeConfig.maxDepth, "model config", errList)) return false;
 	if (! Json_GetObjNum(val, "decTree_minEntropyToSplit", true, TDecTreeNode::Entropy(1, 3 * numInitialStates - 1), decTreeConfig.minEntropyToSplit, "model config", errList)) return false;
@@ -276,8 +279,80 @@ bool StrPTime_HomeGrown(const char *s, const char *format, TSecTm &secTm, int &n
 		else if (fc == 'f') { ns = x; for (int D = d; D < 9; ++D) ns *= 10; }
 		s += d;
 	}
-	if (applyPm && isPm) hour += 12;
+	if (applyPm) {
+		if (hour == 12 && ! isPm) hour = 0; // 12 AM = midnight = 0 in 24-hour time
+		else if (hour < 12 && isPm) hour += 12; }
 	secTm = TSecTm(year, month, day, hour, min, sec); return true;
+}
+
+// The formatting counterpart to StrPTime_HomeGrown.
+bool StrFTime_HomeGrown(TChA& dest, const char *format, const TSecTm &secTm, int ns, bool clrDest)
+{
+	if (clrDest) dest.Clr();
+	if (! format) return false;
+	while (true)
+	{
+		char fc = *format; if (! fc) break; else ++format;
+		// Copy non-formatting characters.
+		if (fc != '%') { dest += fc; continue; }
+		// Handle %%.
+		fc = *format; if (! fc) return false; else ++format; // % at the end = invalid format string
+		int digits = -1, nDigits = 0; while (fc >= '0' && fc <= '9') { if (digits < 0) digits = 0; digits = 10 * digits + (fc - '0'); fc = *format++; ++nDigits; }
+		if (! fc) return false; 
+		if (nDigits > 3 || digits > 100) return false;
+		if (fc == '%') { dest += fc; continue; }
+		// Handle AM/PM.
+		if (fc == 'p') { dest += (secTm.GetHourN() < 12) ? "AM" : "PM"; continue; }
+		// Handle most other fields.
+		int x = 0; bool xSet = false;
+		if (fc == 'y') { x = secTm.GetYearN() % 100; xSet = true; if (digits < 0) digits = 2; }
+		else if (fc == 'Y') { x = secTm.GetYearN(); xSet = true; if (digits < 0) digits = 4; }
+		else if (fc == 'H') { x = secTm.GetHourN(); xSet = true; if (digits < 0) digits = 2; }
+		else if (fc == 'I') { x = secTm.GetHourN(); xSet = true; if (x == 0) x = 12; else if (x > 12) x -= 12; if (digits < 0) digits = 2; }
+		else if (fc == 'M') { x = secTm.GetMinN(); xSet = true; if (digits < 0) digits = 2; }
+		else if (fc == 'm') { x = secTm.GetMonthN(); xSet = true; if (digits < 0) digits = 2; }
+		else if (fc == 'S') { x = secTm.GetSecN(); xSet = true; if (digits < 0) digits = 2; }
+		else if (fc == 'd') { x = secTm.GetDayN(); xSet = true; if (digits < 0) digits = 2; }
+		if (xSet)
+		{
+			char buf[20]; int L = 0; do { buf[L++] = '0' + (x % 10); x /= 10; } while (x != 0);
+			while (digits > L) dest += '0', digits--;
+			for (int i = L - 1; i >= 0; --i) dest += buf[i]; 
+			continue; 
+		}
+		// Handle fractions of a second.
+		if (fc == 'f') { 
+			x = ns; char buf[9]; int minDigits = 1;
+			for (int i = 0; i < 9; ++i) { 
+				int d = x % 10; x /= 10; buf[i] = '0' + d;
+				if (d != 0 && minDigits == 1) minDigits = 9 - i; }
+			if (digits < 0) digits = minDigits;
+			for (int i = 0; i < digits && i < 9; ++i) dest += buf[8 - i]; 
+			for (int i = 9; i < digits; ++i) dest += '0';
+			continue; }
+		// Otherwise we have an invalid/unsupported format specifier.
+		return false;
+	}
+	return true;
+}
+
+TStr StrFTime_HomeGrown(const char *format, const TSecTm &secTm, int ns)
+{
+	TChA buf; StrFTime_HomeGrown(buf, format, secTm, ns);
+	return buf;
+}
+
+void TestStrPFTime()
+{
+	TSecTm secTm; int ns;
+	bool ok = StrPTime_HomeGrown("2012-11-10 23:22:05.970", "%Y-%m-%d %H:%M:%S.%f", secTm, ns);
+	printf("StrPTime returns %s, sec = %d, ns = %d\n", (ok ? "T" : "F"), secTm.GetAbsSecs(), ns);
+	TChA buf; ok = StrFTime_HomeGrown(buf, "%Y-%m-%d %H:%M:%S.%3f", secTm, ns, true); 
+	printf("StrFTime returns %s \"%s\"\n", (ok ? "T" : "F"), buf.CStr());
+	ok = StrFTime_HomeGrown(buf, "%Y-%m-%d %H:%M:%S.%f", secTm, ns, true); 
+	printf("StrFTime returns %s \"%s\"\n", (ok ? "T" : "F"), buf.CStr());
+	ok = StrFTime_HomeGrown(buf, "%Y-%m-%d %3H:%M:%S.%12f", secTm, ns, true); 
+	printf("StrFTime returns %s \"%s\"\n", (ok ? "T" : "F"), buf.CStr());
 }
 
 //-----------------------------------------------------------------------------
@@ -1239,11 +1314,11 @@ PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PSta
 	vLabel->AddToObj("nNotCoveredOutsideState", label.nNotCoveredOutsideState);
 	vLabel->AddToObj("logOddsRatio", label.logOddsRatio);
 	PJsonVal vCentroid = TJsonVal::NewArr(); vState->AddToObj("centroid", vCentroid);
-	PJsonVal vHistograms = TJsonVal::NewArr(); vState->AddToObj("histograms", vHistograms);
+	PJsonVal vHistograms; if (dataset.config->includeHistograms) { vHistograms = TJsonVal::NewArr(); vState->AddToObj("histograms", vHistograms); }
 	for (int colNo = 0; colNo < centroid.Len(); ++colNo)
 	{
 		vCentroid->AddToArr(centroid[colNo].SaveToJson(dataset, colNo));
-		vHistograms->AddToArr(histograms[colNo]->SaveToJson(dataset.cols[colNo]));
+		if (dataset.config->includeHistograms) vHistograms->AddToArr(histograms[colNo]->SaveToJson(dataset.cols[colNo]));
 	}
 	if (! nextLowerScale.Empty())
 	{
@@ -1425,9 +1500,46 @@ PJsonVal TModel::SaveToJson() const
 		PJsonVal vScale = scale->SaveToJson(*dataset, scale->aggStates.Len() == initialStates.Len(), (scaleNo == 0) ? PStatePartition{} : statePartitions[scaleNo - 1]);
 		vScales->AddToArr(vScale);
 	}
-	PJsonVal vHistograms = TJsonVal::NewArr(); vModel->AddToObj("totalHistograms", vHistograms);
-	for (int colNo = 0; colNo < totalHistograms.Len(); ++colNo)
-		vHistograms->AddToArr(totalHistograms[colNo]->SaveToJson(dataset->cols[colNo]));
+	// Save the histograms of the entire dataset (as opposed to state-specific ones).
+	if (dataset->config->includeHistograms)
+	{
+		PJsonVal vHistograms = TJsonVal::NewArr(); vModel->AddToObj("totalHistograms", vHistograms);
+		for (int colNo = 0; colNo < totalHistograms.Len(); ++colNo)
+			vHistograms->AddToArr(totalHistograms[colNo]->SaveToJson(dataset->cols[colNo]));
+	}
+	if (dataset->config->includeStateHistory)
+	{
+		// To save the state history, we have to find the time column first.
+		int timeColNo = -1; TTimeType timeType; TAttrSubtype timeSubType; TStr timeFormatStr;
+		for (int colNo = 0; colNo < dataset->cols.Len(); ++colNo) {
+			const TDataColumn &col = dataset->cols[colNo];
+			if (col.type == TAttrType::Time) { timeColNo = colNo; timeType = col.timeType; timeSubType = col.subType; timeFormatStr = col.formatStr; break; } }
+		// We'll save two arrays, where the state 'stateHistoryInitialStates[i]' applies 
+		// from time 'stateHistoryTimes[i]' to time 'stateHistoryTimes[i + 1]'.
+		PJsonVal vShTimes = TJsonVal::NewArr(); vModel->AddToObj("stateHistoryTimes", vShTimes);
+		PJsonVal vShStates = TJsonVal::NewArr(); vModel->AddToObj("stateHistoryInitialStates", vShStates);
+		int prevState = -1; const int nRows = dataset->nRows;
+		for (int rowNo = 0; rowNo <= nRows; ++rowNo)
+		{
+			int curState = (rowNo < nRows) ? rowToInitialState[rowNo].Val : prevState; 
+			if (rowNo < nRows && curState == prevState) continue;
+			prevState = curState;
+			// If no time column was found, we'll use row numbers instead of times.
+			if (timeColNo < 0) vShTimes->AddToArr(rowNo);
+			else
+			{
+				// Otherwise save the timestamp in a suitable format, depending on the subType of the time column.
+				const TTimeStamp &ts = dataset->cols[timeColNo].timeVals[rowNo < nRows ? rowNo : nRows - 1];
+				if (timeSubType == TAttrSubtype::String) {
+					TSecTm secTm; int ns; ts.GetSecTm(secTm, ns); vShTimes->AddToArr(StrFTime_HomeGrown(timeFormatStr.CStr(), secTm, ns)); }
+				else if (timeSubType == TAttrSubtype::Int) vShTimes->AddToArr((double) ts.GetInt());
+				else if (timeSubType == TAttrSubtype::Flt) vShTimes->AddToArr((double) ts.GetFlt());
+				else IAssert(false);
+			}
+			if (rowNo < nRows) vShStates->AddToArr(curState);
+		}
+		NotifyInfo("TModel::SaveToJson: %d rows -> %d/%d stateHistory times/states\n", nRows, vShTimes->GetArrVals(), vShStates->GetArrVals());
+	}
 	return vModel;
 }
 
