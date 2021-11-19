@@ -23,11 +23,23 @@ public:
 		double f = floor(value); sec = (int64_t) f; ns = (int) ((value - f) * 1e9);
 		if (ns < 0) ns = 0; else if (ns >= 1000000000) { ns -= 1000000000; ++sec; } }
 	void SetTime(double value) { SetFlt(value); type = TTimeType::Time; }
+	int64_t GetInt() const {
+		if (type == TTimeType::Time || type == TTimeType::Int) return sec;
+		else if (type == TTimeType::Flt) return (int64_t) floor(flt);
+		else { Assert(false); return std::numeric_limits<double>::quiet_NaN(); } }
 	double GetFlt() const {
 		if (type == TTimeType::Time) return double(sec) + double(ns) / 1e9;
 		else if (type == TTimeType::Flt) return flt;
 		else if (type == TTimeType::Int) return sec;
 		else { Assert(false); return std::numeric_limits<double>::quiet_NaN(); } }
+	void GetSecTm(TSecTm& secTm, int &ns_) const {
+		if (type == TTimeType::Time) { secTm = TSecTm(sec); ns_ = ns; }
+		else if (type == TTimeType::Int) { secTm = TSecTm(sec); ns_ = 0; }
+		else if (type == TTimeType::Flt) { 
+			double f = floor(flt); int64_t sec_ = (int64_t) f; ns_ = (int) ((flt - f) * 1e9);
+			if (ns_ < 0) ns_ = 0; else if (ns_ >= 1000000000) { ns_ -= 1000000000; ++sec_; }
+			secTm = TSecTm(sec_); }
+		else { Assert(false); secTm = TSecTm(-1); ns_ = -1; } }
 
 	TStr ToStr() const;
 
@@ -183,8 +195,9 @@ public:
 	int numHistogramBuckets;
 	double distWeightOutliers;
 	bool ignoreConversionErrors;
+	bool includeHistograms, includeStateHistory, includeDecisionTrees;
 	TDecTreeConfig decTreeConfig;
-	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); ignoreConversionErrors = true; distWeightOutliers = 0.05; }
+	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); ignoreConversionErrors = true; distWeightOutliers = 0.05; includeHistograms = true; includeStateHistory = true; includeDecisionTrees = true; }
 	bool InitFromJson(const PJsonVal& val, TStrV& errors);
 protected:
 	bool AddAttrsFromOps(TStrV& errors);
@@ -571,6 +584,10 @@ bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing,
 bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing, int defaultValue, int& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjBool(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool defaultValue, bool& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjKey(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, PJsonVal& value, const TStr& whereForErrorMsg, TStrV& errList);
+
+bool StrPTime_HomeGrown(const char *s, const char *format, TSecTm &secTm, int &ns);
+bool StrFTime_HomeGrown(TChA& dest, const char *format, const TSecTm &secTm, int ns, bool clrDest = false);
+TStr StrFTime_HomeGrown(const char *format, const TSecTm &secTm, int ns);
 
 #endif // __STREAMSTORY2_H_DEFINED__
 

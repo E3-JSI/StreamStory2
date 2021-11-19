@@ -171,11 +171,10 @@ public:
 		int nScales = TInt::GetMn(10, allPartitions.Len() / 2); if (nScales < 2 || nScales >= allPartitions.Len()) selectedPartitions = allPartitions;
 		else TStateAggScaleSelector::SelectScales(*model, allPartitions, nScales, selectedPartitions);
 		// Calculate various statistics about the model.
-		model->CalcHistograms();
+		if (config->includeHistograms) model->CalcHistograms();
 		model->CalcLabels();
 		model->CalcStatePositions();
-		model->BuildDecTrees(config->decTreeConfig.maxDepth, config->decTreeConfig.minEntropyToSplit, config->decTreeConfig.minNormInfGainToSplit);
-		// ToDo: state labels, decision trees etc. should also be calculated here.
+		if (config->includeDecisionTrees) model->BuildDecTrees(config->decTreeConfig.maxDepth, config->decTreeConfig.minEntropyToSplit, config->decTreeConfig.minNormInfGainToSplit);
 		// Export the model to json.
 		req.outJson->AddToObj("model",  model->SaveToJson());
 		//
@@ -201,12 +200,15 @@ int TestBuildModelRequest()
 	return 0;
 }
 
+void TestStrPFTime();
+
 //-----------------------------------------------------------------------------
 
 int main(int argc, char** argv)
 {
 	TStr s = "Hello World!";
 	//printf("%s\n", s.CStr());
+	//TestStrPFTime(); return 0;
 
     // create environment
     Env = ::TEnv(argc, argv, TNotify::StdNotify);
