@@ -300,6 +300,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const statesCurr = [];
 
         for (let i = 0; i < model.model.scales.length; i++) {
+            console.log('scaleIx=', i);
+
             let stateHistoryStates: any[] = [];
             let stateHistoryTimes: any[] = [];
 
@@ -313,11 +315,32 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     const state = model.model.scales[i].states[j];
 
                     for (let k = 0; k < state.initialStates.length; k++) {
-                        const initialState = state.initialStates[j];
+                        const initialState = state.initialStates[k];
                         initalStatesDict[initialState] = model.model.scales[i].states[j].stateNo;
                     }
                 }
-                console.log('initalStatesDict=', initalStatesDict);
+                let currIx = 0;
+
+                let startStateIx = -1;
+
+                while (currIx < model.model.stateHistoryInitialStates.length) {
+                    const currState =
+                        initalStatesDict[model.model.stateHistoryInitialStates[currIx]];
+
+                    if (currIx === 0) {
+                        startStateIx = currIx;
+                    } else if (
+                        currState !==
+                        initalStatesDict[model.model.stateHistoryInitialStates[currIx - 1]]
+                    ) {
+                        stateHistoryStates.push(
+                            model.model.stateHistoryInitialStates[startStateIx],
+                        );
+                        stateHistoryTimes.push(model.model.stateHistoryTimes[startStateIx]);
+                        startStateIx = currIx;
+                    }
+                    currIx += 1;
+                }
             }
 
             for (let j = 0; j < stateHistoryStates.length; j++) {
@@ -331,19 +354,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 statesCurr.push(state);
             }
         }
-        console.log('statesCurr=', statesCurr);
         const obj = { scale: yCategories[0], states: statesCurr };
         dataCurr.push(obj);
-
-        console.log('dataCurr=', dataCurr);
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
         const color = d3.scaleOrdinal().domain(uniqueStates).range(d3.schemePaired);
-
-        yCategories.forEach((category: any) => {
-            console.log(`category=${category}, y=${y(category)}`);
-        });
 
         let graph = null;
         let graphContainer = null;
