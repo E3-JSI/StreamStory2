@@ -22,8 +22,10 @@ import { TRANSITION_PROPS } from '../types/charts';
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const useThemeLoaded = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
+    const containerStateHistoryRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
+    const [initializedStateHistory, setInitializedStateHistory] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
@@ -89,6 +91,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     useEffect(() => {
         if (model.model.scales && model.model.scales.length) {
+            console.log('model=', model);
             console.log('model.model.scales=', model.model.scales);
 
             const maxRadius = 100; // FIXME: hardcoded
@@ -257,7 +260,191 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             }
             createLinks(theme, graphData[currentScaleIx], gNodes, gLinks, x, y, TRANSITION_PROPS);
             createMarkers(theme, graphData[currentScaleIx], gMarkers);
+
+            createStateHistory();
         }
+    }
+
+    // stateHistoryTimes
+    // stateHistoryInitialStates
+
+    function createStateHistory() {
+        // console.log('start: createStateHistory');
+        // console.log('stateHistoryTimes=', model.model.stateHistoryTimes);
+        // console.log('stateHistoryInitialStates=', model.model.stateHistoryInitialStates);
+
+        // model.model.scales.forEach((sc: any, scIx: number) => {
+        //     console.log('start: scIx=', scIx);
+        //     sc.states.forEach((state: any) => {
+        //         console.log('... stateNo=', state.stateNo, 'initStates=', state.initialStates);
+        //     });
+        //     console.log('\n');
+        // });
+
+        const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
+        const height = 700; // FIXME: hardcoded
+        const margin = { top: 5, right: 5, bottom: 10, left: 10 }; // FIXME: hardcoded
+        const chart = { top: 130, left: 100 }; // FIXME: hardcoded
+        const xWidth = width - chart.left - margin.left - margin.right;
+        const yWidth = height - chart.top - margin.top - margin.bottom;
+
+        const xExtent = d3.extent(model.model.stateHistoryTimes).map((d: any) => new Date(d));
+        const yCategories = model.model.scales.map((el: any, i: any) => `${i}`);
+
+        let uniqueStates: any[] = Array.from(new Set(model.model.stateHistoryInitialStates)); // FIXME: change if for other scales
+        uniqueStates.sort((a: any, b: any) => a - b);
+        uniqueStates = uniqueStates.map((el: number) => `${el}`);
+
+        const dataCurr = [];
+
+        for (let i = 0; i < model.model.scales.length; i++) {
+            const statesCurr = [];
+
+            if (i === 0) {
+                for (let j = 0; j < model.model.stateHistoryInitialStates.length; j++) {
+                    const duration =
+                        model.model.stateHistoryTimes[j + 1] - model.model.stateHistoryTimes[j];
+                    const state = {
+                        start: model.model.stateHistoryTimes[j],
+                        duration,
+                        state: `${model.model.stateHistoryInitialStates[j]}`,
+                        scaleIx: `${i}`,
+                    };
+                    statesCurr.push(state);
+                }
+            } else {
+                const initalStatesDict: any = {};
+
+                for (let j = 0; j < model.model.scales[i].states.length; j++) {
+                    const state = model.model.scales[i].states[j];
+
+                    for (let k = 0; k < state.initialStates.length; k++) {
+                        const initialState = state.initialStates[k];
+                        initalStatesDict[initialState] = model.model.scales[i].states[j].stateNo;
+                    }
+                }
+                let currIx = 0;
+                let startStateIx = -1;
+
+                while (currIx < model.model.stateHistoryInitialStates.length) {
+                    const currState =
+                        initalStatesDict[model.model.stateHistoryInitialStates[currIx]];
+
+                    if (currIx === 0) {
+                        startStateIx = currIx;
+                    } else if (
+                        currState !==
+                        initalStatesDict[model.model.stateHistoryInitialStates[currIx - 1]]
+                    ) {
+                        const stateOriginal =
+                            initalStatesDict[model.model.stateHistoryInitialStates[startStateIx]];
+
+                        const timestampStart = model.model.stateHistoryTimes[startStateIx];
+                        const timestamp = model.model.stateHistoryTimes[currIx - 1];
+                        const duration = timestamp - timestampStart;
+
+                        const stateNew = {
+                            start: timestampStart,
+                            duration,
+                            state: `${stateOriginal}`,
+                            scaleIx: `${i}`,
+                        };
+                        statesCurr.push(stateNew);
+                        startStateIx = currIx;
+                    }
+                    currIx += 1;
+                }
+            }
+            const obj = { scaleIx: i, states: statesCurr };
+            dataCurr.push(obj);
+        }
+
+        // console.log('dataCurr=', dataCurr);
+
+        const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
+        const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
+        const color = d3.scaleOrdinal().domain(uniqueStates).range(d3.schemePaired);
+
+        let graph = null;
+        let graphContainer = null;
+        let gAxisX = null;
+        let gAxisY = null;
+        let gBars = null;
+
+        if (!initializedStateHistory) {
+            graph = createSVG(containerStateHistoryRef, width, height, margin); // FIXME: hardcoded theme
+            graphContainer = createGraphContainer(graph, width, height, chart);
+            gBars = graphContainer.append('g').attr('class', 'bars');
+            gAxisX = graphContainer.append('g').attr('class', 'axisX');
+            gAxisY = graphContainer.append('g').attr('class', 'axisY');
+            setInitializedStateHistory(true);
+        } else {
+            graph = getSVG(containerStateHistoryRef, width, height, margin);
+            graphContainer = getGraphContainer(graph);
+            gBars = graphContainer.select('g.bars');
+            gAxisX = graphContainer.select('g.axisX');
+            gAxisY = graphContainer.select('g.axisY');
+        }
+
+        graph
+            .append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .style('fill', 'grey')
+            .style('opacity', 0.1);
+
+        graphContainer
+            .append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .style('fill', 'green')
+            .style('opacity', 0.1);
+
+        const xAxis = d3.axisBottom(x).tickSizeOuter(0);
+        gAxisX.attr('transform', `translate(0, ${yWidth})`).call(xAxis);
+
+        gAxisY
+            .attr('transform', `translate(${margin.left}, 0)`)
+            .call(d3.axisLeft(y))
+            .call((g: any) => g.select('.domain').remove());
+
+        const levels = gBars
+            .selectAll('g')
+            .data(dataCurr, (d: any) => d.scaleIx)
+            .join('g')
+            .attr('class', (d: any) => `scale_${d.scaleIx}`);
+
+        const rects = levels
+            .selectAll('rect')
+            // // enter a second tcroup per subgroup to add all rectangles
+            .data((d: any) => d.states)
+            .join('rect')
+            .attr('class', 'state')
+            .attr('id', (d: any) => `${d.state}`)
+            .attr('x', (d: any) => x(d.start))
+            .attr('y', (d: any) => y(d.scaleIx))
+            .attr('width', (d: any) => x(d.duration)) // FIXME: duration not ok computed
+            .attr('height', (d: any) => y.bandwidth())
+            .attr('fill', (d: any) => color(d.state));
+
+        rects.on('mouseover', (event: any) => {
+            console.log('mouseover');
+        });
+
+        // .on('click', (event: any, d: any) => {
+        //     const statesFound = d3
+        //         .selectAll('.state')
+        //         .nodes()
+        //         .forEach((el: any) => {
+        //             const rect = d3.select(el);
+        //             const dataTmp: any = rect.data()[0];
+        //             if (d.state === dataTmp.state) {
+        //                 d3.select(el).style('stroke', 'white').style('stroke-width', 2);
+        //             } else {
+        //                 rect.style('stroke-width', 0);
+        //             }
+        //         });
+        // });
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
@@ -278,6 +465,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
+            {/* <div ref={containerStateHistoryRef} /> */}
             <div ref={tooltipRef} />
             <div ref={containerRef} />
         </>
