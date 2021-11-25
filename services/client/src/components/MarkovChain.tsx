@@ -291,7 +291,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         console.log('xWidth=', xWidth, 'yWidth=', yWidth);
 
         const xExtent = d3.extent(model.model.stateHistoryTimes).map((d: any) => new Date(d));
-        const yCategories = model.model.scales.map((el: any, i: any) => `scale_${i}`);
+        const yCategories = model.model.scales.map((el: any, i: any) => `${i}`);
 
         let uniqueStates: any[] = Array.from(new Set(model.model.stateHistoryInitialStates)); // FIXME: change if for other scales
         uniqueStates.sort((a: any, b: any) => a - b);
@@ -302,10 +302,16 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const statesCurr = [];
 
         for (let i = 0; i < model.model.stateHistoryInitialStates.length; i++) {
+            const scaleIx = 0; // FIXME: should be dynamic
             const stateName = `${model.model.stateHistoryInitialStates[i]}`;
             const duration =
                 model.model.stateHistoryTimes[i + 1] - model.model.stateHistoryTimes[i];
-            const state = { start: model.model.stateHistoryTimes[i], duration, state: stateName };
+            const state = {
+                start: model.model.stateHistoryTimes[i],
+                duration,
+                state: stateName,
+                scaleIx: `${scaleIx}`,
+            };
             statesCurr.push(state);
         }
         console.log('statesCurr=', statesCurr);
@@ -318,7 +324,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
         const color = d3.scaleOrdinal().domain(uniqueStates).range(d3.schemePaired);
 
-        yCategories.forEach((category: any) => console.log(y(category)));
+        yCategories.forEach((category: any) => {
+            console.log(`category=${category}, y=${y(category)}`);
+        });
 
         let graph = null;
         let graphContainer = null;
@@ -367,7 +375,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .selectAll('g')
             .data(dataCurr)
             .join('g')
-            .attr('class', (d: any) => `scale_${d.scale}`)
+            .attr('class', (d: any) => `scale_${d.scaleIx}`)
             .selectAll('rect')
             // // enter a second tcroup per subgroup to add all rectangles
             .data((d: any) => d.states)
@@ -375,13 +383,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('class', 'state')
             .attr('id', (d: any) => `${d.state}`)
             .attr('x', (d: any) => x(d.start))
-            .attr('y', (d: any) => y(d.scale))
-            .attr('width', (d: any, i: number) => x(d.duration)) // FIXME: duration not ok computed
+            .attr('y', (d: any) => y(d.scaleIx))
+            .attr('width', (d: any) => x(d.duration)) // FIXME: duration not ok computed
             .attr('height', (d: any) => y.bandwidth())
-            .attr('fill', (d: any) => {
-                console.log('color(d.state)=', color(d.state), ', d=', d);
-                return color(d.state);
-            });
+            .attr('fill', (d: any) => color(d.state));
         // .on('click', (event: any, d: any) => {
         //     const statesFound = d3
         //         .selectAll('.state')
