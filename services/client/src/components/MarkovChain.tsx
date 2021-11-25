@@ -297,17 +297,21 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
         const dataCurr = [];
 
-        const statesCurr = [];
-
         for (let i = 0; i < model.model.scales.length; i++) {
-            console.log('scaleIx=', i);
-
-            let stateHistoryStates: any[] = [];
-            let stateHistoryTimes: any[] = [];
+            const statesCurr = [];
 
             if (i === 0) {
-                stateHistoryStates = model.model.stateHistoryInitialStates;
-                stateHistoryTimes = model.model.stateHistoryTimes;
+                for (let j = 0; j < model.model.stateHistoryInitialStates.length; j++) {
+                    const duration =
+                        model.model.stateHistoryTimes[j + 1] - model.model.stateHistoryTimes[j];
+                    const state = {
+                        start: model.model.stateHistoryTimes[j],
+                        duration,
+                        state: `${model.model.stateHistoryInitialStates[j]}`,
+                        scaleIx: `${i}`,
+                    };
+                    statesCurr.push(state);
+                }
             } else {
                 const initalStatesDict: any = {};
 
@@ -320,7 +324,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     }
                 }
                 let currIx = 0;
-
                 let startStateIx = -1;
 
                 while (currIx < model.model.stateHistoryInitialStates.length) {
@@ -333,29 +336,30 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                         currState !==
                         initalStatesDict[model.model.stateHistoryInitialStates[currIx - 1]]
                     ) {
-                        stateHistoryStates.push(
-                            model.model.stateHistoryInitialStates[startStateIx],
-                        );
-                        stateHistoryTimes.push(model.model.stateHistoryTimes[startStateIx]);
+                        const stateOriginal =
+                            initalStatesDict[model.model.stateHistoryInitialStates[startStateIx]];
+
+                        const timestampStart = model.model.stateHistoryTimes[startStateIx];
+                        const timestamp = model.model.stateHistoryTimes[currIx - 1];
+                        const duration = timestamp - timestampStart;
+
+                        const stateNew = {
+                            start: timestampStart,
+                            duration,
+                            state: `${stateOriginal}`,
+                            scaleIx: `${i}`,
+                        };
+                        statesCurr.push(stateNew);
                         startStateIx = currIx;
                     }
                     currIx += 1;
                 }
             }
-
-            for (let j = 0; j < stateHistoryStates.length; j++) {
-                const duration = stateHistoryTimes[j + 1] - stateHistoryTimes[j];
-                const state = {
-                    start: stateHistoryTimes[j],
-                    duration,
-                    state: `${stateHistoryStates[j]}`,
-                    scaleIx: `${i}`,
-                };
-                statesCurr.push(state);
-            }
+            const obj = { scaleIx: i, states: statesCurr };
+            dataCurr.push(obj);
         }
-        const obj = { scale: yCategories[0], states: statesCurr };
-        dataCurr.push(obj);
+
+        console.log('dataCurr=', dataCurr);
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
@@ -404,9 +408,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .call(d3.axisLeft(y))
             .call((g: any) => g.select('.domain').remove());
 
-        gBars
+        const level = gBars
             .selectAll('g')
-            .data(dataCurr)
+            .data(dataCurr, (d: any) => d.scaleIx)
             .join('g')
             .attr('class', (d: any) => `scale_${d.scaleIx}`)
             .selectAll('rect')
@@ -420,6 +424,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('width', (d: any) => x(d.duration)) // FIXME: duration not ok computed
             .attr('height', (d: any) => y.bandwidth())
             .attr('fill', (d: any) => color(d.state));
+
+        d3.selectAll('.state').on('mouseover', (event: any) => {
+            console.log('mouseover');
+
+            d3.select(event.target).style('fill', 'red');
+        });
+
         // .on('click', (event: any, d: any) => {
         //     const statesFound = d3
         //         .selectAll('.state')
