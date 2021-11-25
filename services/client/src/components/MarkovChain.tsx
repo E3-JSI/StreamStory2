@@ -269,9 +269,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     // stateHistoryInitialStates
 
     function createStateHistory() {
-        console.log('start: createStateHistory');
+        // console.log('start: createStateHistory');
         // console.log('stateHistoryTimes=', model.model.stateHistoryTimes);
-        console.log('stateHistoryInitialStates=', model.model.stateHistoryInitialStates);
+        // console.log('stateHistoryInitialStates=', model.model.stateHistoryInitialStates);
 
         // model.model.scales.forEach((sc: any, scIx: number) => {
         //     console.log('start: scIx=', scIx);
@@ -359,7 +359,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             dataCurr.push(obj);
         }
 
-        console.log('dataCurr=', dataCurr);
+        // console.log('dataCurr=', dataCurr);
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
@@ -408,11 +408,13 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .call(d3.axisLeft(y))
             .call((g: any) => g.select('.domain').remove());
 
-        const level = gBars
+        const levels = gBars
             .selectAll('g')
             .data(dataCurr, (d: any) => d.scaleIx)
             .join('g')
-            .attr('class', (d: any) => `scale_${d.scaleIx}`)
+            .attr('class', (d: any) => `scale_${d.scaleIx}`);
+
+        const rects = levels
             .selectAll('rect')
             // // enter a second tcroup per subgroup to add all rectangles
             .data((d: any) => d.states)
@@ -425,10 +427,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('height', (d: any) => y.bandwidth())
             .attr('fill', (d: any) => color(d.state));
 
-        d3.selectAll('.state').on('mouseover', (event: any) => {
+        rects.on('mouseover', (event: any) => {
             console.log('mouseover');
-
-            d3.select(event.target).style('fill', 'red');
         });
 
         // .on('click', (event: any, d: any) => {
@@ -465,7 +465,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
-            <div ref={containerStateHistoryRef} />
+            {/* <div ref={containerStateHistoryRef} /> */}
             <div ref={tooltipRef} />
             <div ref={containerRef} />
         </>
