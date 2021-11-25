@@ -270,16 +270,16 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function createStateHistory() {
         console.log('start: createStateHistory');
-        console.log('stateHistoryTimes=', model.model.stateHistoryTimes);
+        // console.log('stateHistoryTimes=', model.model.stateHistoryTimes);
         console.log('stateHistoryInitialStates=', model.model.stateHistoryInitialStates);
 
-        model.model.scales.forEach((sc: any, scIx: number) => {
-            console.log('start: scIx=', scIx);
-            sc.states.forEach((state: any) => {
-                console.log('... stateNo=', state.stateNo, 'initStates=', state.initialStates);
-            });
-            console.log('\n');
-        });
+        // model.model.scales.forEach((sc: any, scIx: number) => {
+        //     console.log('start: scIx=', scIx);
+        //     sc.states.forEach((state: any) => {
+        //         console.log('... stateNo=', state.stateNo, 'initStates=', state.initialStates);
+        //     });
+        //     console.log('\n');
+        // });
 
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
@@ -287,8 +287,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const chart = { top: 130, left: 100 }; // FIXME: hardcoded
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
-
-        console.log('xWidth=', xWidth, 'yWidth=', yWidth);
 
         const xExtent = d3.extent(model.model.stateHistoryTimes).map((d: any) => new Date(d));
         const yCategories = model.model.scales.map((el: any, i: any) => `${i}`);
@@ -301,18 +299,37 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
         const statesCurr = [];
 
-        for (let i = 0; i < model.model.stateHistoryInitialStates.length; i++) {
-            const scaleIx = 0; // FIXME: should be dynamic
-            const stateName = `${model.model.stateHistoryInitialStates[i]}`;
-            const duration =
-                model.model.stateHistoryTimes[i + 1] - model.model.stateHistoryTimes[i];
-            const state = {
-                start: model.model.stateHistoryTimes[i],
-                duration,
-                state: stateName,
-                scaleIx: `${scaleIx}`,
-            };
-            statesCurr.push(state);
+        for (let i = 0; i < model.model.scales.length; i++) {
+            let stateHistoryStates: any[] = [];
+            let stateHistoryTimes: any[] = [];
+
+            if (i === 0) {
+                stateHistoryStates = model.model.stateHistoryInitialStates;
+                stateHistoryTimes = model.model.stateHistoryTimes;
+            } else {
+                const initalStatesDict: any = {};
+
+                for (let j = 0; j < model.model.scales[i].states.length; j++) {
+                    const state = model.model.scales[i].states[j];
+
+                    for (let k = 0; k < state.initialStates.length; k++) {
+                        const initialState = state.initialStates[j];
+                        initalStatesDict[initialState] = model.model.scales[i].states[j].stateNo;
+                    }
+                }
+                console.log('initalStatesDict=', initalStatesDict);
+            }
+
+            for (let j = 0; j < stateHistoryStates.length; j++) {
+                const duration = stateHistoryTimes[j + 1] - stateHistoryTimes[j];
+                const state = {
+                    start: stateHistoryTimes[j],
+                    duration,
+                    state: `${stateHistoryStates[j]}`,
+                    scaleIx: `${i}`,
+                };
+                statesCurr.push(state);
+            }
         }
         console.log('statesCurr=', statesCurr);
         const obj = { scale: yCategories[0], states: statesCurr };
