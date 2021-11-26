@@ -40,6 +40,13 @@ public:
 			if (ns_ < 0) ns_ = 0; else if (ns_ >= 1000000000) { ns_ -= 1000000000; ++sec_; }
 			secTm = TSecTm(sec_); }
 		else { Assert(false); secTm = TSecTm(-1); ns_ = -1; } }
+	void GetSecTm(int64_t &secTm, int &ns_) const {
+		if (type == TTimeType::Time) { secTm = sec; ns_ = ns; }
+		else if (type == TTimeType::Int) { secTm = sec; ns_ = 0; }
+		else if (type == TTimeType::Flt) { 
+			double f = floor(flt); secTm = (int64_t) f; ns_ = (int) ((flt - f) * 1e9);
+			if (ns_ < 0) ns_ = 0; else if (ns_ >= 1000000000) { ns_ -= 1000000000; ++secTm; } }
+		else { Assert(false); secTm = -1; ns_ = -1; } }
 
 	TStr ToStr() const;
 
@@ -70,7 +77,8 @@ public:
 };
 
 enum class TOpType { LinMap, LinTo01, SetMeanAndStd, Standardize, SubtractMean, RestrictRange };
-enum class TTimeWindowType { Time, Samples };
+enum class TTimeWindowOp { Shift, Delta, LinTrend };
+enum class TTimeWindowType { Time, TimeNumeric, Samples };
 enum class TResampleType { SetTimeStep, SetNumSamples };
 enum class TTimeCategoricalUnit { Sec, Min, Hour, DayOfWeek, Month };
 
@@ -86,6 +94,11 @@ class TOpDesc;
 typedef TPt<TOpDesc> POpDesc;
 typedef TVec<POpDesc> TOpDescV;
 
+class TModelConfig;
+typedef TPt<TModelConfig> PModelConfig;
+
+class TDataset;
+
 class TOpDesc
 {
 protected:
@@ -94,7 +107,10 @@ protected:
 public:
 	virtual ~TOpDesc() { }
 	virtual bool InitFromJson(const PJsonVal& jsonVal, TStrV& errList) { return true; }
+	virtual bool AddAttrsFromOps(TModelConfig& config, TStrV& errors) { return true; }
+	virtual bool Apply(TDataset& dataset, TStrV& errors) { return true; }
 	static POpDesc New(const PJsonVal& jsonVal, TStrV& errList);
+	static inline const TStr& WhereForErrMsg() { static const TStr s = "an op description"; return s; }
 };
 
 bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
@@ -105,8 +121,8 @@ public:
 	TStr inAttrName, outAttrName;	
 	bool InitFromJson(const PJsonVal& jsonVal, TStrV& errList) override { 
 		if (! TOpDesc::InitFromJson(jsonVal, errList)) return false;
-		if (! Json_GetObjStr(jsonVal, "inAttr", false, {}, inAttrName, "an op description", errList)) return false;
-		if (! Json_GetObjStr(jsonVal, "outAttr", true, inAttrName, outAttrName, "an op description", errList)) return false;
+		if (! Json_GetObjStr(jsonVal, "inAttr", false, {}, inAttrName, WhereForErrMsg(), errList)) return false;
+		if (! Json_GetObjStr(jsonVal, "outAttr", true, inAttrName, outAttrName, WhereForErrMsg(), errList)) return false;
 		return true; }
 };
 
@@ -134,21 +150,19 @@ public:
 	TFltEx newMin, newMax; 
 };
 
-class TOpDesc_TimeWindow : public TOpDesc_SingleAttrMap
+class TOpDesc_TimeWindow : public TOpDesc
 {
 public:
+	TStr inAttr, outAttr;
+	TStr timeAttr;	// default: use the first attribute whose type is 'time'
+	TTimeWindowOp op;
 	TTimeWindowType windowType;
-	TTimeStamp windowSize;
-};
-
-class TOpDesc_Trend : public TOpDesc_TimeWindow
-{
-public:
-};
-
-class TOpDesc_Delta : public TOpDesc_TimeWindow
-{
-public:
+	TTimeStamp windowSize; // its timetype must be int or float; if windowType = samples, then windowSize is an int number of samples;
+		// if windowType = time, then windowSize is either a int/float number of seconds (if the timetype of 'timeAttrName' is Time), 
+		// or an int/float number (if the timetype of 'timeAttrName' is Int/Flt).
+	bool InitFromJson(const PJsonVal& jsonVal, TStrV& errList) override;
+	bool AddAttrsFromOps(TModelConfig& config, TStrV& errors) override;
+	bool Apply(TDataset& dataset, TStrV& errors) override;
 };
 
 class TOpDesc_Resample : public TOpDesc
@@ -181,9 +195,6 @@ public:
 	void Clr() { *this = {}; }
 };
 
-class TModelConfig;
-typedef TPt<TModelConfig> PModelConfig;
-
 class TModelConfig
 {
 protected:
@@ -199,6 +210,9 @@ public:
 	TDecTreeConfig decTreeConfig;
 	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); ignoreConversionErrors = true; distWeightOutliers = 0.05; includeHistograms = true; includeStateHistory = true; includeDecisionTrees = true; }
 	bool InitFromJson(const PJsonVal& val, TStrV& errors);
+	int GetAttrIdx(const TStr& name) const { for (int i = 0; i < attrs.Len(); ++i) if (attrs[i].name == name) return i; return -1; }
+	bool HasAttr(const TStr& name) const { return GetAttrIdx(name) >= 0; }
+	TStr SuggestUniqueAttrName(const TStr &baseName) const;
 protected:
 	bool AddAttrsFromOps(TStrV& errors);
 };
@@ -212,6 +226,7 @@ public:
 	int idxInConfig;
 	// The following fields are copied from TAttrDesc, for convenience.
 	TStr name, sourceName, userFriendlyLabel, formatStr;
+	TAttrSource source;
 	TAttrType type;
 	TAttrSubtype subType;
 	TTimeType timeType;
@@ -240,18 +255,19 @@ public:
 	void Gen(int nRows) {  
 		ClrVals();
 		if (type == TAttrType::Numeric && subType == TAttrSubtype::Flt) fltVals.Gen(nRows);
-		if (type == TAttrType::Numeric && subType == TAttrSubtype::Int || type == TAttrType::Categorical) intVals.Gen(nRows);
-		if (type == TAttrType::Text) sparseVecIndex.Gen(nRows);
-		if (type == TAttrType::Time) timeVals.Gen(nRows);
+		else if (type == TAttrType::Numeric && subType == TAttrSubtype::Int || type == TAttrType::Categorical) intVals.Gen(nRows);
+		else if (type == TAttrType::Text) sparseVecIndex.Gen(nRows);
+		else if (type == TAttrType::Time) timeVals.Gen(nRows);
+		else IAssert(false);
 		// ToDO: more?
 	}
 	double GetDefaultDistWeight(double propOutliersToIgnore) const;
+	template<typename T>
+	void PutNumVal(int rowNo, T value) { Assert(type == TAttrType::Numeric); if (subType == TAttrSubtype::Flt) fltVals[rowNo] = value; else if (subType == TAttrSubtype::Int) intVals[rowNo] = value; else Assert(false); }
 };
 
 class TCentroidComponent;
 typedef TVec<TCentroidComponent> TCentroidComponentV;
-
-class TDataset;
 
 class TCentroidComponent
 {
@@ -479,6 +495,9 @@ public:
 	double CentrDist2(const TState& state1, const TState& state2) const { return CentrDist2(state1.centroid, state2.centroid); }
 	double CentrDist2(const PState& state1, const PState& state2) const { return CentrDist2(state1->centroid, state2->centroid); }
 	void AddRow(const TConvertedValueV& values);
+	int GetColIdx(const TStr& name) const { for (int i = 0; i < cols.Len(); ++i) if (cols[i].name == name) return i; return -1; }
+	TDataColumn &GetCol(const TStr& name) { int i = GetColIdx(name); AssertR(i >= 0, TStr("TDataColumn::GetCol: cannot find column \"") + name + "\"."); return cols[i]; }
+	const TDataColumn &GetCol(const TStr& name) const { return cols[GetColIdx(name)]; }
 protected:
 	bool AddRowFromJson(const PJsonVal &jsonRow, int jsonRowIdx, TConversionProgress& convProg);
 };

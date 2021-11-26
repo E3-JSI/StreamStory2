@@ -47,6 +47,7 @@ The following options are enabled by default but can be set to `false` to reduce
 Each attribute (a.k.a. field or column) of the input dataset must be described by an object containing the following values:
 
 - `name`: the name of the attribute
+- `source`: this must be either `"input"` (meaning that the attribute is to be read from the input data) or `"synthetic"` (meaning that the attribute does not appear in the input data and will be calculated by one of the post-input operations defined in `config.ops`).  Default value: `"input"`.  It is generally not necessary to declare synthetic attributes in `config.attrs` because the post-input operations will add them with reasonable default settings (such as type and subtype); but you can declare a synthetic attribute here if you wish to customize its attributes (e.g. by specifying a `label` or a `distWeight`).
 - `sourceName`: optional (if missing, the same value as `name` is used).  This is the name under which the attribute appears in the input data.  If the input data is in the CSV format, this name appears in the header of the corresponding column.  If the input data is in the JSON format, this name is used to represent this attribute in the JSON objects that represent individual data points.
 - `label`: optional (if missing, the same value as `name` is used).  This is a user-friendly label for this attribute.  This might eventually be used in string descriptions/representations in the model, constructed by the server and intended to be visible to the end-user.  
 - `distWeight`: the weight of this attribute for the purposes of distance calculations: `d(x, y) = sum_i w_i (x_i - y_i)^2`, where `w_i` is the `distWeight` of the `i`'th attribute.  This attribute is optional; if absent, `1 / (variance of this attribute)` is used as the default, which is equivalent to rescaling each attribute so that it has a standard deviation of 1.
@@ -72,6 +73,36 @@ The following combinations of `type` and `subType` are allowed:
 ### Post-input operation specification
 
 [Documentation for the `ops` specification will be added as the implementation of these operations progresses.]
+
+Each post-input operation must be described by an object.  The following subsections describe the various types of operations supported and the attributes that should be present in the object used to define such an operation.
+
+#### Time-window operations
+
+An attribute `a` may be thought of as a function of time, `a(t)`.  The time-window operations, given a window size `w`, define a new attribute `b` such that `b(t)` is calculated from the values of `a` at time `t` and in the `w` units of time before that, i.e. in the time period [`t - w`, `t`].  Currently, three operations of this type are supported
+- time shift: `b(t) = a(t - w)`
+- time delta: `b(t) = a(t) - a(t - w)`
+- linear trend: a linear function is fitted over the points (`u`, `a(u)`) for all times `u` in the range `t - w <= u <= t`.  The slope of this linear function is used as `b(t)`.
+
+The operation must be defined by a JSON object containing the following attributes:
+
+- `op`: must be either `"timeShift"`, `"timeDelta"`, or `"linTrend"`.
+- `inAttr`: the name of the input attribute (`a` in the discussion above).  This must be a numeric attribute.
+- `outAttr`: the name of the output attribute (`b` in the discussion above).  If no such attribute is defined in `config.attrs`, the modelling service will create one with suitable default settings.
+- `windowUnit`: the unit used to define the window size (`w` in the discussion above).  Possible values: 
+  - `windowUnit = "samples"`: the window is defined as consisting of a certain number of input samples; no time attribute is needed.
+  - `windowUnit = "numeric"`: the time attribute is assumed to be a purely numeric value and not a true timestamp (i.e. its `timeType` is `"int"` or `"float"`, not `"time"`); the window is defined as a range of a fixed length on this numeric time axis, i.e. the window that ends at timepoint `t` covers all timepoints `u` for which `t - w <= u <= t`, where `w` is the window size.
+  - `windowUnit = "sec"`: the time attribute is assumed to be a true timestamp (i.e. its `timeType` is `"time"`), and the window size will be specified in seconds.
+  - `windowUnit = "min"`, `"hour"`, `"day"`: like `"sec"` except that the window size will be specified in minutes, hours, or days, respectively.
+- `timeAttr`: the name of the time attribute used to determine the time `t` of each input sample.  If this value is omitted, the first attribute whose type is `time` will be used.  If `windowUnit == "samples"`, no time attribute is needed.
+- `windowSize`: a number (integer or floating-point) specifying the window size in the units indicated by `windowUnit`.
+
+Example:
+
+    {  "inAttr": "flow", "outAttr": "flow_two_hours_earlier",
+       "op": "timeShift",
+       "windowUnit": "hour", "windowSize": 2 }
+
+This defines a new attribute, `flow_two_hours_earlier`, whose value in a given sample is defined as the value that the attribute `flow` had two hours before the timestamp of the said sample.  If no input sample exists exactly two hours before the current one, the value of `flow` will be interpolated from the nearest input sample on either side of that point in time.
 
 # Structure of the response JSON object
 

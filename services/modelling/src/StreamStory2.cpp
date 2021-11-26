@@ -72,10 +72,265 @@ POpDesc TOpDesc::New(const PJsonVal& jsonVal, TStrV& errList)
 	TStr opStr; if (! Json_GetObjStr(jsonVal, "op", false, {}, opStr, "an op description", errList)) return {};
 	POpDesc o;
 	if (opStr == "linMap") o = new TOpDesc_AttrLinMap();
+	else if (opStr == "timeShift" || opStr == "timeDelta" || opStr == "linTrend") o = new TOpDesc_TimeWindow();
 	// ToDo: add other op types here.
 	else { errList.Add("Invalid op type: \"" + opStr + "\"."); return {}; }
 	if (! o->InitFromJson(jsonVal, errList)) return {};
 	return o;
+}
+
+bool TOpDesc_TimeWindow::InitFromJson(const PJsonVal& jsonVal, TStrV& errList) 
+{ 
+	if (! TOpDesc::InitFromJson(jsonVal, errList)) return false;
+	if (! Json_GetObjStr(jsonVal, "inAttr", false, {}, inAttr, WhereForErrMsg(), errList)) return false;
+	if (! Json_GetObjStr(jsonVal, "outAttr", true, inAttr, outAttr, WhereForErrMsg(), errList)) return false; 
+	if (! Json_GetObjStr(jsonVal, "timeAttr", true, {}, timeAttr, WhereForErrMsg(), errList)) return false;
+	TStr s; if (! Json_GetObjStr(jsonVal, "op", false, {}, s, "an op description", errList)) return {};
+	if (s == "timeShift") op = TTimeWindowOp::Shift;
+	else if (s == "timeDelta") op = TTimeWindowOp::Delta;
+	else if (s == "linTrend") op = TTimeWindowOp::LinTrend;
+	else { errList.Add("Invalid op type for a time window op: \"" + s + "\"."); return {}; }
+	//
+	int64_t unitMultiplier = 1, unitDivisor = 1; TStr key = "windowUnit";
+	if (! Json_GetObjStr(jsonVal, key.CStr(), false, {}, s, WhereForErrMsg(), errList)) return false;
+	s.ToLc();
+	if (s == "samples") windowType = TTimeWindowType::Samples;
+	else if (s == "num" || s == "numeric") windowType = TTimeWindowType::TimeNumeric;
+	else if (s == "s" || s == "sec" || s == "second" || s == "seconds" || s == "num" || s == "numeric") windowType = TTimeWindowType::Time;
+	else if (s == "m" || s == "min" || s == "minute" || s == "minutes") windowType = TTimeWindowType::Time, unitMultiplier = 60;
+	else if (s == "h" || s == "hour" || s == "hours") windowType = TTimeWindowType::Time, unitMultiplier = 60 * 60;
+	else if (s == "d" || s == "day" || s == "days") windowType = TTimeWindowType::Time, unitMultiplier = 60 * 60 * 24;
+	else { errList.Add(TStr("The value of \"") + key + "\" in " + WhereForErrMsg() + " is invalid: \"" + s.GetSubStrSafe(0, 100) + "\"."); return false; }
+	//
+	if (windowType == TTimeWindowType::Samples)
+	{
+		key = "windowSize";
+		int x; if (! Json_GetObjInt(jsonVal, key.CStr(), true, 1, x, WhereForErrMsg(), errList)) return false;
+		if (x <= 0) { errList.Add(TStr("The value of \"") + key + "\" in " + WhereForErrMsg() + " should be > 0."); return false; }
+		windowSize.SetInt(x);
+		if (! timeAttr.Empty()) errList.Add("Warning: a time window op whose window is defined in samples does not need to have timeAttr defined."); 
+	}
+	else
+	{
+		double x; if (! Json_GetObjNum(jsonVal, "windowSize", true, 1, x, WhereForErrMsg(), errList)) return false;
+		typedef decltype(windowSize.sec) T;
+		T ix = (T) x; if (ix == x && (ix * unitMultiplier) % unitDivisor == 0) windowSize.SetInt((ix * unitMultiplier) / unitDivisor);
+		else windowSize.SetFlt(x * unitMultiplier / double(unitDivisor));
+	}
+	return true; 
+}
+
+bool TOpDesc_TimeWindow::AddAttrsFromOps(TModelConfig& config, TStrV& errors) 
+{
+	// Make sure that the input attribute exists and is numeric.
+	int inAttrIdx = config.GetAttrIdx(inAttr); 
+	if (inAttrIdx < 0) { errors.Add("Error in a time-window op definition: input attribute \"" + inAttr + "\" not found."); return false; }
+	if (config.attrs[inAttrIdx].type != TAttrType::Numeric) { errors.Add("Error in a time-window op definition: the input attribute \"" + inAttr + "\" must be numeric."); return false; } 
+	// If the output attribute doesn't exist, we'll create it.
+	int outAttrIdx = config.GetAttrIdx(outAttr); 
+	if (outAttrIdx >= 0) { 
+		if (config.attrs[outAttrIdx].type != TAttrType::Numeric) { errors.Add("Error in a time-window op definition: the output attribute \"" + inAttr + "\" must be numeric."); return false; } }
+	else {
+		outAttrIdx = config.attrs.Add();
+		const TAttrDesc &IA = config.attrs[inAttrIdx]; TAttrDesc &OA = config.attrs[outAttrIdx];
+		OA = IA; OA.source = TAttrSource::Synthetic; 
+		// Linear regression will likely return non-integer slopes even if the input attribute was an integer.
+		if (op == TTimeWindowOp::LinTrend) OA.subType = TAttrSubtype::Flt; 
+		// Similarly, the delta and shift operations might require interpolation unless the window is defined in samples.
+		if ((op == TTimeWindowOp::Delta || op == TTimeWindowOp::Shift) && windowType == TTimeWindowType::Samples) OA.subType = TAttrSubtype::Flt; 
+		if (! outAttr.Empty()) OA.name = outAttr;
+		else {
+			OA.name = ""; // prevent interfering with SuggestUniqueAttrName
+			OA.name = config.SuggestUniqueAttrName(TStr::Fmt("%s %s", IA.name.CStr(), op == TTimeWindowOp::Delta ? "Delta" : op == TTimeWindowOp::Shift ? "Shifted" : op == TTimeWindowOp::LinTrend ? "Trend" : "????")); 
+			outAttr = OA.name; }}
+	// If timeAttr has been specified, make sure it exists and is a suitable time attribute.
+	int timeAttrIdx = config.GetAttrIdx(timeAttr);
+	if (timeAttrIdx < 0)
+	{
+		if (! timeAttr.Empty()) { errors.Add("Error in a time-window op definition: input attribute \"" + inAttr + "\" not found."); return false; }
+		if (windowType != TTimeWindowType::Samples) {
+			for (int i = 0; i < config.attrs.Len(); ++i) if (config.attrs[i].type == TAttrType::Time) { timeAttrIdx = i; break; }
+			if (timeAttrIdx < 0) { errors.Add("Error in a time-window op definition: no time attribute attribute \"" + inAttr + "\" not found."); return false; } 
+			timeAttr = config.attrs[timeAttrIdx].name; }
+	}
+	if (windowType != TTimeWindowType::Samples)
+	{
+		const TAttrDesc &TA = config.attrs[timeAttrIdx];
+		if (windowType == TTimeWindowType::TimeNumeric && ! (TA.timeType == TTimeType::Int || TA.timeType == TTimeType::Flt)) { errors.Add("Error in a time-window op definition: the time attribute \"" + timeAttr + "\" is not numeric, as required by the time window specification."); return false; } 
+		if (windowType == TTimeWindowType::Time && TA.timeType != TTimeType::Time) { errors.Add("Error in a time-window op definition: the time attribute \"" + timeAttr + "\" is not a true timestamp, as required by the time window specification."); return false; } 
+	}
+	return true;
+}
+
+class TLinRegression
+{
+protected:
+	double sum_w = 0, sum_wx = 0, sum_wy = 0, sum_wxy = 0, sum_wx2 = 0, sum_wy2 = 0;
+	static const double eps;
+	static double SolveLin2By2(double A, double B, double C, double D, double E, double F, double &x, double &y);
+public:
+	void Clr() { sum_w = 0; sum_wx = 0; sum_wy = 0; sum_wxy = 0; sum_wx2 = 0; sum_wy2 = 0; }
+	void Add(double wi, double xi, double yi) { sum_w += wi; sum_wx += wi * xi; sum_wy += wi * yi; sum_wxy += wi * xi * yi; sum_wx2 += wi * xi * xi; sum_wy2 += wi * yi * yi; }
+	void Results(double &linCoef, double &constTerm, double &rmse) const; // y = linCoef x + constTerm
+};
+
+const double TLinRegression::eps = 1e-14;
+
+// Solves a 2*2 system of linear equations: Ax + By + C = 0 and Dx + Ey + F = 0.
+// Returns the squared error of the best solution; if the system is actually solvable, this will be 0.
+double TLinRegression::SolveLin2By2(double A, double B, double C, double D, double E, double F, double &x, double &y)
+{
+	using std::swap;
+	if (abs(A) < abs(D)) { swap(A, D); swap(B, E); swap(C, F); }
+	if (abs(A) < eps) {
+		// We have By + C = 0, Ey + F = 0.
+		if (abs(B) < abs(E)) { swap(B, E); swap(C, F); }
+		if (abs(B) < eps) { 
+			// We have C = 0, F = 0;
+			x = 0; y = 0; }
+		else {
+			// y = -C/B or -F/E.
+			x = 0; y = -C/B; } }
+	else {
+		// We have x = -(By + C)/A = (-B/A) y - (C/A),
+		// and thus  Dx + Ey + F = 0 becomes
+		// -(BD/A) y - (CD/A) + Ey + F = 0,
+		// [E - (BD/A)] y = (CD/A) - F = 0
+		double U = E - B * D / A, V = C * D / A - F;
+		// U = 0 means that one equation is a multiple of the other.
+		if (abs(U) < eps) y = 0; else y = V / U;
+		x = -(B * y + C) / A; }
+	double e1 = A * x + B * y + C, e2 = D * x + E * y + F;
+	return e1 * e1 + e2 * e2;
+}
+
+// We're looking for a formula of the form y = Ax + B.
+// The error is J(A, B) = sum_i w_i (A x_i + B - y_i)^2
+// dJ / dA = 2 sum_i w_i (A x_i + B - y_i) x_i
+// dJ / dB = 2 sum_i w_i (A x_i + B - y_i) 
+// For both derivatives to be 0, we must have
+//    sum_i w_i (A x_i + B - y_i) x_i = 0 
+//    A sum_i w_i x_i^2 + B sum_i w_i x_i - sum_i w_i x_i y_i = 0
+// and   
+//    sum_i w_i (A x_i + B - y_i) 
+//    A sum_i w_i x_i + B sum_i w_i - sum_i w_i y_i = 0.
+void TLinRegression::Results(double &linCoef, double &constTerm, double &rmse) const
+{
+	double &A = linCoef, &B = constTerm;
+	double err = SolveLin2By2(sum_wx2, sum_wx, -sum_wxy, sum_wx, sum_w, -sum_wy, A, B);
+	// Note: the error 'err' should be close to 0 because J should definitely have a minimum.
+	//Assert(err < 1e-6); // But since we don't know what size numbers we're dealing with, we shouldn't make any assumptions about the actual value of 'eps'.
+	// J(A, B) = sum_i w_i (A^2 x_i^2 + B^2 + y_i^2 + 2 A B x_i - 2 A x_i y_i - 2 B y_i)
+	double J = A * A * sum_wx2 + B * B * sum_w + sum_wy2 + 2 * A * B * sum_wx - 2 * A * sum_wxy - 2 * B * sum_wy;
+	// rmse = sqrt(J / sum_i w_i).
+	if (sum_w < eps) rmse = 0;
+	else { rmse = J / sum_w; if (rmse < eps) rmse = 0; else rmse = sqrt(rmse); }
+}
+
+double LinInterp(double x1, double y1, double x2, double y2, double x)
+{
+	// y = ((x2 - x) y1 + (x - x1) y2) / (x2 - x1)
+	double dx = x2 - x1; if (abs(dx) < 1e-12) return 0.5 * (y1 + y2);
+	else return ((x2 - x) * y1 + (x - x1) * y2) / dx;
+}
+
+void TestLinRegr()
+{
+	double A = 12.3, B = 45.6;
+	TLinRegression linRegr;
+	TRnd rnd(123);
+	for (int i = 1; i <= 1000000 || true; i++)
+	{
+		double x = rnd.GetUniDev() * 100 + 50;
+		double err = rnd.GetUniDev() * 10 - 5;
+		double y = A * x + B + err;
+		double w = rnd.GetUniDev();
+		linRegr.Add(w, x, y);
+		if ((i % (i <= 10000 ? 1000 : 1000000)) == 0)
+		{
+			double AA, BB, rmse; linRegr.Results(AA, BB, rmse);
+			printf("i = %d] A = %g, B = %g; rmse = %g%c", i, AA, BB, rmse, i >= 10000 ? '\r' : '\n');
+		}
+	}
+}
+
+bool TOpDesc_TimeWindow::Apply(TDataset& dataset, TStrV& errors) 
+{
+	const TDataColumn &IC = dataset.GetCol(inAttr);
+	TDataColumn &OC = dataset.GetCol(outAttr);
+	TDataColumn *TC = nullptr; { int i = dataset.GetColIdx(timeAttr); if (i >= 0) TC = &dataset.cols[i]; }
+	const int nRows = dataset.nRows; OC.Gen(nRows);
+	for (int rowNo = 0; rowNo < nRows; ++rowNo)
+	{
+		// Determine how far back the time window extends from the rowNo'th datapoint.
+		int fromRowNo = rowNo;
+		if (windowType == TTimeWindowType::Samples) fromRowNo = TInt::GetMx(0, rowNo - windowSize.GetInt()); 
+		else if (windowType == TTimeWindowType::TimeNumeric)
+		{
+			TTimeStamp curTs = TC->timeVals[rowNo];
+			if (TC->timeType == TTimeType::Int) {
+				auto minTime = curTs.GetInt(); minTime -= windowSize.GetInt();
+				while (fromRowNo > 0 && minTime <= TC->timeVals[fromRowNo - 1].GetInt()) --fromRowNo; }
+			else if (TC->timeType == TTimeType::Flt) {
+				double minTime = curTs.GetFlt() - windowSize.GetFlt();
+				while (fromRowNo > 0 && minTime <= TC->timeVals[fromRowNo - 1].GetFlt()) --fromRowNo; }
+			else IAssert(false);
+		}
+		else if (windowType == TTimeWindowType::Time)
+		{
+			int64_t curSec; int curNs; TC->timeVals[rowNo].GetSecTm(curSec, curNs);
+			int64_t winSec; int winNs; windowSize.GetSecTm(winSec, winNs);
+			int64_t minSec = curSec - winSec; int minNs = curNs - winNs;
+			if (minNs < 0) { minSec -= 1; minNs += 1000000000; }
+			IAssert(TC->timeType == TTimeType::Time);
+			while (fromRowNo > 0) {
+				int64_t prevSec; int prevNs; TC->timeVals[fromRowNo - 1].GetSecTm(prevSec, prevNs);
+				if (minSec > prevSec || (minSec == prevSec && minNs > prevNs)) break;
+				--fromRowNo; }
+		}
+		// Perform the desired operation on the window.
+		// We use OC.PutNumVal to store the result because the subtype may not be what we expect - the user
+		// could have overridden it by adding a definition of the output column to config.attributes.
+		if (op == TTimeWindowOp::Shift || op == TTimeWindowOp::Delta) {
+			if (windowType == TTimeWindowType::Samples) {
+				if (op == TTimeWindowOp::Shift) {
+					if (IC.subType == TAttrSubtype::Int) OC.PutNumVal(rowNo, IC.intVals[fromRowNo]);
+					else if (IC.subType == TAttrSubtype::Flt) OC.PutNumVal(rowNo, IC.fltVals[fromRowNo]);
+					else IAssert(false); }
+				else if (op == TTimeWindowOp::Delta) {
+					if (IC.subType == TAttrSubtype::Int) OC.PutNumVal(rowNo, IC.intVals[rowNo] - IC.intVals[fromRowNo]);
+					else if (IC.subType == TAttrSubtype::Flt) OC.PutNumVal(rowNo, IC.fltVals[rowNo] - IC.fltVals[fromRowNo]);
+					else IAssert(false); } }
+			else {
+				// Interpolation may be needed, and the result will always be a float.
+				int beforeRowNo = (fromRowNo > 0) ? fromRowNo - 1 : fromRowNo;
+				double t1 = TC->timeVals[beforeRowNo].GetFlt(), t2 = TC->timeVals[fromRowNo].GetFlt();
+				double t0 = TC->timeVals[rowNo].GetFlt() - windowSize.GetFlt();
+				double val1, val2; if (IC.subType == TAttrSubtype::Int) val1 = IC.intVals[beforeRowNo], val2 = IC.intVals[fromRowNo];
+				else val1 = IC.fltVals[beforeRowNo], val2 = IC.fltVals[fromRowNo];
+				double startValue = LinInterp(t1, val1, t2, val2, t0); 
+				if (op == TTimeWindowOp::Shift) OC.PutNumVal(rowNo, startValue);
+				else if (op == TTimeWindowOp::Delta) {
+					double curValue = (IC.subType == TAttrSubtype::Flt) ? double(IC.fltVals[rowNo]) : double(OC.fltVals[rowNo]);
+					OC.PutNumVal(rowNo, curValue - startValue); }
+				else IAssert(false); }}
+		else if (op == TTimeWindowOp::LinTrend) 
+		{
+			TLinRegression linRegr;
+			for (int i = fromRowNo; i <= rowNo; ++i)
+			{
+				double x = (TC) ? TC->timeVals[i].GetFlt() : double(i);
+				double y; if (IC.subType == TAttrSubtype::Int) y = (double) IC.intVals[i];
+				else if (IC.subType == TAttrSubtype::Flt) y = (double) IC.fltVals[i];
+				else IAssert(false);
+				linRegr.Add(1.0, x, y);
+			}
+			double linCoef, constTerm, rmse; linRegr.Results(linCoef, constTerm, rmse);
+			if (fromRowNo >= rowNo) linCoef = 0;
+			OC.PutNumVal(rowNo, linCoef);
+		}
+	}
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -197,14 +452,30 @@ bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
 			ops.Add(opDesc);
 		}
 	} while (false);
+	// Add the attributes required by the ops.
+	if (! AddAttrsFromOps(errList)) return false;
+	//
 	return true;
 }
 
 bool TModelConfig::AddAttrsFromOps(TStrV& errors)
 {
-	// ToDo.  For each op, see if its outAttrName needs to be added; if its inAttrName is valid;
-	// if there are any conflicts.
+	// Give each op the opportunity to add new attributes.
+	for (const POpDesc& op : this->ops)
+	{
+		if (op.Empty()) continue;
+		if (! op->AddAttrsFromOps(*this, errors)) return false;
+	}
 	return true;
+}
+
+TStr TModelConfig::SuggestUniqueAttrName(const TStr &baseName) const
+{
+	if (! HasAttr(baseName)) return baseName;
+	for (int i = 2; ; ++i) {
+		TStr candName = TStr::Fmt("%s (%d)", baseName.CStr(), i);
+		if (! HasAttr(candName)) return candName; }
+	IAssert(false); return "";
 }
 
 //-----------------------------------------------------------------------------
@@ -506,6 +777,7 @@ bool TDatasetCsvFeeder::SetHeaders(const TStrV& headers, int rowNo, TStrV& error
 	for (int colNo = 0; colNo < nCols; ++colNo)
 	{
 		const TDataColumn &col = dataset.cols[colNo];
+		if (col.source != TAttrSource::Input) continue;
 		int found = -1;
 		for (int headNo = 0; headNo < nHeaders; ++headNo)
 			if (headers[headNo] == col.sourceName)
@@ -530,6 +802,7 @@ bool TDatasetCsvFeeder::AddRow(const TStrV& values, int rowNo, TConversionProgre
 	for (int colNo = 0; colNo < nCols; ++colNo)
 	{
 		TDataColumn &col = dataset.cols[colNo];
+		if (col.source != TAttrSource::Input) continue;
 		int csvColNo = dataColToCsvCol[colNo];
 		if (csvColNo < 0 || csvColNo >= values.Len()) ON_ERROR(TStr::Fmt("[%s] Error in CSV data (row %d): this row has %d values, attribute \"%s\" should be in column %d based on headers.", fileName.CStr(), rowNo, int(values.Len()), col.name.CStr(), csvColNo + 1));
 		const TStr& value = values[csvColNo];
@@ -596,7 +869,9 @@ void TDataset::AddRow(const TConvertedValueV& values)
 	const int nCols = cols.Len(); Assert(values.Len() == nCols);
 	for (int colNo = 0; colNo < nCols; ++colNo)
 	{
-		TDataColumn &col = cols[colNo]; const TConvertedValue &cv = values[colNo];
+		TDataColumn &col = cols[colNo]; 
+		if (col.source != TAttrSource::Input) continue;
+		const TConvertedValue &cv = values[colNo];
 		//
 		if (col.type == TAttrType::Numeric) {
 			if (col.subType == TAttrSubtype::Flt) col.fltVals.Add(cv.fltVal); 
@@ -640,6 +915,7 @@ void TDataset::InitColsFromConfig(const PModelConfig& config_)
 		const TAttrDesc &attr = config->attrs[colIdx];
 		cols.Add(); TDataColumn &col = cols.Last();
 		col.name = attr.name; col.sourceName = attr.sourceName; col.userFriendlyLabel = attr.userFriendlyLabel;
+		col.source = attr.source;
 		col.idxInConfig = colIdx; col.distWeight = attr.distWeight;
 		col.type = attr.type; col.subType = attr.subType; col.formatStr = attr.formatStr; col.timeType = attr.timeType;
 	}
@@ -853,7 +1129,8 @@ bool TDataset::ReadDataFromJsonDataSourceSpec(const PJsonVal &jsonSpec, TStrV& e
 
 bool TDataset::ApplyOps(TStrV& errors)
 {
-	// ToDo. 
+	for (const POpDesc &op : config->ops)
+		if (! op->Apply(*this, errors)) return false;
 	return true;
 }
 

@@ -201,6 +201,7 @@ int TestBuildModelRequest()
 }
 
 void TestStrPFTime();
+void TestLinRegr();
 
 //-----------------------------------------------------------------------------
 
@@ -209,6 +210,7 @@ int main(int argc, char** argv)
 	TStr s = "Hello World!";
 	//printf("%s\n", s.CStr());
 	//TestStrPFTime(); return 0;
+	//TestLinRegr(); return 0;
 
     // create environment
     Env = ::TEnv(argc, argv, TNotify::StdNotify);
