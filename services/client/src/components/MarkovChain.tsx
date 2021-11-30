@@ -124,7 +124,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         ) {
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
-            renderMarkovChain(data);
+            renderMarkovChain(graphData);
         }
     }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
