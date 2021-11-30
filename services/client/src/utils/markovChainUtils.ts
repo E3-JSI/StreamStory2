@@ -150,7 +150,7 @@ export function createLinks(
                         const dTarget = nodesMap[d.target].data()[0];
                         const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                         return newCoords.y;
-                    })
+                    }).text((d: any) => formatLinkP(d.p))
                 update.call((updt: any) => updt.transition(tEnter).attr('opacity', 1));
 
                 return update;
