@@ -268,6 +268,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     // stateHistoryTimes
     // stateHistoryInitialStates
 
+    function createDate(unixTimestamp: number) {
+        return new Date(unixTimestamp * 1000);
+    }
+
     function createStateHistory() {
         // console.log('start: createStateHistory');
         // console.log('stateHistoryTimes=', model.model.stateHistoryTimes);
@@ -288,8 +292,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
 
-        const xExtent = d3.extent(model.model.stateHistoryTimes).map((d: any) => new Date(d));
-        const yCategories = model.model.scales.map((el: any, i: any) => `${i}`);
+        const xExtent: any = d3.extent(model.model.stateHistoryTimes, createDate);
+        const yCategories: any = model.model.scales.map((el: any, i: any) => `${i}`);
 
         let uniqueStates: any[] = Array.from(new Set(model.model.stateHistoryInitialStates)); // FIXME: change if for other scales
         uniqueStates.sort((a: any, b: any) => a - b);
@@ -359,10 +363,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             dataCurr.push(obj);
         }
 
-        // console.log('dataCurr=', dataCurr);
-
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
+
+        console.log('x.domain=', x.domain());
+        console.log('y.domain=', y.domain());
+
         const color = d3.scaleOrdinal().domain(uniqueStates).range(d3.schemePaired);
 
         let graph = null;
@@ -421,15 +427,19 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .join('rect')
             .attr('class', 'state')
             .attr('id', (d: any) => `${d.state}`)
-            .attr('x', (d: any) => x(d.start))
-            .attr('y', (d: any) => y(d.scaleIx))
-            .attr('width', (d: any) => x(d.duration)) // FIXME: duration not ok computed
+            .attr('x', (d: any) => x(createDate(d.start)))
+            .attr('y', (d: any) => {
+                console.log('y(d.scaleIx)=', y(d.scaleIx));
+                const a = 5;
+                return y(`${d.scaleIx}`);
+            })
+            .attr('width', (d: any) => x(createDate(d.start + d.duration))) // FIXME: duration not ok computed
             .attr('height', (d: any) => y.bandwidth())
             .attr('fill', (d: any) => color(d.state));
 
-        rects.on('mouseover', (event: any) => {
-            console.log('mouseover');
-        });
+        // rects.on('mouseover', (event: any) => {
+        //     console.log('mouseover');
+        // });
 
         // .on('click', (event: any, d: any) => {
         //     const statesFound = d3
@@ -465,7 +475,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
-            {/* <div ref={containerStateHistoryRef} /> */}
+            <div ref={containerStateHistoryRef} />
             <div ref={tooltipRef} />
             <div ref={containerRef} />
         </>
