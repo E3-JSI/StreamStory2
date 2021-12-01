@@ -277,76 +277,69 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
 
-        const xExtent: any = d3.extent(model.model.stateHistoryTimes, createDate);
-        const yCategories: any = model.model.scales.map((el: any, i: any) => `${i}`);
+        const {
+            model: { scales, stateHistoryInitialStates: initialStates, stateHistoryTimes: times },
+        } = model;
 
-        let uniqueStates: any[] = Array.from(new Set(model.model.stateHistoryInitialStates)); // FIXME: change if for other scales
+        const xExtent: any = d3.extent(times, (d: number) => createDate(d));
+        const yCategories: any = scales.map((el: any, i: any) => `${i}`);
+
+        let uniqueStates: any[] = Array.from(new Set(initialStates)); // FIXME: change if for other scales
         uniqueStates.sort((a: any, b: any) => a - b);
         uniqueStates = uniqueStates.map((el: number) => `${el}`);
 
-        const dataCurr = [];
+        const dataCurr: any = [];
 
-        for (let i = 0; i < model.model.scales.length; i++) {
-            const statesCurr = [];
+        scales.forEach((sc: any, scaleIx: number) => {
+            const statesCurr: any = [];
 
-            if (i === 0) {
-                for (let j = 0; j < model.model.stateHistoryInitialStates.length; j++) {
-                    const duration =
-                        model.model.stateHistoryTimes[j + 1] - model.model.stateHistoryTimes[j];
-                    const state = {
-                        start: model.model.stateHistoryTimes[j],
-                        duration,
-                        state: `${model.model.stateHistoryInitialStates[j]}`,
-                        scaleIx: `${i}`,
-                    };
-                    statesCurr.push(state);
-                }
+            if (scaleIx === 0) {
+                initialStates.forEach((st: any, stateIx: number) => {
+                    statesCurr.push({
+                        start: createDate(times[stateIx]),
+                        end: createDate(times[stateIx + 1]),
+                        state: `${initialStates[stateIx]}`,
+                        scaleIx: `${scaleIx}`,
+                    });
+                });
             } else {
-                const initalStatesDict: any = {};
+                const initStatesDict: any = {};
 
-                for (let j = 0; j < model.model.scales[i].states.length; j++) {
-                    const state = model.model.scales[i].states[j];
+                for (let j = 0; j < scales[scaleIx].states.length; j++) {
+                    const state = scales[scaleIx].states[j];
 
                     for (let k = 0; k < state.initialStates.length; k++) {
                         const initialState = state.initialStates[k];
-                        initalStatesDict[initialState] = model.model.scales[i].states[j].stateNo;
+                        initStatesDict[initialState] = state.stateNo;
                     }
                 }
-                let currIx = 0;
-                let startStateIx = -1;
 
-                while (currIx < model.model.stateHistoryInitialStates.length) {
-                    const currState =
-                        initalStatesDict[model.model.stateHistoryInitialStates[currIx]];
+                let startIx = 0;
 
-                    if (currIx === 0) {
-                        startStateIx = currIx;
-                    } else if (
-                        currState !==
-                        initalStatesDict[model.model.stateHistoryInitialStates[currIx - 1]]
-                    ) {
-                        const stateOriginal =
-                            initalStatesDict[model.model.stateHistoryInitialStates[startStateIx]];
+                initialStates.forEach((initState: any, stIx: number) => {
+                    const startStateNo = initStatesDict[initialStates[startIx]];
+                    const currStateNo = initStatesDict[initialStates[stIx]];
+                    let startIxNew = -1;
 
-                        const timestampStart = model.model.stateHistoryTimes[startStateIx];
-                        const timestamp = model.model.stateHistoryTimes[currIx - 1];
-                        const duration = timestamp - timestampStart;
-
-                        const stateNew = {
-                            start: timestampStart,
-                            duration,
-                            state: `${stateOriginal}`,
-                            scaleIx: `${i}`,
-                        };
-                        statesCurr.push(stateNew);
-                        startStateIx = currIx;
+                    if (currStateNo !== startStateNo) {
+                        startIxNew = stIx;
                     }
-                    currIx += 1;
-                }
+
+                    if (currStateNo === startStateNo && stIx < initialStates.length - 1) {
+                        return;
+                    }
+                    statesCurr.push({
+                        start: createDate(times[startIx]),
+                        end: createDate(times[stIx]),
+                        state: `${initialStates[startIx]}`,
+                        scaleIx: `${scaleIx}`,
+                    });
+
+                    startIx = startIxNew;
+                });
             }
-            const obj = { scaleIx: i, states: statesCurr };
-            dataCurr.push(obj);
-        }
+            dataCurr.push({ scaleIx, states: statesCurr });
+        });
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
@@ -359,7 +352,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         let gBars = null;
 
         if (!initializedStateHistory) {
-            graph = createSVG(containerStateHistoryRef, width, height, margin); // FIXME: hardcoded theme
+            graph = createSVG(containerStateHistoryRef, width, height, margin);
 
             graph
                 .append('rect')
@@ -398,16 +391,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .join('g')
             .attr('class', (d: any) => `scale_${d.scaleIx}`);
 
-        const rects = levels
+        levels
             .selectAll('rect')
-            // // enter a second tcroup per subgroup to add all rectangles
             .data((d: any) => d.states)
             .join('rect')
             .attr('class', 'state')
             .attr('id', (d: any) => `${d.state}`)
-            .attr('x', (d: any) => x(createDate(d.start)))
+            .attr('x', (d: any) => x(d.start))
             .attr('y', (d: any) => y(`${d.scaleIx}`))
-            .attr('width', (d: any) => x(createDate(d.start + d.duration))) // FIXME: duration not ok computed
+            .attr('width', (d: any) => x(d.end) - x(d.start))
             .attr('height', (d: any) => y.bandwidth())
             .attr('fill', (d: any) => color(d.state))
             .on('mouseover', function (this: any) {
@@ -424,7 +416,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                         const rect = d3.select(el);
                         const dataTmp: any = rect.data()[0];
                         if (d.state === dataTmp.state) {
-                            d3.select(el).style('stroke', 'red').style('stroke-width', 1);
+                            d3.select(el).style('stroke', 'white').style('stroke-width', 1).raise();
                         } else {
                             rect.style('stroke-width', 0);
                         }
