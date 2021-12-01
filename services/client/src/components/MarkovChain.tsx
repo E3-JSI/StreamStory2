@@ -265,26 +265,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         }
     }
 
-    // stateHistoryTimes
-    // stateHistoryInitialStates
-
     function createDate(unixTimestamp: number) {
         return new Date(unixTimestamp * 1000);
     }
 
     function createStateHistory() {
-        // console.log('start: createStateHistory');
-        // console.log('stateHistoryTimes=', model.model.stateHistoryTimes);
-        // console.log('stateHistoryInitialStates=', model.model.stateHistoryInitialStates);
-
-        // model.model.scales.forEach((sc: any, scIx: number) => {
-        //     console.log('start: scIx=', scIx);
-        //     sc.states.forEach((state: any) => {
-        //         console.log('... stateNo=', state.stateNo, 'initStates=', state.initialStates);
-        //     });
-        //     console.log('\n');
-        // });
-
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 700; // FIXME: hardcoded
         const margin = { top: 5, right: 5, bottom: 10, left: 10 }; // FIXME: hardcoded
@@ -365,10 +350,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
-
-        console.log('x.domain=', x.domain());
-        console.log('y.domain=', y.domain());
-
         const color = d3.scaleOrdinal().domain(uniqueStates).range(d3.schemePaired);
 
         let graph = null;
@@ -379,7 +360,23 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin); // FIXME: hardcoded theme
+
+            graph
+                .append('rect')
+                .attr('width', width)
+                .attr('height', height)
+                .style('fill', 'grey')
+                .style('opacity', 0.1);
+
             graphContainer = createGraphContainer(graph, width, height, chart);
+
+            graphContainer
+                .append('rect')
+                .attr('width', width)
+                .attr('height', height)
+                .style('fill', 'green')
+                .style('opacity', 0.1);
+
             gBars = graphContainer.append('g').attr('class', 'bars');
             gAxisX = graphContainer.append('g').attr('class', 'axisX');
             gAxisY = graphContainer.append('g').attr('class', 'axisY');
@@ -392,27 +389,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             gAxisY = graphContainer.select('g.axisY');
         }
 
-        graph
-            .append('rect')
-            .attr('width', width)
-            .attr('height', height)
-            .style('fill', 'grey')
-            .style('opacity', 0.1);
-
-        graphContainer
-            .append('rect')
-            .attr('width', width)
-            .attr('height', height)
-            .style('fill', 'green')
-            .style('opacity', 0.1);
-
         const xAxis = d3.axisBottom(x).tickSizeOuter(0);
         gAxisX.attr('transform', `translate(0, ${yWidth})`).call(xAxis);
-
-        gAxisY
-            .attr('transform', `translate(${margin.left}, 0)`)
-            .call(d3.axisLeft(y))
-            .call((g: any) => g.select('.domain').remove());
 
         const levels = gBars
             .selectAll('g')
@@ -428,33 +406,30 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('class', 'state')
             .attr('id', (d: any) => `${d.state}`)
             .attr('x', (d: any) => x(createDate(d.start)))
-            .attr('y', (d: any) => {
-                console.log('y(d.scaleIx)=', y(d.scaleIx));
-                const a = 5;
-                return y(`${d.scaleIx}`);
-            })
+            .attr('y', (d: any) => y(`${d.scaleIx}`))
             .attr('width', (d: any) => x(createDate(d.start + d.duration))) // FIXME: duration not ok computed
             .attr('height', (d: any) => y.bandwidth())
-            .attr('fill', (d: any) => color(d.state));
-
-        // rects.on('mouseover', (event: any) => {
-        //     console.log('mouseover');
-        // });
-
-        // .on('click', (event: any, d: any) => {
-        //     const statesFound = d3
-        //         .selectAll('.state')
-        //         .nodes()
-        //         .forEach((el: any) => {
-        //             const rect = d3.select(el);
-        //             const dataTmp: any = rect.data()[0];
-        //             if (d.state === dataTmp.state) {
-        //                 d3.select(el).style('stroke', 'white').style('stroke-width', 2);
-        //             } else {
-        //                 rect.style('stroke-width', 0);
-        //             }
-        //         });
-        // });
+            .attr('fill', (d: any) => color(d.state))
+            .on('mouseover', function (this: any) {
+                d3.select(this).style('cursor', 'pointer');
+            })
+            .on('mouseout', function (this: any) {
+                d3.select(this).style('cursor', 'default');
+            })
+            .on('click', (event: any, d: any) => {
+                const a = 5;
+                d3.selectAll('.state')
+                    .nodes()
+                    .forEach((el: any) => {
+                        const rect = d3.select(el);
+                        const dataTmp: any = rect.data()[0];
+                        if (d.state === dataTmp.state) {
+                            d3.select(el).style('stroke', 'red').style('stroke-width', 1);
+                        } else {
+                            rect.style('stroke-width', 0);
+                        }
+                    });
+            });
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
