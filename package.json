@@ -4,9 +4,9 @@
     "description": "StreamStory - Making a story of streaming data",
     "main": "index.js",
     "scripts": {
-        "build": "docker-compose -p streamstory build --build-arg CONFIG=$npm_config_config",
+        "build": "docker-compose -p streamstory build --no-cache --build-arg CONFIG=$npm_config_config",
         "build:dev": "docker-compose -f docker-compose.dev.yml -p streamstory build --build-arg CONFIG=$npm_config_config",
-        "start": "docker-compose -p streamstory up -d",
+        "start": "docker-compose -p streamstory up -d --force-recreate",
         "start:dev": "docker-compose -f docker-compose.dev.yml -p streamstory up -d",
         "log": "docker-compose -p streamstory logs -f",
         "stop": "docker-compose -p streamstory down --remove-orphans -v",
