@@ -35,7 +35,7 @@ function ModelConfiguration({ datasetAttributes, datasetName }: ModelConfigurati
     const defaultValues = {
         selectedAttributes: [],
         timeAttribute: '',
-        timeUnit: 'h',
+        timeUnit: 'hour',
         includeTimeAttribute: false,
         categoricalAttributes: [],
         derivatives: [],
@@ -73,23 +73,19 @@ function ModelConfiguration({ datasetAttributes, datasetName }: ModelConfigurati
     const timeUnitOptions: Option[] = [
         {
             label: t('second'),
-            value: 's',
+            value: 'sec',
         },
         {
             label: t('minute'),
-            value: 'm',
+            value: 'min',
         },
         {
             label: t('hour'),
-            value: 'h',
+            value: 'hour',
         },
         {
             label: t('day'),
-            value: 'd',
-        },
-        {
-            label: t('week'),
-            value: 'w',
+            value: 'day',
         },
     ];
 
@@ -292,7 +288,7 @@ function ModelConfiguration({ datasetAttributes, datasetName }: ModelConfigurati
                                         searchPlaceholder={t('search_attributes')}
                                         selectionI18nKey="m_of_n_attributes_selected"
                                         emptyI18nKey="n_attributes"
-                                        disabled
+                                        // disabled
                                         {...muiRegister('derivatives')}
                                     />
                                     <FormHelperText disabled>

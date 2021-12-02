@@ -133,8 +133,10 @@ export async function createModel(req: Request, res: Response, next: NextFunctio
         const {
             selectedAttributes,
             timeAttribute,
+            timeUnit,
             includeTimeAttribute,
             categoricalAttributes,
+            derivatives,
             numberOfStates,
             name,
             description,
@@ -147,8 +149,10 @@ export async function createModel(req: Request, res: Response, next: NextFunctio
             filePath: getDataFilePath(req),
             selectedAttributes,
             timeAttribute,
+            timeUnit,
             includeTimeAttribute,
             categoricalAttributes,
+            derivatives,
             numberOfStates,
             numberOfHistogramBuckets: 10,
         });
