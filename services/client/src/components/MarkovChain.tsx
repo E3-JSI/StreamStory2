@@ -294,12 +294,16 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             const statesCurr: any = [];
 
             if (scaleIx === 0) {
-                initialStates.forEach((st: any, stateIx: number) => {
+                initialStates.forEach((initState: any, stateIx: number) => {
+                    const state = scales[scaleIx].states.find(
+                        (currState: any) => currState.stateNo === initState,
+                    );
                     statesCurr.push({
                         start: createDate(times[stateIx]),
                         end: createDate(times[stateIx + 1]),
                         state: `${initialStates[stateIx]}`,
                         scaleIx: `${scaleIx}`,
+                        color: state.color,
                     });
                 });
             } else {
@@ -328,11 +332,17 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     if (currStateNo === startStateNo && stIx < initialStates.length - 1) {
                         return;
                     }
+
+                    const stateCurr = sc.states.find(
+                        (state: any) => state.stateNo === startStateNo,
+                    );
+
                     statesCurr.push({
                         start: createDate(times[startIx]),
                         end: createDate(times[stIx]),
                         state: `${initialStates[startIx]}`,
                         scaleIx: `${scaleIx}`,
+                        color: stateCurr.color,
                     });
 
                     startIx = startIxNew;
@@ -401,7 +411,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('y', (d: any) => y(`${d.scaleIx}`))
             .attr('width', (d: any) => x(d.end) - x(d.start))
             .attr('height', (d: any) => y.bandwidth())
-            .attr('fill', (d: any) => color(d.state))
+            // attr('fill', (d: any) => color(d.state))
+            .attr('fill', (d: any) => d.color)
             .on('mouseover', function (this: any) {
                 d3.select(this).style('cursor', 'pointer');
             })
