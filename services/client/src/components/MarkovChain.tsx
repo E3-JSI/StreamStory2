@@ -404,33 +404,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const xAxisBrush: any = d3.axisBottom(xBrush).tickSizeOuter(0);
         gAxisXBrush.attr('transform', `translate(0, ${yWidth + 30})`).call(xAxisBrush);
 
-        const brush = d3
-            .brushX()
-            .extent([
-                [0, 0],
-                [xWidth, yWidth],
-            ])
-            .on('brush end', function (this: any, event: any) {
-                const rangeSelection: any = d3.brushSelection(this);
-
-                console.log('event=', event);
-
-                if (rangeSelection != null && event.sourceEvent != null) {
-                    const xAxisNewRange = rangeSelection.map(xBrush.invert);
-                    console.log(xAxisNewRange);
-
-                    x.domain(xAxisNewRange);
-
-                    gAxisX
-                        .attr('transform', `translate(0, ${yWidth})`)
-                        .call(d3.axisBottom(x).tickSizeOuter(0));
-                }
-            });
-
-        gBrush.call(brush);
-
-        brush.move(gBrush, ([20, 50] as any).map(xBrush));
-
         const levels = gBars
             .selectAll('g')
             .data(dataCurr, (d: any) => d.scaleIx)
@@ -469,6 +442,46 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                         }
                     });
             });
+
+        const brush = d3
+            .brushX()
+            .extent([
+                [0, 0],
+                [xWidth, yWidth],
+            ])
+            .on('brush end', function (this: any, event: any) {
+                const rangeSelection: any = d3.brushSelection(this);
+                // console.log('event=', event);
+
+                if (rangeSelection != null && event.sourceEvent != null) {
+                    const xAxisNewRange = rangeSelection.map(xBrush.invert);
+                    // console.log(xAxisNewRange);
+
+                    x.domain(xAxisNewRange);
+
+                    gAxisX
+                        .attr('transform', `translate(0, ${yWidth})`)
+                        .call(d3.axisBottom(x).tickSizeOuter(0));
+
+                    levels
+                        .selectAll('rect')
+                        .data((d: any) => d.states)
+                        .join(
+                            (enter: any) => enter,
+                            (update: any) =>
+                                update
+                                    .attr('x', (d: any) => x(d.start))
+                                    .attr('y', (d: any) => y(`${d.scaleIx}`))
+                                    .attr('width', (d: any) => x(d.end) - x(d.start))
+                                    .attr('height', (d: any) => y.bandwidth()),
+                            (exit: any) => exit.remove(),
+                        );
+                }
+            });
+
+        gBrush.call(brush);
+
+        brush.move(gBrush, ([20, 50] as any).map(xBrush));
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
