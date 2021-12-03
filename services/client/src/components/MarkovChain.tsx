@@ -271,9 +271,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function createStateHistory() {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
-        const height = 700; // FIXME: hardcoded
-        const margin = { top: 5, right: 5, bottom: 10, left: 10 }; // FIXME: hardcoded
-        const chart = { top: 130, left: 100 }; // FIXME: hardcoded
+        const height = 500; // FIXME: hardcoded
+        const margin = { top: 50, right: 50, bottom: 50, left: 50 }; // FIXME: hardcoded
+        const chart = { top: 10, left: 10 }; // FIXME: hardcoded
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
 
@@ -353,13 +353,15 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
-        const color = d3.scaleOrdinal().domain(uniqueStates).range(d3.schemePaired);
+        const xBrush = d3.scaleTime().domain(xExtent).range([0, xWidth]);
 
-        let graph = null;
-        let graphContainer = null;
-        let gAxisX = null;
-        let gAxisY = null;
-        let gBars = null;
+        let graph: any = null;
+        let graphContainer: any = null;
+        let gAxisX: any = null;
+        let gAxisXBrush: any = null;
+        let gAxisY: any = null;
+        let gBars: any = null;
+        let gBrush: any = null;
 
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin);
@@ -383,17 +385,51 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             gBars = graphContainer.append('g').attr('class', 'bars');
             gAxisX = graphContainer.append('g').attr('class', 'axisX');
             gAxisY = graphContainer.append('g').attr('class', 'axisY');
+            gAxisXBrush = graphContainer.append('g').attr('class', 'axisXBrush');
+            gBrush = graphContainer.append('g').attr('class', 'brush');
             setInitializedStateHistory(true);
         } else {
             graph = getSVG(containerStateHistoryRef, width, height, margin);
             graphContainer = getGraphContainer(graph);
             gBars = graphContainer.select('g.bars');
             gAxisX = graphContainer.select('g.axisX');
+            gAxisXBrush = graphContainer.select('g.axisXBrush');
             gAxisY = graphContainer.select('g.axisY');
+            gBrush = graphContainer.select('g.brush');
         }
 
         const xAxis = d3.axisBottom(x).tickSizeOuter(0);
         gAxisX.attr('transform', `translate(0, ${yWidth})`).call(xAxis);
+
+        const xAxisBrush: any = d3.axisBottom(xBrush).tickSizeOuter(0);
+        gAxisXBrush.attr('transform', `translate(0, ${yWidth + 30})`).call(xAxisBrush);
+
+        const brush = d3
+            .brushX()
+            .extent([
+                [0, 0],
+                [xWidth, yWidth],
+            ])
+            .on('brush end', function (this: any, event: any) {
+                const rangeSelection: any = d3.brushSelection(this);
+
+                console.log('event=', event);
+
+                if (rangeSelection != null && event.sourceEvent != null) {
+                    const xAxisNewRange = rangeSelection.map(xBrush.invert);
+                    console.log(xAxisNewRange);
+
+                    x.domain(xAxisNewRange);
+
+                    gAxisX
+                        .attr('transform', `translate(0, ${yWidth + 30})`)
+                        .call(d3.axisBottom(x).tickSizeOuter(0));
+                }
+            });
+
+        gBrush.call(brush);
+
+        brush.move(gBrush, ([20, 50] as any).map(xBrush));
 
         const levels = gBars
             .selectAll('g')
