@@ -422,7 +422,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     x.domain(xAxisNewRange);
 
                     gAxisX
-                        .attr('transform', `translate(0, ${yWidth + 30})`)
+                        .attr('transform', `translate(0, ${yWidth})`)
                         .call(d3.axisBottom(x).tickSizeOuter(0));
                 }
             });
