@@ -16,6 +16,16 @@ export function createGraphContainer(g: any, width: number, height: number, char
         .attr('transform', `translate(${chart.left}, ${chart.top})`);
 }
 
+
+export function createGraphContainer2(g: any, width: number, height: number, chart: any) {
+    return g
+        .append('g')
+        .attr('class', 'graphContainer')
+        .attr('width', width - chart.left - chart.right)
+        .attr('height', height - chart.top - chart.bottom)
+        .attr('transform', `translate(${chart.left}, ${chart.top})`);
+}
+
 export function getGraphContainer(svg: any) {
     return svg.select('g.graphContainer');
 }

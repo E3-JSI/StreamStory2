@@ -273,7 +273,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 500; // FIXME: hardcoded
         const margin = { top: 50, right: 50, bottom: 50, left: 50 }; // FIXME: hardcoded
-        const chart = { top: 10, left: 10 }; // FIXME: hardcoded
+        const chart = { top: 10, left: 10, bottom: 30, right: 0 }; // FIXME: hardcoded
         const xWidth = width - chart.left - margin.left - margin.right;
         const yWidth = height - chart.top - margin.top - margin.bottom;
 
@@ -354,6 +354,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
         const xBrush = d3.scaleTime().domain(xExtent).range([0, xWidth]);
+        const yBrush = d3.scaleBand().domain(yCategories).range([30, 0]).padding(0.1);
 
         let graph: any = null;
         let graphContainer: any = null;
@@ -362,6 +363,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         let gAxisY: any = null;
         let gBars: any = null;
         let gBrush: any = null;
+        let gBarsBrush: any = null;
 
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin);
@@ -386,7 +388,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             gAxisX = graphContainer.append('g').attr('class', 'axisX');
             gAxisY = graphContainer.append('g').attr('class', 'axisY');
             gAxisXBrush = graphContainer.append('g').attr('class', 'axisXBrush');
-            gBrush = graphContainer.append('g').attr('class', 'brush');
+            gBrush = graph.append('g').attr('class', 'brush');
+            gBarsBrush = graph.append('g').attr('class', 'barsBrush');
             setInitializedStateHistory(true);
         } else {
             graph = getSVG(containerStateHistoryRef, width, height, margin);
@@ -395,8 +398,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             gAxisX = graphContainer.select('g.axisX');
             gAxisXBrush = graphContainer.select('g.axisXBrush');
             gAxisY = graphContainer.select('g.axisY');
-            gBrush = graphContainer.select('g.brush');
+            gBrush = graph.select('g.brush');
+            gBarsBrush = graph.select('g.barsBrush');
         }
+
+        gBarsBrush.attr('transform', `translate(0, ${yWidth + 40})`);
 
         const xAxis = d3.axisBottom(x).tickSizeOuter(0);
         gAxisX.attr('transform', `translate(0, ${yWidth})`).call(xAxis);
@@ -405,6 +411,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         gAxisXBrush.attr('transform', `translate(0, ${yWidth + 30})`).call(xAxisBrush);
 
         const levels = gBars
+            .selectAll('g')
+            .data(dataCurr, (d: any) => d.scaleIx)
+            .join('g')
+            .attr('class', (d: any) => `scale_${d.scaleIx}`);
+
+        const brushLevels = gBarsBrush
             .selectAll('g')
             .data(dataCurr, (d: any) => d.scaleIx)
             .join('g')
@@ -442,6 +454,19 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                         }
                     });
             });
+
+        brushLevels
+            .selectAll('rect')
+            .data((d: any) => d.states)
+            .join('rect')
+            .attr('class', 'state')
+            .attr('id', (d: any) => `${d.state}`)
+            .attr('x', (d: any) => xBrush(d.start))
+            .attr('y', (d: any) => yBrush(`${d.scaleIx}`))
+            .attr('width', (d: any) => xBrush(d.end) - xBrush(d.start))
+            .attr('height', (d: any) => yBrush.bandwidth())
+            // attr('fill', (d: any) => color(d.state))
+            .attr('fill', (d: any) => d.color);
 
         const brush = d3
             .brushX()
