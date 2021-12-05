@@ -404,12 +404,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .join('g')
             .attr('class', (d: any) => `scale_${d.scaleIx}`);
 
-        const brushLevels = gBarsBrush
-            .selectAll('g')
-            .data(dataCurr, (d: any) => d.scaleIx)
-            .join('g')
-            .attr('class', (d: any) => `scale_${d.scaleIx}`);
-
         levels
             .selectAll('rect')
             .data((d: any) => d.states)
@@ -442,6 +436,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     });
             });
 
+        const brushLevels = gBarsBrush
+            .selectAll('g')
+            .data(dataCurr, (d: any) => d.scaleIx)
+            .join('g')
+            .attr('class', (d: any) => `scale_${d.scaleIx}`);
+
         brushLevels
             .selectAll('rect')
             .data((d: any) => d.states)
@@ -454,11 +454,12 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('height', (d: any) => yBrush.bandwidth())
             .attr('fill', (d: any) => d.color);
 
+        let sourceEvent: any;
+
         const brush = d3
             .brushX()
             .extent([
                 [0, 0],
-                // [xWidth, marginPreview.top + yWidthPreview],
                 [xWidth, yWidthPreview],
             ])
             .on('brush end', function (this: any, event: any) {
@@ -487,9 +488,47 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 }
             });
 
-        gBarsBrush.call(brush);
+        const zoom = d3
+            .zoom()
+            .scaleExtent([1, Infinity])
+            .translateExtent([
+                [0, 0],
+                [width, height],
+            ])
+            .extent([
+                [0, 0],
+                [width, height],
+            ])
+            .on('zoom', (event: any) => {
+                if (sourceEvent === 'brush') return; // ignore zoom-by-brush
+                sourceEvent = 'zoom';
+                const t: any = event.transform;
+                x.domain(t.rescaleX(xBrush).domain());
+                gBarsBrush.call(brush).call(brush.move, (x as any).range().map(t.invertX, t));
+                sourceEvent = null;
 
-        brush.move(gBarsBrush, ([20, 50] as any).map(xBrush));
+                gAxisX
+                    .attr('transform', `translate(0, ${yWidth})`)
+                    .call(d3.axisBottom(x).tickSizeOuter(0));
+
+                levels
+                    .selectAll('rect')
+                    .data((d: any) => d.states)
+                    .join(
+                        (enter: any) => enter,
+                        (update: any) =>
+                            update
+                                .attr('x', (d: any) => x(d.start))
+                                .attr('y', (d: any) => y(`${d.scaleIx}`))
+                                .attr('width', (d: any) => x(d.end) - x(d.start))
+                                .attr('height', (d: any) => y.bandwidth()),
+                        (exit: any) => exit.remove(),
+                    );
+            });
+
+        gBars.call(zoom);
+
+        gBarsBrush.call(brush).call(brush.move, xBrush.range());
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
