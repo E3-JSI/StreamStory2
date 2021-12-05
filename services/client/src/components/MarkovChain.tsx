@@ -273,7 +273,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 500; // FIXME: hardcoded
         const margin = { top: 20, right: 20, bottom: 110, left: 40 };
-        const marginPreview = { top: 430, right: 20, bottom: 50, left: 40 };
+        const marginPreview = { top: 400, right: 20, bottom: 50, left: 40 };
         const xWidth = width - margin.left - margin.right;
         const yWidth = height - margin.top - margin.bottom;
         const yWidthPreview = height - marginPreview.top - marginPreview.bottom;
@@ -361,7 +361,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         let gAxisXBrush: any = null;
         let gAxisY: any = null;
         let gBars: any = null;
-        let gBrush: any = null;
         let gBarsBrush: any = null;
 
         if (!initializedStateHistory) {
@@ -378,7 +377,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             gAxisX = graph.append('g').attr('class', 'axisX');
             gAxisY = graph.append('g').attr('class', 'axisY');
             gAxisXBrush = graph.append('g').attr('class', 'axisXBrush');
-            gBrush = graph.append('g').attr('class', 'brush');
             gBarsBrush = graph.append('g').attr('class', 'barsBrush');
             setInitializedStateHistory(true);
         } else {
@@ -387,7 +385,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             gAxisX = graph.select('g.axisX');
             gAxisXBrush = graph.select('g.axisXBrush');
             gAxisY = graph.select('g.axisY');
-            gBrush = graph.select('g.brush');
             gBarsBrush = graph.select('g.barsBrush');
         }
 
@@ -461,7 +458,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .brushX()
             .extent([
                 [0, 0],
-                [xWidth, yWidth],
+                // [xWidth, marginPreview.top + yWidthPreview],
+                [xWidth, yWidthPreview],
             ])
             .on('brush end', function (this: any, event: any) {
                 const rangeSelection: any = d3.brushSelection(this);
@@ -489,9 +487,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 }
             });
 
-        gBrush.call(brush);
+        gBarsBrush.call(brush);
 
-        brush.move(gBrush, ([20, 50] as any).map(xBrush));
+        brush.move(gBarsBrush, ([20, 50] as any).map(xBrush));
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
