@@ -272,10 +272,11 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     function createStateHistory() {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 500; // FIXME: hardcoded
-        const margin = { top: 50, right: 50, bottom: 50, left: 50 }; // FIXME: hardcoded
-        const chart = { top: 10, left: 10, bottom: 30, right: 0 }; // FIXME: hardcoded
-        const xWidth = width - chart.left - margin.left - margin.right;
-        const yWidth = height - chart.top - margin.top - margin.bottom;
+        const margin = { top: 20, right: 20, bottom: 110, left: 40 };
+        const marginPreview = { top: 430, right: 20, bottom: 50, left: 40 };
+        const xWidth = width - margin.left - margin.right;
+        const yWidth = height - margin.top - margin.bottom;
+        const yWidthPreview = height - marginPreview.top - marginPreview.bottom;
 
         const {
             model: { scales, stateHistoryInitialStates: initialStates, stateHistoryTimes: times },
@@ -344,7 +345,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                         scaleIx: `${scaleIx}`,
                         color: stateCurr.color,
                     });
-
                     startIx = startIxNew;
                 });
             }
@@ -354,10 +354,9 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
         const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
         const xBrush = d3.scaleTime().domain(xExtent).range([0, xWidth]);
-        const yBrush = d3.scaleBand().domain(yCategories).range([30, 0]).padding(0.1);
+        const yBrush = d3.scaleBand().domain(yCategories).range([yWidthPreview, 0]).padding(0.1);
 
         let graph: any = null;
-        let graphContainer: any = null;
         let gAxisX: any = null;
         let gAxisXBrush: any = null;
         let gAxisY: any = null;
@@ -375,40 +374,32 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                 .style('fill', 'grey')
                 .style('opacity', 0.1);
 
-            graphContainer = createGraphContainer(graph, width, height, chart);
-
-            graphContainer
-                .append('rect')
-                .attr('width', width)
-                .attr('height', height)
-                .style('fill', 'green')
-                .style('opacity', 0.1);
-
-            gBars = graphContainer.append('g').attr('class', 'bars');
-            gAxisX = graphContainer.append('g').attr('class', 'axisX');
-            gAxisY = graphContainer.append('g').attr('class', 'axisY');
-            gAxisXBrush = graphContainer.append('g').attr('class', 'axisXBrush');
+            gBars = graph.append('g').attr('class', 'bars');
+            gAxisX = graph.append('g').attr('class', 'axisX');
+            gAxisY = graph.append('g').attr('class', 'axisY');
+            gAxisXBrush = graph.append('g').attr('class', 'axisXBrush');
             gBrush = graph.append('g').attr('class', 'brush');
             gBarsBrush = graph.append('g').attr('class', 'barsBrush');
             setInitializedStateHistory(true);
         } else {
             graph = getSVG(containerStateHistoryRef, width, height, margin);
-            graphContainer = getGraphContainer(graph);
-            gBars = graphContainer.select('g.bars');
-            gAxisX = graphContainer.select('g.axisX');
-            gAxisXBrush = graphContainer.select('g.axisXBrush');
-            gAxisY = graphContainer.select('g.axisY');
+            gBars = graph.select('g.bars');
+            gAxisX = graph.select('g.axisX');
+            gAxisXBrush = graph.select('g.axisXBrush');
+            gAxisY = graph.select('g.axisY');
             gBrush = graph.select('g.brush');
             gBarsBrush = graph.select('g.barsBrush');
         }
 
-        gBarsBrush.attr('transform', `translate(0, ${yWidth + 40})`);
+        gBarsBrush.attr('transform', `translate(0, ${marginPreview.top})`);
 
         const xAxis = d3.axisBottom(x).tickSizeOuter(0);
         gAxisX.attr('transform', `translate(0, ${yWidth})`).call(xAxis);
 
         const xAxisBrush: any = d3.axisBottom(xBrush).tickSizeOuter(0);
-        gAxisXBrush.attr('transform', `translate(0, ${yWidth + 30})`).call(xAxisBrush);
+        gAxisXBrush
+            .attr('transform', `translate(0, ${marginPreview.top + yWidthPreview})`)
+            .call(xAxisBrush);
 
         const levels = gBars
             .selectAll('g')
@@ -432,7 +423,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('y', (d: any) => y(`${d.scaleIx}`))
             .attr('width', (d: any) => x(d.end) - x(d.start))
             .attr('height', (d: any) => y.bandwidth())
-            // attr('fill', (d: any) => color(d.state))
             .attr('fill', (d: any) => d.color)
             .on('mouseover', function (this: any) {
                 d3.select(this).style('cursor', 'pointer');
@@ -465,7 +455,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             .attr('y', (d: any) => yBrush(`${d.scaleIx}`))
             .attr('width', (d: any) => xBrush(d.end) - xBrush(d.start))
             .attr('height', (d: any) => yBrush.bandwidth())
-            // attr('fill', (d: any) => color(d.state))
             .attr('fill', (d: any) => d.color);
 
         const brush = d3
@@ -476,12 +465,8 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             ])
             .on('brush end', function (this: any, event: any) {
                 const rangeSelection: any = d3.brushSelection(this);
-                // console.log('event=', event);
-
                 if (rangeSelection != null && event.sourceEvent != null) {
                     const xAxisNewRange = rangeSelection.map(xBrush.invert);
-                    // console.log(xAxisNewRange);
-
                     x.domain(xAxisNewRange);
 
                     gAxisX
