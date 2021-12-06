@@ -20,7 +20,14 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             addColorsToScaleStates(model.model.scales);
             createStateHistory();
         }
-    }, [model?.model?.scales, containerStateHistoryRef?.current?.offsetWidth, selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [model.model.scales]); // eslint-disable-line react-hooks/exhaustive-deps
+    
+    
+    useEffect(()=> {
+        if(model && model.model && model.model.scales && model.model.scales.length ) {
+            createStateHistory();
+        }
+    }, [containerStateHistoryRef?.current?.offsetWidth, selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
 
     function createDate(unixTimestamp: number) {
         return new Date(unixTimestamp * 1000);
@@ -28,19 +35,17 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
     function createStateHistory() {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
-        const height = 450; // FIXME: hardcoded
-        const chart = { top: 10, left: 10 }; // FIXME: hardcodeds
+        const height = 450;
+        const chart = { top: 10, left: 10 }; 
         const margin = { top: 20, right: 20, bottom: 20, left: 40 };
         const xWidth = width - chart.left - margin.left - margin.right;
-       
         const baseHeight = height - chart.top - margin.top  - margin.bottom;
         const subChartOffset = baseHeight * 0.1; // dist between top bars and brushBars
         const yWidth = 0.95 * (baseHeight- 2*subChartOffset); // height of bars
         const yWidthPreview = 0.1 * (baseHeight-2*subChartOffset) // height of brushBars
-
         const xExtent: any = d3.extent(model.model.stateHistoryTimes, (d: number) => createDate(d));
         const yCategories: any = model.model.scales.map((el: any, i: any) => `${i}`);
-
+      
         const dataCurr = createDataCurr();
 
         const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
@@ -55,13 +60,11 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         let gBrushBarsContainer:any = null;  
         let gAxisX: any = null; 
         let gAxisXBrush: any = null; 
-        let gAxisY: any = null; 
         let gBars: any = null; 
         let gBrushBars: any = null; 
 
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin)
-
             graph.append("defs")
             .append("clipPath")
             .attr("id", "clip")
@@ -70,41 +73,32 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             .attr("height", baseHeight)
             .attr("x", 0)
             .attr("y", 0);
-            
-            gGraphContainer = createGraphContainer(graph, width, height, chart)
 
+            gGraphContainer = createGraphContainer(graph, width, height, chart)
             gGraphContainerClip = gGraphContainer.append('g')
                 .attr("class", "graphContainerClip")
                 .attr("clip-path", "url(#clip)")
 
             gBarsContainer = gGraphContainerClip.append("g").attr("class", "barsContainer")
-        
             gBars = gBarsContainer.append('g').attr('class', 'bars')
             gAxisX =  gBarsContainer.append("g").attr("class", "xAxis")
-            gAxisY =  gBarsContainer.append("g").attr("class", "yAxis")
-            
             gBrushBarsContainer = gGraphContainerClip.append("g").attr("class", "brushBarsContainer")
             gBrushBars = gBrushBarsContainer.append('g').attr('class', 'brushBars')
             gAxisXBrush =  gBrushBarsContainer.append("g").attr("class", "xAxisBrush")
-       
             setInitializedStateHistory(true);
         } 
         else {
             graph = getSVG(containerStateHistoryRef, width, height, margin);
 
-            gGraphContainer = getGraphContainer(graph) // .attr("clip-path", "url(#clip)");
-            gGraphContainerClip = gGraphContainer.select(".graphContainerClip").attr("clip-path", "url(#clip)")
-
+            gGraphContainer = getGraphContainer(graph);
+            gGraphContainerClip = gGraphContainer.select(".graphContainerClip").attr("clip-path", "url(#clip)");
             gBarsContainer = gGraphContainerClip.select("g.barsContainer")  
             gBars = gBarsContainer.select('g.bars')
             gAxisX = gBarsContainer.select("g.xAxis")
-            gAxisY = gBarsContainer.select("g.yAxis")
-            
             gBrushBarsContainer = gGraphContainerClip.select("g.brushBarsContainer")
             gBrushBars = gBrushBarsContainer.select('g.brushBars')
             gAxisXBrush = gBrushBarsContainer.select("g.xAxisBrush")
         }
-
         gBrushBarsContainer.attr("transform", `translate(0, ${yWidth + subChartOffset})`);
              
         const xAxis = d3
@@ -145,10 +139,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
         const brush = d3
             .brushX()
-            .extent([
-                [0, 0],
-                [xWidth, yWidthPreview],
-            ])
+            .extent([[0, 0], [xWidth, yWidthPreview]])
             .on('brush start', ()=> {
                 d3.select(".selection")
                 .attr("opacity", 0.6)
@@ -173,14 +164,8 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         const zoom = d3
             .zoom()
             .scaleExtent([1, Infinity])
-            .translateExtent([
-                [0, 0],
-                [width, height],
-            ])
-            .extent([
-                [0, 0],
-                [width, height],
-            ])
+            .translateExtent([[0, 0], [width, height]])
+            .extent([[0, 0], [width, height]])
             .on('zoom', (event: any) => {
                 if (sourceEvent === 'brush') return; // ignore zoom-by-brush
                 sourceEvent = 'zoom';
@@ -197,10 +182,8 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
         if(selectedState != null && selectedState.stateNo != null) {
             const scFound = dataCurr.find((d:any)=> d.scaleIx === selectedState.scaleIx);
-
             if(scFound && scFound.states) {
                 const dFound = scFound.states.find((d:any)=> d.stateNo === `${selectedState.stateNo}`);
-
                 if(dFound != null) {
                     highlightStates(dFound);
                 }
@@ -285,7 +268,6 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                         initStatesDict[initialState] = state.stateNo;
                     }
                 }
-
                 let startIx = 0;
 
                 initialStates.forEach((initState: any, stIx: number) => {
@@ -299,10 +281,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                     if (currStateNo === startStateNo && stIx < initialStates.length - 1) {
                         return;
                     }
-
-                    const stateCurr = sc.states.find(
-                        (state: any) => state.stateNo === startStateNo,
-                    );
+                    const stateCurr = sc.states.find((state: any) => state.stateNo === startStateNo);
 
                     statesCurr.push({
                         start: createDate(times[startIx]),
@@ -319,7 +298,6 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         });
         return dataCurr;
     }
-
 
     return (
             <div ref={containerStateHistoryRef} />
