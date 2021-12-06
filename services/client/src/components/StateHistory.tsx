@@ -30,14 +30,15 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
 
     function createStateHistory() {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
-        const height = 550; // FIXME: hardcoded
+        const height = 450; // FIXME: hardcoded
         const chart = { top: 20, left: 20 }; // FIXME: hardcodeds
         const margin = { top: 20, right: 20, bottom: 20, left: 40 };
         const xWidth = width - chart.left - margin.left - margin.right;
        
         const baseHeight = height - chart.top - margin.top  - margin.bottom;
-        const yWidth = 0.95 * baseHeight;
-        const yWidthPreview = 0.05 * baseHeight
+        const subChartOffset = baseHeight * 0.05; // dist between top bars and brushBars
+        const yWidth = 0.95 * (baseHeight- 2*subChartOffset); // height of bars
+        const yWidthPreview = 0.1 * (baseHeight-2*subChartOffset) // height of brushBars
 
         const xExtent: any = d3.extent(model.model.stateHistoryTimes, (d: number) => createDate(d));
         const yCategories: any = model.model.scales.map((el: any, i: any) => `${i}`);
@@ -63,7 +64,6 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin)
 
-            
             graph.append("defs")
             .append("clipPath")
             .attr("id", "clip")
@@ -105,7 +105,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             gAxisXBrush = gBrushBarsContainer.select("g.xAxisBrush")
         }
 
-        gBrushBarsContainer.attr("transform", `translate(0, ${yWidth})`);
+        gBrushBarsContainer.attr("transform", `translate(0, ${yWidth + subChartOffset})`);
              
         const xAxis = d3
             .axisBottom(x)
@@ -145,7 +145,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                 d3.select(this).style('cursor', 'default');
             })
             .on('click', (event: any, d: any) => {             
-                d3.selectAll(`rect.state`)
+                d3.selectAll(`.level > rect.state`)
                     .style("stroke", "white").style("stroke-width", (dCurr:any)=> {
                         let strokeWidth = "0px";
                         const result =  d.initStates.every((initState:any) => dCurr.initStates.includes(initState));
@@ -186,6 +186,11 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                 [0, 0],
                 [xWidth, yWidthPreview],
             ])
+            .on('brush start', ()=> {
+                d3.select(".selection")
+                .attr("opacity", 0.6)
+                .attr("fill", "blue");
+            })
             .on('brush end', function (this: any, event: any) {
                 const rangeSelection: any = d3.brushSelection(this);
                 if (rangeSelection != null && event.sourceEvent != null) {

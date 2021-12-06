@@ -39,7 +39,7 @@ export function createSVG(
         .attr("class", "zoom_rect")
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
-        .attr("fill", "green").attr("opacity", 0.1)
+        .attr("fill", "green").attr("opacity", 0)
 
     return svg;
 }
