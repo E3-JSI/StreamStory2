@@ -17,23 +17,28 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
     useEffect(() => {
         if (model && model.model && model.model.scales && model.model.scales.length) {
+            console.log("useEffect1")
             addColorsToScaleStates(model.model.scales);
             createStateHistory();
+            console.log("\n")
         }
     }, [model.model.scales]); // eslint-disable-line react-hooks/exhaustive-deps
     
     
     useEffect(()=> {
-        if(model && model.model && model.model.scales && model.model.scales.length ) {
-            createStateHistory();
+        if(selectedState && model && model.model && model.model.scales && model.model.scales.length ) {
+            highlightStates(selectedState);
         }
-    }, [containerStateHistoryRef?.current?.offsetWidth, selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
 
+    
     function createDate(unixTimestamp: number) {
         return new Date(unixTimestamp * 1000);
     }
 
     function createStateHistory() {
+        console.log("start: createStateHistory, initializedStateHistory=",initializedStateHistory)
+
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 450;
         const chart = { top: 10, left: 10 }; 
@@ -206,6 +211,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
     }
 
     function highlightStates(d:any) {
+        console.log("start: highlightStates, d=",d)
         const scaleCurr = model.model.scales[d.scaleIx];
 
         if(scaleCurr) {
@@ -220,15 +226,17 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             .style("stroke", "white")
             .style("stroke-width", function(this:any, dCurr:any)  {
                 let strokeWidth = "0px";
-                const result =  d.initStates.every((initState:any) => dCurr.initStates.includes(initState));
+                const result =  d.initialStates.every((initState:any) => dCurr.initialStates.includes(initState));
                 const selectionThis = d3.select(this);
 
-                if(dCurr.scaleIx === d.scaleIx && dCurr.stateNo === d.stateNo) {
+                if((dCurr.scaleIx === d.scaleIx && dCurr.stateNo === d.stateNo) || 
+                ((dCurr.scaleIx !== d.scaleIx) && result)) {
                     strokeWidth = "2px"
-                    selectionThis.raise();
-                } else if(dCurr.scaleIx !== d.scaleIx && result) {
-                    strokeWidth = "2px"
-                    selectionThis.raise();
+                    selectionThis
+                    .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))').raise();
+                } else {
+                    selectionThis
+                    .style('filter', 'none');
                 }
                 return strokeWidth
             });
@@ -251,7 +259,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                     statesCurr.push({
                         start: createDate(times[stateIx]),
                         end: createDate(times[stateIx + 1]),                        
-                        initStates: state.initialStates,
+                        initialStates: state.initialStates,
                         stateNo: `${initialStates[stateIx]}`,
                         scaleIx: `${scaleIx}`,
                         color: state.color,
@@ -286,7 +294,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                     statesCurr.push({
                         start: createDate(times[startIx]),
                         end: createDate(times[stIx]),
-                        initStates: stateCurr.initialStates,
+                        initialStates: stateCurr.initialStates,
                         stateNo: `${initStatesDict[initialStates[startIx]]}`,
                         scaleIx: `${scaleIx}`,
                         color: stateCurr.color,

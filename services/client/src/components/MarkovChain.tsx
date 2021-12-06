@@ -130,7 +130,6 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
 
     useEffect(() => {
         if (selectedState) {
-            console.log('d.scaleIx=', selectedState.scaleIx, ', d.stateNo=', selectedState.stateNo);
             setCurrentState(selectedState);
             setCurrentScaleIx(selectedState.scaleIx);
         }
@@ -155,8 +154,6 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
             let gMarkers = null;
             let gSliderProb = null;
             let gSliderScale: any = null;
-
-            console.log('currentScaleIx=', currentScaleIx);
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin); // FIXME: hardcoded theme
@@ -274,8 +271,6 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
                 const selectedNodeGroup: any = d3.select(`#${stateNoScaleIxId(currentState)}`);
 
                 if (selectedNodeGroup) {
-                    const { _groups: groups } = selectedNodeGroup;
-                    console.log('selectedNodeGroup._groups=', groups);
                     colorBlueNodeAndLinks(selectedNodeGroup, theme, gNodes, gLinks, gMarkers);
                 }
             }
