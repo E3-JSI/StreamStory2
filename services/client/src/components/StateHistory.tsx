@@ -190,10 +190,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                 d3.select(".selection")
                 .attr("opacity", 0.6)
                 .attr("fill", "blue");
-
-                d3.selectAll("rect.handle").attr("fill", "black").attr("width", "5").attr("opacity", 0.8)
-
-
+                d3.selectAll("rect.handle").attr("fill", "black").attr("width", "5").attr("opacity", 0.8).attr("rx", 3)
             })
             .on('brush end', function (this: any, event: any) {
                 const rangeSelection: any = d3.brushSelection(this);
