@@ -28,10 +28,10 @@ export function createSVG(
     const svg = d3
         .select(container.current)
         .append('svg')
-        .append('g')
-        .attr('class', 'graph')
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
+        .append('g')
+        .attr('class', 'graph')
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     svg
@@ -39,7 +39,7 @@ export function createSVG(
         .attr("class", "zoom_rect")
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
-        .attr("fill", "white")
+        .attr("fill", "green").attr("opacity", 0.1)
 
     return svg;
 }

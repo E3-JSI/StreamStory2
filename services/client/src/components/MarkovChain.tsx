@@ -16,16 +16,15 @@ import {
     addColorsToScaleStates,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
-import { createSlider, updateSlider } from '../utils/sliderUtils';
+import { createSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
+import StateHistory from './StateHistory';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const useThemeLoaded = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
-    const containerStateHistoryRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
-    const [initializedStateHistory, setInitializedStateHistory] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
     const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
@@ -103,9 +102,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
                     state.r = state.radius * maxRadius; // eslint-disable-line no-param-reassign
                 });
             });
-
             setCurrentScaleIx(model.model.scales.length - 1);
-
             addColorsToScaleStates(model.model.scales);
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
@@ -130,7 +127,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     function renderMarkovChain(graphData: any): void {
         const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
-
         const theme = createTheme();
         const boundary = findMinMaxValues(model.model.scales);
         const width = containerRef?.current?.offsetWidth || 150; // FIXME: hardcoded
@@ -260,275 +256,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             }
             createLinks(theme, graphData[currentScaleIx], gNodes, gLinks, x, y, TRANSITION_PROPS);
             createMarkers(theme, graphData[currentScaleIx], gMarkers);
-
-            createStateHistory();
         }
-    }
-
-    function createDate(unixTimestamp: number) {
-        return new Date(unixTimestamp * 1000);
-    }
-
-    function createStateHistory() {
-        const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
-        const height = 500; // FIXME: hardcoded
-        const margin = { top: 20, right: 20, bottom: 110, left: 40 };
-        const marginPreview = { top: 400, right: 20, bottom: 50, left: 40 };
-        const xWidth = width - margin.left - margin.right;
-        const yWidth = height - margin.top - margin.bottom;
-        const yWidthPreview = height - marginPreview.top - marginPreview.bottom;
-
-        const {
-            model: { scales, stateHistoryInitialStates: initialStates, stateHistoryTimes: times },
-        } = model;
-
-        const xExtent: any = d3.extent(times, (d: number) => createDate(d));
-        const yCategories: any = scales.map((el: any, i: any) => `${i}`);
-
-        let uniqueStates: any[] = Array.from(new Set(initialStates)); // FIXME: change if for other scales
-        uniqueStates.sort((a: any, b: any) => a - b);
-        uniqueStates = uniqueStates.map((el: number) => `${el}`);
-
-        const dataCurr: any = [];
-
-        scales.forEach((sc: any, scaleIx: number) => {
-            const statesCurr: any = [];
-
-            if (scaleIx === 0) {
-                initialStates.forEach((initState: any, stateIx: number) => {
-                    const state = scales[scaleIx].states.find(
-                        (currState: any) => currState.stateNo === initState,
-                    );
-                    statesCurr.push({
-                        start: createDate(times[stateIx]),
-                        end: createDate(times[stateIx + 1]),
-                        state: `${initialStates[stateIx]}`,
-                        scaleIx: `${scaleIx}`,
-                        color: state.color,
-                    });
-                });
-            } else {
-                const initStatesDict: any = {};
-
-                for (let j = 0; j < scales[scaleIx].states.length; j++) {
-                    const state = scales[scaleIx].states[j];
-
-                    for (let k = 0; k < state.initialStates.length; k++) {
-                        const initialState = state.initialStates[k];
-                        initStatesDict[initialState] = state.stateNo;
-                    }
-                }
-
-                let startIx = 0;
-
-                initialStates.forEach((initState: any, stIx: number) => {
-                    const startStateNo = initStatesDict[initialStates[startIx]];
-                    const currStateNo = initStatesDict[initialStates[stIx]];
-                    let startIxNew = -1;
-
-                    if (currStateNo !== startStateNo) {
-                        startIxNew = stIx;
-                    }
-
-                    if (currStateNo === startStateNo && stIx < initialStates.length - 1) {
-                        return;
-                    }
-
-                    const stateCurr = sc.states.find(
-                        (state: any) => state.stateNo === startStateNo,
-                    );
-
-                    statesCurr.push({
-                        start: createDate(times[startIx]),
-                        end: createDate(times[stIx]),
-                        state: `${initialStates[startIx]}`,
-                        scaleIx: `${scaleIx}`,
-                        color: stateCurr.color,
-                    });
-                    startIx = startIxNew;
-                });
-            }
-            dataCurr.push({ scaleIx, states: statesCurr });
-        });
-
-        const x = d3.scaleTime().domain(xExtent).range([0, xWidth]);
-        const y = d3.scaleBand().domain(yCategories).range([yWidth, 0]).padding(0.1);
-        const xBrush = d3.scaleTime().domain(xExtent).range([0, xWidth]);
-        const yBrush = d3.scaleBand().domain(yCategories).range([yWidthPreview, 0]).padding(0.1);
-
-        let graph: any = null;
-        let gAxisX: any = null;
-        let gAxisXBrush: any = null;
-        let gAxisY: any = null;
-        let gBars: any = null;
-        let gBarsBrush: any = null;
-
-        if (!initializedStateHistory) {
-            graph = createSVG(containerStateHistoryRef, width, height, margin);
-
-            graph
-                .append('rect')
-                .attr('width', width)
-                .attr('height', height)
-                .style('fill', 'grey')
-                .style('opacity', 0.1);
-
-            gBars = graph.append('g').attr('class', 'bars');
-            gAxisX = graph.append('g').attr('class', 'axisX');
-            gAxisY = graph.append('g').attr('class', 'axisY');
-            gAxisXBrush = graph.append('g').attr('class', 'axisXBrush');
-            gBarsBrush = graph.append('g').attr('class', 'barsBrush');
-            setInitializedStateHistory(true);
-        } else {
-            graph = getSVG(containerStateHistoryRef, width, height, margin);
-            gBars = graph.select('g.bars');
-            gAxisX = graph.select('g.axisX');
-            gAxisXBrush = graph.select('g.axisXBrush');
-            gAxisY = graph.select('g.axisY');
-            gBarsBrush = graph.select('g.barsBrush');
-        }
-
-        gBarsBrush.attr('transform', `translate(0, ${marginPreview.top})`);
-
-        const xAxis = d3.axisBottom(x).tickSizeOuter(0);
-        gAxisX.attr('transform', `translate(0, ${yWidth})`).call(xAxis);
-
-        const xAxisBrush: any = d3.axisBottom(xBrush).tickSizeOuter(0);
-        gAxisXBrush
-            .attr('transform', `translate(0, ${marginPreview.top + yWidthPreview})`)
-            .call(xAxisBrush);
-
-        const levels = gBars
-            .selectAll('g')
-            .data(dataCurr, (d: any) => d.scaleIx)
-            .join('g')
-            .attr('class', (d: any) => `scale_${d.scaleIx}`);
-
-        levels
-            .selectAll('rect')
-            .data((d: any) => d.states)
-            .join('rect')
-            .attr('class', 'state')
-            .attr('id', (d: any) => `${d.state}`)
-            .attr('x', (d: any) => x(d.start))
-            .attr('y', (d: any) => y(`${d.scaleIx}`))
-            .attr('width', (d: any) => x(d.end) - x(d.start))
-            .attr('height', (d: any) => y.bandwidth())
-            .attr('fill', (d: any) => d.color)
-            .on('mouseover', function (this: any) {
-                d3.select(this).style('cursor', 'pointer');
-            })
-            .on('mouseout', function (this: any) {
-                d3.select(this).style('cursor', 'default');
-            })
-            .on('click', (event: any, d: any) => {
-                const a = 5;
-                d3.selectAll('.state')
-                    .nodes()
-                    .forEach((el: any) => {
-                        const rect = d3.select(el);
-                        const dataTmp: any = rect.data()[0];
-                        if (d.state === dataTmp.state) {
-                            d3.select(el).style('stroke', 'white').style('stroke-width', 1).raise();
-                        } else {
-                            rect.style('stroke-width', 0);
-                        }
-                    });
-            });
-
-        const brushLevels = gBarsBrush
-            .selectAll('g')
-            .data(dataCurr, (d: any) => d.scaleIx)
-            .join('g')
-            .attr('class', (d: any) => `scale_${d.scaleIx}`);
-
-        brushLevels
-            .selectAll('rect')
-            .data((d: any) => d.states)
-            .join('rect')
-            .attr('class', 'state')
-            .attr('id', (d: any) => `${d.state}`)
-            .attr('x', (d: any) => xBrush(d.start))
-            .attr('y', (d: any) => yBrush(`${d.scaleIx}`))
-            .attr('width', (d: any) => xBrush(d.end) - xBrush(d.start))
-            .attr('height', (d: any) => yBrush.bandwidth())
-            .attr('fill', (d: any) => d.color);
-
-        let sourceEvent: any;
-
-        const brush = d3
-            .brushX()
-            .extent([
-                [0, 0],
-                [xWidth, yWidthPreview],
-            ])
-            .on('brush end', function (this: any, event: any) {
-                const rangeSelection: any = d3.brushSelection(this);
-                if (rangeSelection != null && event.sourceEvent != null) {
-                    const xAxisNewRange = rangeSelection.map(xBrush.invert);
-                    x.domain(xAxisNewRange);
-
-                    gAxisX
-                        .attr('transform', `translate(0, ${yWidth})`)
-                        .call(d3.axisBottom(x).tickSizeOuter(0));
-
-                    levels
-                        .selectAll('rect')
-                        .data((d: any) => d.states)
-                        .join(
-                            (enter: any) => enter,
-                            (update: any) =>
-                                update
-                                    .attr('x', (d: any) => x(d.start))
-                                    .attr('y', (d: any) => y(`${d.scaleIx}`))
-                                    .attr('width', (d: any) => x(d.end) - x(d.start))
-                                    .attr('height', (d: any) => y.bandwidth()),
-                            (exit: any) => exit.remove(),
-                        );
-                }
-            });
-
-        const zoom = d3
-            .zoom()
-            .scaleExtent([1, Infinity])
-            .translateExtent([
-                [0, 0],
-                [width, height],
-            ])
-            .extent([
-                [0, 0],
-                [width, height],
-            ])
-            .on('zoom', (event: any) => {
-                if (sourceEvent === 'brush') return; // ignore zoom-by-brush
-                sourceEvent = 'zoom';
-                const t: any = event.transform;
-                x.domain(t.rescaleX(xBrush).domain());
-                gBarsBrush.call(brush).call(brush.move, (x as any).range().map(t.invertX, t));
-                sourceEvent = null;
-
-                gAxisX
-                    .attr('transform', `translate(0, ${yWidth})`)
-                    .call(d3.axisBottom(x).tickSizeOuter(0));
-
-                levels
-                    .selectAll('rect')
-                    .data((d: any) => d.states)
-                    .join(
-                        (enter: any) => enter,
-                        (update: any) =>
-                            update
-                                .attr('x', (d: any) => x(d.start))
-                                .attr('y', (d: any) => y(`${d.scaleIx}`))
-                                .attr('width', (d: any) => x(d.end) - x(d.start))
-                                .attr('height', (d: any) => y.bandwidth()),
-                        (exit: any) => exit.remove(),
-                    );
-            });
-
-        gBars.call(zoom);
-
-        gBarsBrush.call(brush).call(brush.move, xBrush.range());
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
@@ -549,7 +277,7 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
-            <div ref={containerStateHistoryRef} />
+            <StateHistory model={model} />
             <div ref={tooltipRef} />
             <div ref={containerRef} />
         </>
