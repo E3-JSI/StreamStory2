@@ -264,7 +264,6 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                 const stateFound = scaleCurr.states.find((st:any)=> d.stateNo === `${st.stateNo}`);
 
                 if(stateFound != null) {
-                    console.log("stateFound=", stateFound);
                     onStateSelected(stateFound)   
                 }   
         }
