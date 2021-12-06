@@ -51,6 +51,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
 
         let graph:any = null;
         let gGraphContainer:any = null;  // eslint-disable-line prefer-const
+        let gGraphContainerClip:any = null;  // eslint-disable-line prefer-const
         let gBarsContainer:any = null;  // eslint-disable-line prefer-const
         let gBrushBarsContainer:any = null;  // eslint-disable-line prefer-const
         let gAxisX: any = null; // eslint-disable-line prefer-const
@@ -62,13 +63,28 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin)
 
-            gGraphContainer = createGraphContainer(graph, width, height, chart)
             
-            gBarsContainer = gGraphContainer.append("g").attr("class", "barsContainer")
+            graph.append("defs")
+            .append("clipPath")
+            .attr("id", "clip")
+            .append("SVG:rect")
+            .attr("width", xWidth)
+            .attr("height", baseHeight)
+            .attr("x", 0)
+            .attr("y", 0);
+            
+            gGraphContainer = createGraphContainer(graph, width, height, chart)
+
+            gGraphContainerClip = gGraphContainer.append('g')
+                .attr("class", "graphContainerClip")
+                .attr("clip-path", "url(#clip)")
+
+            gBarsContainer = gGraphContainerClip.append("g").attr("class", "barsContainer")
+        
             gBars = gBarsContainer.append('g').attr('class', 'bars')
             gAxisX =  gBarsContainer.append("g").attr("class", "xAxis")
             
-            gBrushBarsContainer = gGraphContainer.append("g").attr("class", "brushBarsContainer")
+            gBrushBarsContainer = gGraphContainerClip.append("g").attr("class", "brushBarsContainer")
             gBrushBars = gBrushBarsContainer.append('g').attr('class', 'brushBars')
             gAxisXBrush =  gBrushBarsContainer.append("g").attr("class", "xAxisBrush")
        
@@ -78,12 +94,13 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             graph = getSVG(containerStateHistoryRef, width, height, margin);
 
             gGraphContainer = getGraphContainer(graph) // .attr("clip-path", "url(#clip)");
+            gGraphContainerClip = gGraphContainer.select(".graphContainerClip").attr("clip-path", "url(#clip)")
 
-            gBarsContainer = gGraphContainer.select("g.barsContainer")  
+            gBarsContainer = gGraphContainerClip.select("g.barsContainer")  
             gBars = gBarsContainer.select('g.bars')
             gAxisX = gBarsContainer.select("g.xAxis")
             
-            gBrushBarsContainer = gGraphContainer.select("g.brushBarsContainer")
+            gBrushBarsContainer = gGraphContainerClip.select("g.brushBarsContainer")
             gBrushBars = gBrushBarsContainer.select('g.brushBars')
             gAxisXBrush = gBrushBarsContainer.select("g.xAxisBrush")
         }
@@ -107,7 +124,8 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             .selectAll('g')
             .data(dataCurr, (d: any) => d.scaleIx)
             .join('g')
-            .attr('class', (d: any) => `scale_${d.scaleIx}`);
+            .attr("class", "level")
+            .attr('id', (d: any) => `scale_${d.scaleIx}`);
 
         levels
             .selectAll('rect')
@@ -128,7 +146,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             })
             .on('click', (event: any, d: any) => {
                 const a = 5;
-                d3.selectAll('.state')
+                d3.selectAll('.level > .state')
                     .nodes()
                     .forEach((el: any) => {
                         const rect = d3.select(el);
@@ -145,7 +163,8 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             .selectAll('g')
             .data(dataCurr, (d: any) => d.scaleIx)
             .join('g')
-            .attr('class', (d: any) => `scale_${d.scaleIx}`);
+            .attr("class", "brushLevel")
+            .attr('id', (d: any) => `scale_${d.scaleIx}`);
 
         brushLevels
             .selectAll('rect')
