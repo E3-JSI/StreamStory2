@@ -14,6 +14,9 @@ import {
     findMinMaxValues,
     createGraphData,
     addColorsToScaleStates,
+    colorBlueNodeAndLinks,
+    uniqueId,
+    stateNoScaleIxId,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -24,7 +27,8 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
-    const [currentScaleIx, setCurrentScaleIx] = useState<number>(0);
+    const [currentScaleIx, setCurrentScaleIx] = useState<number>(-1);
+    const [currentState, setCurrentState] = useState<any>();
     const [data, setData] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [pThreshold, setPThreshold] = useState<number>(0.1);
@@ -122,14 +126,12 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
             setData(graphData);
             renderMarkovChain(graphData);
         }
-    }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded, currentState]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
-        if (selectedState != null) {
-            console.log('start: ########################################');
-            console.log('selectedState=', selectedState);
-            console.log('end: ########################################');
-
+        if (selectedState) {
+            console.log('d.scaleIx=', selectedState.scaleIx, ', d.stateNo=', selectedState.stateNo);
+            setCurrentState(selectedState);
             setCurrentScaleIx(selectedState.scaleIx);
         }
     }, [selectedState]);
@@ -153,6 +155,8 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
             let gMarkers = null;
             let gSliderProb = null;
             let gSliderScale: any = null;
+
+            console.log('currentScaleIx=', currentScaleIx);
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin); // FIXME: hardcoded theme
@@ -265,6 +269,16 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
             }
             createLinks(theme, graphData[currentScaleIx], gNodes, gLinks, x, y, TRANSITION_PROPS);
             createMarkers(theme, graphData[currentScaleIx], gMarkers);
+
+            if (currentState) {
+                const selectedNodeGroup: any = d3.select(`#${stateNoScaleIxId(currentState)}`);
+
+                if (selectedNodeGroup) {
+                    const { _groups: groups } = selectedNodeGroup;
+                    console.log('selectedNodeGroup._groups=', groups);
+                    colorBlueNodeAndLinks(selectedNodeGroup, theme, gNodes, gLinks, gMarkers);
+                }
+            }
         }
     }
 

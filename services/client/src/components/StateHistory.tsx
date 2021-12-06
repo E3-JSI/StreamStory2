@@ -17,8 +17,6 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
     useEffect(() => {
         if (model && model.model && model.model.scales && model.model.scales.length) {
-            console.log('model=', model);
-            console.log('model.model.scales=', model.model.scales);
             addColorsToScaleStates(model.model.scales);
             createStateHistory();
         }

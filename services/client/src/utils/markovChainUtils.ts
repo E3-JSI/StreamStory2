@@ -225,7 +225,12 @@ export function createNodes(
 
     selectAllNodeGroups(gNodes)
         .on('click', function (this: any, event: any) {
-            colorBlueNodeAndLinks.call(this, theme, gNodes, gLinks, gMarkers);
+            const nodeGroupClicked: any = d3.select(this);
+
+            console.log("d.scaleIx=", nodeGroupClicked.data()[0].scaleIx, "d.stateNo=", nodeGroupClicked.data()[0].stateNo);
+            console.log("\n")
+
+            colorBlueNodeAndLinks(nodeGroupClicked, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
         .on("mouseover", function (this: any, event: any, d: any) {
@@ -264,7 +269,14 @@ export function createNodes(
 }
 
 function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
-    const enterTmp = selection.append('g').attr('class', 'node_group').attr('opacity', 0);
+    const enterTmp = selection
+        .append('g')
+        .attr('id', (d: any) => {
+            console.log("d=", d, ", id_new=", `${stateNoScaleIxId(d)}`)
+            return `${stateNoScaleIxId(d)}`;
+        })
+        .attr('class', 'node_group')
+        .attr('opacity', 0);
     enterTmp
         .append('circle')
         .attr('class', 'node_circle')
@@ -441,41 +453,45 @@ function drawLineWithOffset(nodesMap: any, d: any) {
     return path;
 }
 
-function colorBlueNodeAndLinks(this: any, theme: any, gNodes: any, gLinks: any, gMarkers: any): void {
+export function colorBlueNodeAndLinks(nodeGroupClicked: any, theme: any, gNodes: any, gLinks: any, gMarkers: any): void {
     selectAllNodeGroups(gNodes).each(function (this: any) {
         selectNodeCircle(d3.select(this)).attr('stroke', 'none');
     });
-    const nodeGroupClicked = d3.select(this);
-    selectNodeCircle(nodeGroupClicked)
-        .attr('stroke', theme.state.selected.stroke)
-        .attr('stroke-width', 5)
-
+    if (nodeGroupClicked != null) {
+        selectNodeCircle(nodeGroupClicked)
+            .attr('stroke', theme.state.selected.stroke)
+            .attr('stroke-width', 5)
+    }
     selectAllLinkGroups(gLinks).each(function (this: any) {
         const linkGroup = d3.select(this);
         const linePath = selectLinkPath(linkGroup);
         const lineData: any = linkGroup.data()[0];
         const arrow = gMarkers.select(`#arrow_s${lineData.source}_t${lineData.target}`);
-
         const delay = 150;
 
-        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).stateNo) {
-            linePath
-                .attr('stroke', theme.link.default.stroke)
-                .transition()
-                .ease(d3.easeExpIn)
-                .duration(delay)
-                .attr('stroke', theme.link.selected.stroke);
+        if (linePath && nodeGroupClicked && linkGroup) {
+            const linkGroupData: any = linkGroup.data()[0];
+            const nodeGroupData: any = nodeGroupClicked.data()[0]
 
-            arrow
-                .attr('stroke', theme.marker.selected.stroke)
-                .attr('fill', theme.marker.selected.fill)
-                .transition()
-                .ease(d3.easeExpIn)
-                .duration(delay)
-                .attr('stroke', theme.marker.selected.fill);
-        } else {
-            linePath.attr('stroke', theme.link.default.stroke);
-            arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
+            if (linkGroupData && nodeGroupData && (linkGroupData.source === nodeGroupData.stateNo)) {
+                linePath
+                    .attr('stroke', theme.link.default.stroke)
+                    .transition()
+                    .ease(d3.easeExpIn)
+                    .duration(delay)
+                    .attr('stroke', theme.link.selected.stroke);
+
+                arrow
+                    .attr('stroke', theme.marker.selected.stroke)
+                    .attr('fill', theme.marker.selected.fill)
+                    .transition()
+                    .ease(d3.easeExpIn)
+                    .duration(delay)
+                    .attr('stroke', theme.marker.selected.fill);
+            } else {
+                linePath.attr('stroke', theme.link.default.stroke);
+                arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
+            }
         }
     });
 }
@@ -643,6 +659,10 @@ export function findMinMaxValues(scales: any) {
     return rez;
 }
 
+export function stateNoScaleIxId(state: any) {
+    return `scaleIx_${state.scaleIx}_stateNo_${state.stateNo}`
+}
+
 export function uniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
 }
@@ -737,14 +757,12 @@ export function addColorsToScaleStates(scales: any) {
                 }
             });
         }
+        sc.states.forEach((state: any) => {
+            state.scaleIx = scaleIx; // eslint-disable-line no-param-reassign
+        })
+
     });
     // color added to each state, if added before same state in diff scale would have diff color
-
-    scales.forEach((sc: any, scaleIx: number) => {
-        sc.states.forEach((st: any) => {
-            st.scaleIx = scaleIx; // eslint-disable-line no-param-reassign
-        })
-    })
 
     scales
         .map((sc: any) => sc.states).flat()
