@@ -18,7 +18,6 @@ import {
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
-import StateHistory from './StateHistory';
 
 const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     const useThemeLoaded = useTheme();
@@ -277,7 +276,6 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
 
     return (
         <>
-            <StateHistory model={model} />
             <div ref={tooltipRef} />
             <div ref={containerRef} />
         </>

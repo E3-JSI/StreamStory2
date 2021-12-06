@@ -739,6 +739,13 @@ export function addColorsToScaleStates(scales: any) {
         }
     });
     // color added to each state, if added before same state in diff scale would have diff color
+
+    scales.forEach((sc: any, scaleIx: number) => {
+        sc.states.forEach((st: any) => {
+            st.scaleIx = scaleIx; // eslint-disable-line no-param-reassign
+        })
+    })
+
     scales
         .map((sc: any) => sc.states).flat()
         .forEach((state: any) => {

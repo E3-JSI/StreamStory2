@@ -11,9 +11,10 @@ import TabPanel, { getTabA11yProps } from './TabPanel';
 
 import useStyles from './StateVisualization.styles';
 import Histogram from './Histogram';
+import StateHistory from './StateHistory';
 
 export interface StateVisualizationProps extends BoxProps {
-    model?: Model;
+    model: Model;
     selectedState?:any;
 }
 
@@ -79,7 +80,7 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                 </Tabs>
             </Paper>
             <TabPanel value={tabValue} index={0} prefix={stateTabPrefix}>
-                {t('state_history')}
+                <StateHistory model={model} selectedState={selectedState} />
             </TabPanel>
             <TabPanel value={tabValue} index={1} prefix={stateTabPrefix}>
                 {t('coordinates')}

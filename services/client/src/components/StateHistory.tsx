@@ -8,21 +8,21 @@ import {
     createGraphContainer,
     getGraphContainer,
 } from '../utils/markovChainUtils';
-import { ModelVisualizationProps } from './ModelVisualization';
+import { StateVisualizationProps } from './StateVisualization';
 
-const StateHistory = ({ model }: ModelVisualizationProps) => {
+const StateHistory = ({ model, selectedState }: StateVisualizationProps) => {
     const containerStateHistoryRef = useRef<HTMLDivElement>(null);
     const [initializedStateHistory, setInitializedStateHistory] = useState<boolean>(false);
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
 
     useEffect(() => {
-        if (model.model.scales && model.model.scales.length) {
+        if (model && model.model && model.model.scales && model.model.scales.length) {
             console.log('model=', model);
             console.log('model.model.scales=', model.model.scales);
             addColorsToScaleStates(model.model.scales);
             createStateHistory();
         }
-    }, [model.model.scales, containerStateHistoryRef?.current?.offsetWidth]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [model?.model?.scales, containerStateHistoryRef?.current?.offsetWidth, selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function createDate(unixTimestamp: number) {
         return new Date(unixTimestamp * 1000);
@@ -31,7 +31,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
     function createStateHistory() {
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 450; // FIXME: hardcoded
-        const chart = { top: 20, left: 20 }; // FIXME: hardcodeds
+        const chart = { top: 10, left: 10 }; // FIXME: hardcodeds
         const margin = { top: 20, right: 20, bottom: 20, left: 40 };
         const xWidth = width - chart.left - margin.left - margin.right;
        
@@ -144,20 +144,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             .on('mouseout', function (this: any) {
                 d3.select(this).style('cursor', 'default');
             })
-            .on('click', (event: any, d: any) => {             
-                d3.selectAll(`.level > rect.state`)
-                    .style("stroke", "white").style("stroke-width", (dCurr:any)=> {
-                        let strokeWidth = "0px";
-                        const result =  d.initStates.every((initState:any) => dCurr.initStates.includes(initState));
-
-                        if(dCurr.scaleIx === d.scaleIx && dCurr.stateNo === d.stateNo) {
-                            strokeWidth = "2px"
-                        } else if(dCurr.scaleIx !== d.scaleIx && result) {
-                            strokeWidth = "2px"
-                        }
-                    return strokeWidth
-                })
-            });
+            .on('click', (event: any, d: any) => highlightStates(d));
 
         const brushLevels = gBrushBars
             .selectAll('g')
@@ -255,6 +242,46 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
         gBars.call(zoom);
 
         gBrushBars.call(brush).call(brush.move, xBrush.range());
+
+
+        if(selectedState != null && selectedState.stateNo != null) {
+
+            console.log("selectedState=",selectedState)
+            console.log("dataCurr=",dataCurr)
+
+            const scFound = dataCurr.find((d:any)=> d.scaleIx === selectedState.scaleIx);
+
+            console.log("scFound=",scFound)
+
+            if(scFound && scFound.states) {
+                const dFound = scFound.states.find((d:any)=> d.stateNo === `${selectedState.stateNo}`);
+
+                if(dFound != null) {
+                    console.log("dFound=",dFound)
+                    highlightStates(dFound);
+                }else {
+                    console.log("d not found!!!")
+                }
+            }
+        }
+    }
+
+    function highlightStates(d:any) {
+        d3.selectAll(`.level > rect.state`)
+            .style("stroke", "white").style("stroke-width", function(this:any, dCurr:any)  {
+                let strokeWidth = "0px";
+                const result =  d.initStates.every((initState:any) => dCurr.initStates.includes(initState));
+                const selectionThis = d3.select(this);
+
+                if(dCurr.scaleIx === d.scaleIx && dCurr.stateNo === d.stateNo) {
+                    strokeWidth = "2px"
+                    selectionThis.raise();
+                } else if(dCurr.scaleIx !== d.scaleIx && result) {
+                    strokeWidth = "2px"
+                    selectionThis.raise();
+                }
+                return strokeWidth
+            });
     }
 
     function resizePath(d:any, heightCurr:number) {
