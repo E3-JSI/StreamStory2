@@ -129,10 +129,10 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
 
         levels
             .selectAll('rect')
-            .data((d: any) => d.states)
+            .data((d: any) => d.states, (d:any)=> `scaleIx_${d.scaleIx}_start_${d.start}_end_${d.end}`)
             .join('rect')
             .attr('class', 'state')
-            .attr('id', (d: any) => `${d.state}`)
+            .attr('id', (d: any) => `${d.stateNo}`)
             .attr('x', (d: any) => x(d.start))
             .attr('y', (d: any) => y(`${d.scaleIx}`))
             .attr('width', (d: any) => x(d.end) - x(d.start))
@@ -144,19 +144,19 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             .on('mouseout', function (this: any) {
                 d3.select(this).style('cursor', 'default');
             })
-            .on('click', (event: any, d: any) => {
-                const a = 5;
-                d3.selectAll('.level > .state')
-                    .nodes()
-                    .forEach((el: any) => {
-                        const rect = d3.select(el);
-                        const dataTmp: any = rect.data()[0];
-                        if (d.state === dataTmp.state) {
-                            d3.select(el).style('stroke', 'white').style('stroke-width', 1).raise();
-                        } else {
-                            rect.style('stroke-width', 0);
+            .on('click', (event: any, d: any) => {             
+                d3.selectAll(`rect.state`)
+                    .style("stroke", "white").style("stroke-width", (dCurr:any)=> {
+                        let strokeWidth = "0px";
+                        const result =  d.initStates.every((initState:any) => dCurr.initStates.includes(initState));
+
+                        if(dCurr.scaleIx === d.scaleIx && dCurr.stateNo === d.stateNo) {
+                            strokeWidth = "2px"
+                        } else if(dCurr.scaleIx !== d.scaleIx && result) {
+                            strokeWidth = "2px"
                         }
-                    });
+                    return strokeWidth
+                })
             });
 
         const brushLevels = gBrushBars
@@ -171,7 +171,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
             .data((d: any) => d.states)
             .join('rect')
             .attr('class', 'state')
-            .attr('id', (d: any) => `${d.state}`)
+            .attr('id', (d: any) => `${d.stateNo }`)
             .attr('x', (d: any) => xBrush(d.start))
             .attr('y', (d: any) => yBrush(`${d.scaleIx}`))
             .attr('width', (d: any) => xBrush(d.end) - xBrush(d.start))
@@ -270,8 +270,9 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                     );
                     statesCurr.push({
                         start: createDate(times[stateIx]),
-                        end: createDate(times[stateIx + 1]),
-                        state: `${initialStates[stateIx]}`,
+                        end: createDate(times[stateIx + 1]),                        
+                        initStates: state.initialStates,
+                        stateNo: `${initialStates[stateIx]}`,
                         scaleIx: `${scaleIx}`,
                         color: state.color,
                     });
@@ -298,7 +299,6 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                     if (currStateNo !== startStateNo) {
                         startIxNew = stIx;
                     }
-
                     if (currStateNo === startStateNo && stIx < initialStates.length - 1) {
                         return;
                     }
@@ -310,7 +310,8 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                     statesCurr.push({
                         start: createDate(times[startIx]),
                         end: createDate(times[stIx]),
-                        state: `${initialStates[startIx]}`,
+                        initStates: stateCurr.initialStates,
+                        stateNo: `${initStatesDict[initialStates[startIx]]}`,
                         scaleIx: `${scaleIx}`,
                         color: stateCurr.color,
                     });
