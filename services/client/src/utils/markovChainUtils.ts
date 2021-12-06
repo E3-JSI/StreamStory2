@@ -271,10 +271,7 @@ export function createNodes(
 function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
     const enterTmp = selection
         .append('g')
-        .attr('id', (d: any) => {
-            console.log("d=", d, ", id_new=", `${stateNoScaleIxId(d)}`)
-            return `${stateNoScaleIxId(d)}`;
-        })
+        .attr('id', (d: any) => `${stateNoScaleIxId(d)}`)
         .attr('class', 'node_group')
         .attr('opacity', 0);
     enterTmp

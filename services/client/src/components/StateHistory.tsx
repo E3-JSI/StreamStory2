@@ -49,15 +49,15 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         const yBrush = d3.scaleBand().domain(yCategories).range([yWidthPreview, 0]).padding(0.1);
 
         let graph:any = null;
-        let gGraphContainer:any = null;  // eslint-disable-line prefer-const
-        let gGraphContainerClip:any = null;  // eslint-disable-line prefer-const
-        let gBarsContainer:any = null;  // eslint-disable-line prefer-const
-        let gBrushBarsContainer:any = null;  // eslint-disable-line prefer-const
-        let gAxisX: any = null; // eslint-disable-line prefer-const
-        let gAxisXBrush: any = null; // eslint-disable-line prefer-const
-        let gAxisY: any = null; // eslint-disable-line prefer-const
-        let gBars: any = null; // eslint-disable-line prefer-const
-        let gBrushBars: any = null; // eslint-disable-line prefer-const
+        let gGraphContainer:any = null; 
+        let gGraphContainerClip:any = null;  
+        let gBarsContainer:any = null;  
+        let gBrushBarsContainer:any = null;  
+        let gAxisX: any = null; 
+        let gAxisXBrush: any = null; 
+        let gAxisY: any = null; 
+        let gBars: any = null; 
+        let gBrushBars: any = null; 
 
         if (!initializedStateHistory) {
             graph = createSVG(containerStateHistoryRef, width, height, margin)
@@ -81,6 +81,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         
             gBars = gBarsContainer.append('g').attr('class', 'bars')
             gAxisX =  gBarsContainer.append("g").attr("class", "xAxis")
+            gAxisY =  gBarsContainer.append("g").attr("class", "yAxis")
             
             gBrushBarsContainer = gGraphContainerClip.append("g").attr("class", "brushBarsContainer")
             gBrushBars = gBrushBarsContainer.append('g').attr('class', 'brushBars')
@@ -97,6 +98,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             gBarsContainer = gGraphContainerClip.select("g.barsContainer")  
             gBars = gBarsContainer.select('g.bars')
             gAxisX = gBarsContainer.select("g.xAxis")
+            gAxisY = gBarsContainer.select("g.yAxis")
             
             gBrushBarsContainer = gGraphContainerClip.select("g.brushBarsContainer")
             gBrushBars = gBrushBarsContainer.select('g.brushBars')
@@ -125,23 +127,9 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             .attr("class", "level")
             .attr('id', (d: any) => `scale_${d.scaleIx}`);
 
-        levels
-            .selectAll('rect')
-            .data((d: any) => d.states, (d:any)=> `scaleIx_${d.scaleIx}_start_${d.start}_end_${d.end}`)
-            .join('rect')
-            .attr('class', 'state')
-            .attr('id', (d: any) => `${d.stateNo}`)
-            .attr('x', (d: any) => x(d.start))
-            .attr('y', (d: any) => y(`${d.scaleIx}`))
-            .attr('width', (d: any) => x(d.end) - x(d.start))
-            .attr('height', (d: any) => y.bandwidth())
-            .attr('fill', (d: any) => d.color)
-            .on('mouseover', function (this: any) {
-                d3.select(this).style('cursor', 'pointer');
-            })
-            .on('mouseout', function (this: any) {
-                d3.select(this).style('cursor', 'default');
-            })
+        createLevelRects(levels, x ,y)
+            .on('mouseover', function (this: any) {d3.select(this).style('cursor', 'pointer')})
+            .on('mouseout', function (this: any) {d3.select(this).style('cursor', 'default')})
             .on('click', (event: any, d: any) => highlightStates(d));
 
         const brushLevels = gBrushBars
@@ -151,17 +139,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             .attr("class", "brushLevel")
             .attr('id', (d: any) => `scale_${d.scaleIx}`);
 
-        brushLevels
-            .selectAll('rect')
-            .data((d: any) => d.states)
-            .join('rect')
-            .attr('class', 'state')
-            .attr('id', (d: any) => `${d.stateNo }`)
-            .attr('x', (d: any) => xBrush(d.start))
-            .attr('y', (d: any) => yBrush(`${d.scaleIx}`))
-            .attr('width', (d: any) => xBrush(d.end) - xBrush(d.start))
-            .attr('height', (d: any) => yBrush.bandwidth())
-            .attr('fill', (d: any) => d.color);
+        createLevelRects(brushLevels, xBrush, yBrush);
 
         let sourceEvent: any;
 
@@ -175,29 +153,20 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                 d3.select(".selection")
                 .attr("opacity", 0.6)
                 .attr("fill", "blue");
-                d3.selectAll("rect.handle").attr("fill", "black").attr("width", "5").attr("opacity", 0.8).attr("rx", 3)
+               
+                d3.selectAll("rect.handle")
+                    .attr("fill", "black")
+                    .attr("width", "5")
+                    .attr("opacity", 0.8)
+                    .attr("rx", 3)
             })
             .on('brush end', function (this: any, event: any) {
                 const rangeSelection: any = d3.brushSelection(this);
                 if (rangeSelection != null && event.sourceEvent != null) {
                     const xAxisNewRange = rangeSelection.map(xBrush.invert);
                     x.domain(xAxisNewRange);
-
                     gAxisX.call(d3.axisBottom(x).tickSizeOuter(0));
-
-                    levels
-                        .selectAll('rect')
-                        .data((d: any) => d.states)
-                        .join(
-                            (enter: any) => enter,
-                            (update: any) =>
-                                update
-                                    .attr('x', (d: any) => x(d.start))
-                                    .attr('y', (d: any) => y(`${d.scaleIx}`))
-                                    .attr('width', (d: any) => x(d.end) - x(d.start))
-                                    .attr('height', (d: any) => y.bandwidth()),
-                            (exit: any) => exit.remove(),
-                        );
+                    createLevelRects(levels, x, y);
                 }
             });
 
@@ -219,28 +188,12 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
                 x.domain(t.rescaleX(xBrush).domain());
                 gBrushBars.call(brush).call(brush.move, (x as any).range().map(t.invertX, t));
                 sourceEvent = null;
-
                 gAxisX.call(d3.axisBottom(x).tickSizeOuter(0));
-
-                levels
-                    .selectAll('rect')
-                    .data((d: any) => d.states)
-                    .join(
-                        (enter: any) => enter,
-                        (update: any) =>
-                            update
-                                .attr('x', (d: any) => x(d.start))
-                                .attr('y', (d: any) => y(`${d.scaleIx}`))
-                                .attr('width', (d: any) => x(d.end) - x(d.start))
-                                .attr('height', (d: any) => y.bandwidth()),
-                        (exit: any) => exit.remove(),
-                    );
+                createLevelRects(levels, x, y);
             });
 
         gBars.call(zoom);
-
         gBrushBars.call(brush).call(brush.move, xBrush.range());
-
 
         if(selectedState != null && selectedState.stateNo != null) {
             const scFound = dataCurr.find((d:any)=> d.scaleIx === selectedState.scaleIx);
@@ -255,19 +208,34 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         }
     }
 
+    function createLevelRects(levels:any, x:any, y:any) {
+        return levels
+        .selectAll('rect')
+        .data((d: any) => d.states, (d:any)=> `scaleIx_${d.scaleIx}_start_${d.start}_end_${d.end}`)
+        .join('rect')
+        .attr('class', 'state')
+        .attr('id', (d: any) => `${d.stateNo}`)
+        .attr('x', (d: any) => x(d.start))
+        .attr('y', (d: any) => y(`${d.scaleIx}`))
+        .attr('width', (d: any) => x(d.end) - x(d.start))
+        .attr('height', (d: any) => y.bandwidth())
+        .attr('fill', (d: any) => d.color)
+    }
+
     function highlightStates(d:any) {
         const scaleCurr = model.model.scales[d.scaleIx];
 
-        if(scaleCurr != null) {
+        if(scaleCurr) {
                 const stateFound = scaleCurr.states.find((st:any)=> d.stateNo === `${st.stateNo}`);
 
-                if(stateFound != null) {
+                if(stateFound) {
                     onStateSelected(stateFound)   
                 }   
         }
 
         d3.selectAll(`.level > rect.state`)
-            .style("stroke", "white").style("stroke-width", function(this:any, dCurr:any)  {
+            .style("stroke", "white")
+            .style("stroke-width", function(this:any, dCurr:any)  {
                 let strokeWidth = "0px";
                 const result =  d.initStates.every((initState:any) => dCurr.initStates.includes(initState));
                 const selectionThis = d3.select(this);
@@ -283,20 +251,10 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
             });
     }
 
-    function resizePath(d:any, heightCurr:number) {
-        const e = +(d === "e");
-        const x = e ? 1 : -1;
-        const y =heightCurr / 3;
-        return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8); // eslint-disable-line
-      }
-
     function createDataCurr() {
-
         const {
             model: { scales, stateHistoryInitialStates: initialStates, stateHistoryTimes: times },
         } = model;
-
-        
         const dataCurr: any = [];
 
         scales.forEach((sc: any, scaleIx: number) => {
