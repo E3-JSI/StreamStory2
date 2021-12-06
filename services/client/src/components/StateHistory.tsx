@@ -10,7 +10,7 @@ import {
 } from '../utils/markovChainUtils';
 import { StateVisualizationProps } from './StateVisualization';
 
-const StateHistory = ({ model, selectedState }: StateVisualizationProps) => {
+const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizationProps) => {
     const containerStateHistoryRef = useRef<HTMLDivElement>(null);
     const [initializedStateHistory, setInitializedStateHistory] = useState<boolean>(false);
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
@@ -245,28 +245,30 @@ const StateHistory = ({ model, selectedState }: StateVisualizationProps) => {
 
 
         if(selectedState != null && selectedState.stateNo != null) {
-
-            console.log("selectedState=",selectedState)
-            console.log("dataCurr=",dataCurr)
-
             const scFound = dataCurr.find((d:any)=> d.scaleIx === selectedState.scaleIx);
-
-            console.log("scFound=",scFound)
 
             if(scFound && scFound.states) {
                 const dFound = scFound.states.find((d:any)=> d.stateNo === `${selectedState.stateNo}`);
 
                 if(dFound != null) {
-                    console.log("dFound=",dFound)
                     highlightStates(dFound);
-                }else {
-                    console.log("d not found!!!")
                 }
             }
         }
     }
 
     function highlightStates(d:any) {
+        const scaleCurr = model.model.scales[d.scaleIx];
+
+        if(scaleCurr != null) {
+                const stateFound = scaleCurr.states.find((st:any)=> d.stateNo === `${st.stateNo}`);
+
+                if(stateFound != null) {
+                    console.log("stateFound=", stateFound);
+                    onStateSelected(stateFound)   
+                }   
+        }
+
         d3.selectAll(`.level > rect.state`)
             .style("stroke", "white").style("stroke-width", function(this:any, dCurr:any)  {
                 let strokeWidth = "0px";

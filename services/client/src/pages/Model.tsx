@@ -91,11 +91,16 @@ function Model(): JSX.Element {
                             <Grid item>
                                 <ModelVisualization
                                     model={model}
+                                    selectedState={selectedState}
                                     onStateSelected={setSelectedState}
                                 />
                             </Grid>
                             <Grid item>
-                                <StateVisualization model={model} selectedState={selectedState} />
+                                <StateVisualization
+                                    model={model}
+                                    selectedState={selectedState}
+                                    onStateSelected={setSelectedState}
+                                />
                             </Grid>
                         </Grid>
                     </Grid>

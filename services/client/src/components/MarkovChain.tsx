@@ -19,7 +19,7 @@ import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
 
-const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
+const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizationProps) => {
     const useThemeLoaded = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
@@ -123,6 +123,16 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
             renderMarkovChain(graphData);
         }
     }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (selectedState != null) {
+            console.log('start: ########################################');
+            console.log('selectedState=', selectedState);
+            console.log('end: ########################################');
+
+            setCurrentScaleIx(selectedState.scaleIx);
+        }
+    }, [selectedState]);
 
     function renderMarkovChain(graphData: any): void {
         const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
@@ -259,10 +269,10 @@ const MarkovChain = ({ model, onStateSelected }: ModelVisualizationProps) => {
     }
 
     function handleOnStateSelected(event: any, stateNo: number) {
-        const selectedState = model.model.scales[currentScaleIx].states.find(
+        const currState = model.model.scales[currentScaleIx].states.find(
             (state: any) => state.stateNo === stateNo,
         );
-        onStateSelected(selectedState);
+        onStateSelected(currState);
     }
 
     function handleOnProbChanged(p: number) {

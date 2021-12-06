@@ -19,11 +19,13 @@ import MarkovChain from './MarkovChain';
 
 export interface ModelVisualizationProps extends PaperProps {
     model: Model;
+    selectedState?: any;
     onStateSelected?: any;
 }
 
 function ModelVisualization({
     model,
+    selectedState,
     onStateSelected,
     ...other
 }: ModelVisualizationProps): JSX.Element {
@@ -51,7 +53,11 @@ function ModelVisualization({
             <Divider />
             {/* Replace with Markov model */}
 
-            <MarkovChain model={model} onStateSelected={onStateSelected} />
+            <MarkovChain
+                model={model}
+                selectedState={selectedState}
+                onStateSelected={onStateSelected}
+            />
 
             {/* <Box p={2} overflow="auto" height={600}>
                 <Typography component="pre" style={{ fontFamily: 'monospace' }}>

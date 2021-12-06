@@ -16,9 +16,10 @@ import StateHistory from './StateHistory';
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
     selectedState?:any;
+    onStateSelected?:any;
 }
 
-function StateVisualization({ model, selectedState, ...other }: StateVisualizationProps): JSX.Element {
+function StateVisualization({ model, onStateSelected, selectedState, ...other }: StateVisualizationProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
@@ -33,9 +34,7 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
            const currHist = selectedState.histograms[histIx];
             const totalHist = model?.model?.totalHistograms[histIx];
             setTotalHistogram(totalHist);
-            
-            console.log("currHist=",currHist);
-    
+                
             if(currHist) {
                 setHistogram(currHist);
             }
@@ -80,7 +79,11 @@ function StateVisualization({ model, selectedState, ...other }: StateVisualizati
                 </Tabs>
             </Paper>
             <TabPanel value={tabValue} index={0} prefix={stateTabPrefix}>
-                <StateHistory model={model} selectedState={selectedState} />
+                <StateHistory model={model} selectedState={selectedState} onStateSelected={(stateCurr:any)=> {
+                    onStateSelected(stateCurr)
+                }
+
+                } />
             </TabPanel>
             <TabPanel value={tabValue} index={1} prefix={stateTabPrefix}>
                 {t('coordinates')}
