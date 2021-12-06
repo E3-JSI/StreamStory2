@@ -36,7 +36,7 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
         const xWidth = width - chart.left - margin.left - margin.right;
        
         const baseHeight = height - chart.top - margin.top  - margin.bottom;
-        const subChartOffset = baseHeight * 0.05; // dist between top bars and brushBars
+        const subChartOffset = baseHeight * 0.1; // dist between top bars and brushBars
         const yWidth = 0.95 * (baseHeight- 2*subChartOffset); // height of bars
         const yWidthPreview = 0.1 * (baseHeight-2*subChartOffset) // height of brushBars
 
@@ -190,6 +190,10 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
                 d3.select(".selection")
                 .attr("opacity", 0.6)
                 .attr("fill", "blue");
+
+                d3.selectAll("rect.handle").attr("fill", "black").attr("width", "5").attr("opacity", 0.8)
+
+
             })
             .on('brush end', function (this: any, event: any) {
                 const rangeSelection: any = d3.brushSelection(this);
@@ -255,6 +259,13 @@ const StateHistory = ({ model }: ModelVisualizationProps) => {
 
         gBrushBars.call(brush).call(brush.move, xBrush.range());
     }
+
+    function resizePath(d:any, heightCurr:number) {
+        const e = +(d === "e");
+        const x = e ? 1 : -1;
+        const y =heightCurr / 3;
+        return "M" + (.5 * x) + "," + y + "A6,6 0 0 " + e + " " + (6.5 * x) + "," + (y + 6) + "V" + (2 * y - 6) + "A6,6 0 0 " + e + " " + (.5 * x) + "," + (2 * y) + "Z" + "M" + (2.5 * x) + "," + (y + 8) + "V" + (2 * y - 8) + "M" + (4.5 * x) + "," + (y + 8) + "V" + (2 * y - 8); // eslint-disable-line
+      }
 
     function createDataCurr() {
 
