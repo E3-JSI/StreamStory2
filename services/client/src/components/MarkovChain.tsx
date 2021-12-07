@@ -47,8 +47,7 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
             },
             stateText: {
                 default: {
-                    // fill: uTheme.palette.text.primary,
-                    fill: 'black',
+                    fill: 'white',
                 },
             },
             link: {

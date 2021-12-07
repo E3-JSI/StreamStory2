@@ -299,7 +299,8 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("class", "node_label")
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
-        .style('fill', theme.stateText.default.fill)
+        .style('fill', (d: any) => (d.color == null) ? "white" : theme.stateText.default.fill)
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
         .attr(
             "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")
