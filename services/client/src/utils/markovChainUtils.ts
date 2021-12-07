@@ -271,7 +271,7 @@ export function createNodes(
 function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
     const enterTmp = selection
         .append('g')
-        .attr('id', (d: any) => `${stateNoScaleIxId(d)}`)
+        .attr('id', (d: any) => stateId(d))
         .attr('class', 'node_group')
         .attr('opacity', 0);
     enterTmp
@@ -457,7 +457,7 @@ export function colorBlueNodeAndLinks(nodeGroupClicked: any, theme: any, gNodes:
     if (nodeGroupClicked != null) {
         selectNodeCircle(nodeGroupClicked)
             .attr('stroke', theme.state.selected.stroke)
-            .attr('stroke-width', 5)
+            .attr('stroke-width', 6)
     }
     selectAllLinkGroups(gLinks).each(function (this: any) {
         const linkGroup = d3.select(this);
@@ -664,12 +664,12 @@ export function uniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
 }
 
-export function uniqueIdScale(state: any, scaleIx: number) {
-    return `uid=${state.suggestedLabel.label}_scaleIx=${scaleIx}`;
-}
-
 export function pseudoUniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}`;
+}
+
+export function stateId(state: any) {
+    return `${uniqueId(state).replace(/\W+/g, "_")}`
 }
 
 export function createStateLinks(

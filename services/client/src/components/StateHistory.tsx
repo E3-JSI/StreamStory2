@@ -17,7 +17,6 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
     useEffect(() => {
         if (model && model.model && model.model.scales && model.model.scales.length) {
-            console.log("useEffect1")
             addColorsToScaleStates(model.model.scales);
             createStateHistory();
             console.log("\n")
@@ -211,12 +210,9 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
     }
 
     function highlightStates(d:any) {
-        console.log("start: highlightStates, d=",d)
         const scaleCurr = model.model.scales[d.scaleIx];
-
         if(scaleCurr) {
                 const stateFound = scaleCurr.states.find((st:any)=> d.stateNo === `${st.stateNo}`);
-
                 if(stateFound) {
                     onStateSelected(stateFound)   
                 }   

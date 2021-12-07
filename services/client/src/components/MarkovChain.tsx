@@ -15,8 +15,7 @@ import {
     createGraphData,
     addColorsToScaleStates,
     colorBlueNodeAndLinks,
-    uniqueId,
-    stateNoScaleIxId,
+    stateId,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -130,6 +129,7 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
 
     useEffect(() => {
         if (selectedState) {
+            console.log('scaleIx=', selectedState.scaleIx, ', stateNo=', selectedState.stateNo);
             setCurrentState(selectedState);
             setCurrentScaleIx(selectedState.scaleIx);
         }
@@ -268,7 +268,9 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
             createMarkers(theme, graphData[currentScaleIx], gMarkers);
 
             if (currentState) {
-                const selectedNodeGroup: any = d3.select(`#${stateNoScaleIxId(currentState)}`);
+                const selectedNodeGroup: any = d3.select(`#${stateId(currentState)}`);
+
+                console.log('selectedNodeGroup=', selectedNodeGroup);
 
                 if (selectedNodeGroup) {
                     colorBlueNodeAndLinks(selectedNodeGroup, theme, gNodes, gLinks, gMarkers);
