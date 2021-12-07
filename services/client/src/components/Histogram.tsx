@@ -54,7 +54,9 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 freqFn = (data: any) => data.freqs;
                 totalFreqFn = () => totalHistogram.freqs;
             }
-            renderHistogram(domain, freqFn, totalFreqFn);
+            if (histogram != null && freqFn(histogram) != null && freqFn(histogram).length > 0) {
+                renderHistogram(domain, freqFn, totalFreqFn);
+            }
         }
     }, [histogram, totalHistogram, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 

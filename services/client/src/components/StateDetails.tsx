@@ -30,7 +30,6 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
 
     useEffect(()=> {
         if(selectedState) {
-            console.log("selectedState=", selectedState.suggestedLabel.label)
             const histIndices = selectedState.histograms
             .map((hist:any, ix:any) => ((hist.attrName.toLowerCase() !== 'time') && (hist.attrName.toLowerCase() !== 'timestamp')) ? ix: null)
             .filter((el:any)=> el!= null);
@@ -49,10 +48,6 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                    console.log("problem!!")
                }
             }
-
-            console.log("hists=", hists)
-            console.log("totalHists=", totalHists)
-
             setHistograms(hists);
             setTotalHistograms(totalHists)
         }

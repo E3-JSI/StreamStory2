@@ -28,10 +28,10 @@ export function createSVG(
     const svg = d3
         .select(container.current)
         .append('svg')
-        .append('g')
-        .attr('class', 'graph')
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
+        .append('g')
+        .attr('class', 'graph')
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     svg
@@ -39,7 +39,7 @@ export function createSVG(
         .attr("class", "zoom_rect")
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
-        .attr("fill", "white")
+        .attr("fill", "green").attr("opacity", 0)
 
     return svg;
 }
@@ -225,7 +225,12 @@ export function createNodes(
 
     selectAllNodeGroups(gNodes)
         .on('click', function (this: any, event: any) {
-            colorBlueNodeAndLinks.call(this, theme, gNodes, gLinks, gMarkers);
+            const nodeGroupClicked: any = d3.select(this);
+
+            console.log("d.scaleIx=", nodeGroupClicked.data()[0].scaleIx, "d.stateNo=", nodeGroupClicked.data()[0].stateNo);
+            console.log("\n")
+
+            colorBlueNodeAndLinks(nodeGroupClicked, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
         .on("mouseover", function (this: any, event: any, d: any) {
@@ -264,7 +269,11 @@ export function createNodes(
 }
 
 function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
-    const enterTmp = selection.append('g').attr('class', 'node_group').attr('opacity', 0);
+    const enterTmp = selection
+        .append('g')
+        .attr('id', (d: any) => stateId(d))
+        .attr('class', 'node_group')
+        .attr('opacity', 0);
     enterTmp
         .append('circle')
         .attr('class', 'node_circle')
@@ -290,7 +299,8 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("class", "node_label")
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
-        .style('fill', theme.stateText.default.fill)
+        .style('fill', (d: any) => (d.color == null) ? "white" : theme.stateText.default.fill)
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
         .attr(
             "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")
@@ -441,41 +451,45 @@ function drawLineWithOffset(nodesMap: any, d: any) {
     return path;
 }
 
-function colorBlueNodeAndLinks(this: any, theme: any, gNodes: any, gLinks: any, gMarkers: any): void {
+export function colorBlueNodeAndLinks(nodeGroupClicked: any, theme: any, gNodes: any, gLinks: any, gMarkers: any): void {
     selectAllNodeGroups(gNodes).each(function (this: any) {
         selectNodeCircle(d3.select(this)).attr('stroke', 'none');
     });
-    const nodeGroupClicked = d3.select(this);
-    selectNodeCircle(nodeGroupClicked)
-        .attr('stroke', theme.state.selected.stroke)
-        .attr('stroke-width', 5)
-
+    if (nodeGroupClicked != null) {
+        selectNodeCircle(nodeGroupClicked)
+            .attr('stroke', theme.state.selected.stroke)
+            .attr('stroke-width', 6)
+    }
     selectAllLinkGroups(gLinks).each(function (this: any) {
         const linkGroup = d3.select(this);
         const linePath = selectLinkPath(linkGroup);
         const lineData: any = linkGroup.data()[0];
         const arrow = gMarkers.select(`#arrow_s${lineData.source}_t${lineData.target}`);
-
         const delay = 150;
 
-        if ((linkGroup.data()[0] as any).source === (nodeGroupClicked.data()[0] as any).stateNo) {
-            linePath
-                .attr('stroke', theme.link.default.stroke)
-                .transition()
-                .ease(d3.easeExpIn)
-                .duration(delay)
-                .attr('stroke', theme.link.selected.stroke);
+        if (linePath && nodeGroupClicked && linkGroup) {
+            const linkGroupData: any = linkGroup.data()[0];
+            const nodeGroupData: any = nodeGroupClicked.data()[0]
 
-            arrow
-                .attr('stroke', theme.marker.selected.stroke)
-                .attr('fill', theme.marker.selected.fill)
-                .transition()
-                .ease(d3.easeExpIn)
-                .duration(delay)
-                .attr('stroke', theme.marker.selected.fill);
-        } else {
-            linePath.attr('stroke', theme.link.default.stroke);
-            arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
+            if (linkGroupData && nodeGroupData && (linkGroupData.source === nodeGroupData.stateNo)) {
+                linePath
+                    .attr('stroke', theme.link.default.stroke)
+                    .transition()
+                    .ease(d3.easeExpIn)
+                    .duration(delay)
+                    .attr('stroke', theme.link.selected.stroke);
+
+                arrow
+                    .attr('stroke', theme.marker.selected.stroke)
+                    .attr('fill', theme.marker.selected.fill)
+                    .transition()
+                    .ease(d3.easeExpIn)
+                    .duration(delay)
+                    .attr('stroke', theme.marker.selected.fill);
+            } else {
+                linePath.attr('stroke', theme.link.default.stroke);
+                arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
+            }
         }
     });
 }
@@ -643,16 +657,20 @@ export function findMinMaxValues(scales: any) {
     return rez;
 }
 
+export function stateNoScaleIxId(state: any) {
+    return `scaleIx_${state.scaleIx}_stateNo_${state.stateNo}`
+}
+
 export function uniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
 }
 
-export function uniqueIdScale(state: any, scaleIx: number) {
-    return `uid=${state.suggestedLabel.label}_scaleIx=${scaleIx}`;
-}
-
 export function pseudoUniqueId(state: any) {
     return `uid=${state.suggestedLabel.label}`;
+}
+
+export function stateId(state: any) {
+    return `${uniqueId(state).replace(/\W+/g, "_")}`
 }
 
 export function createStateLinks(
@@ -737,8 +755,13 @@ export function addColorsToScaleStates(scales: any) {
                 }
             });
         }
+        sc.states.forEach((state: any) => {
+            state.scaleIx = scaleIx; // eslint-disable-line no-param-reassign
+        })
+
     });
     // color added to each state, if added before same state in diff scale would have diff color
+
     scales
         .map((sc: any) => sc.states).flat()
         .forEach((state: any) => {
