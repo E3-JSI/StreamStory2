@@ -1,6 +1,6 @@
 # The buildModel function
 
-Send a HTTP POST request to the StreamStory2 server with `/buildModel` as the path and a JSON object in the body of the request.  The response returned by the server will likewise be a JSON object.
+Send an HTTP POST request to the StreamStory2 server with `/buildModel` as the path and a JSON object in the body of the request.  The response returned by the server will likewise be a JSON object.
 
 ## Structure of the input JSON object
 
@@ -118,6 +118,8 @@ The model object contains the following attributes:
 - `totalHistograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst all the datapoints of the dataset.  
 - `stateHistoryTimes` and `stateHistoryInitialStates`: two arrays which, taken together, indicate that the measurements whose time `t` falls into the range `stateHistoryTimes[i] <= t < stateHistoryTimes[i + 1]` belong to initial state `stateHistoryInitialStates[i]`.  
 
+The model may contain additional attributes not documented here; these are used to support subsequent use of the model e.g. to classify new datapoints.
+
 For the structure of the objects representing scales and histograms, see the subsequent sections.
 
 ### Structure of a scale object
@@ -135,18 +137,21 @@ A state object contains the following attributes:
 - `stateNo`: the zero-based index of this state in the `states` array for this scale.
 - `initialStates`: an array of integers listing the initial states that have been aggregated to form the state represented by this object.
 - `childStates`: the zero-based indices of the children of this state on the scale immediately below the current one; that is, these are the states whose `initialStates` set is a subset of the `initialStates` set of the current state.  At the lowest scale, which contains the initial states without any aggregation, the objects do not have a `childStates` attribute.
-- `centroid`: a vector of objects representing the centroid of this state (i.e. the centroid of all the input datapoints that have been assigned, during clustering, into those initial states out of which the current state has been aggregated).  Each of these objects contains two fields, `attrName` and `value`.  
+- `parentState`: the zero-based index of the parent of this state on the scale immediately above the current one.  At the highest scale, the objects do not have a `parentState` attribute.
+- `sameAsParent`: a boolean value indicating whether this state is identical to its parent (i.e. whether it has the same set of `initialStates`).  To reduce the size of the JSON representation of the model, if `sameAsParent == true`, the `centroid`, `suggestedLabel`, `histograms` and `decisionTree` members are omitted from the object representing the current state, because these structures would be identical as in the parent state.  In that case the caller should simply copy the references from the corresponding structures of the parent state into the current state.
+- `centroid`: a vector of objects representing the centroid of this state (i.e. the centroid of all the input datapoints that have been assigned, during clustering, into those initial states out of which the current state has been aggregated).  Each of these objects contains two fields, `attrName` and `value`.  The `centroid` array is present only if `sameAsParent == false`.
 - `stationaryProbability`: the stationary probability of this state, i.e. the proportion of input datapoints that belong to the initial states (clusters) from which this state has been aggregated.
 - `nMembers`: the number of datapoints (from the input dataset) belonging to this state (or, in other words, to the initial states out of which the present state has been aggregated).
 - `nextStateProbDistr`: an array of floating-point values containing the probabilities of the next state.  Thus, `states[i].nextStateProbDistr[j]` is the probability that the next datapoint belongs to `states[j]` conditional on the fact that the current datapoint belongs to `states[i]`. 
-- `histograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst the datapoints that belong to the current state.  For more detauls about the structure of the histogram objects, see a subsequent section.
+- `histograms`: an array of objects, one for each attribute in the input datapoints, representing the distribution of the values of that attribute amongst the datapoints that belong to the current state.  For more details about the structure of the histogram objects, see a subsequent section.  The `histograms` array is present only if `sameAsParent == false`.
 - `xCenter`, `yCenter`, `radius`: suggested position of a circle used to represent this state in visualizations.  Circles associated with states on the same scale will not overlap, and if several scales have an identical state (i.e. one consisting of the same set of initial states), this state will receive the same coordinates and radius at all scales where it appears.  The coordinates are not guaranteed to lie in any particular range, and the caller should scale them as needed.
 - `suggestedLabel`: an object containing the following attributes:
   - `label`: a suggested string label for this state, e.g. `"humidity HIGH"`.  
   - `nCoveredInState`, `nNotCoveredInState`: the number of instances that belong to this state and do/don't match the label.
   - `nCoveredOutsideState`, `nNotCoveredOutsideState`: the number of instances that don't belong to this state and do/don't match the label.
   - `logOddsRatio`: the logarithm of the odds-ratio calculated from the above values.  The caller may wish to use this to decide whether to display the suggested label at all; if `logOddsRatio` is low, the suggested label might be considered misleading or useless, and a generic label (e.g. based on `stateNo`) might be preferred instead.
-- `decisionTree`: an object representing (the root node of) a decision tree that can be used to predict/describe whether a datapoint should belong to this state or not.  For the structure of the decision tree nodes, see a subsequent section.
+  The `suggestedLabel` object is present only if `sameAsParent == false`. 
+- `decisionTree`: an object representing (the root node of) a decision tree that can be used to predict/describe whether a datapoint should belong to this state or not.  For the structure of the decision tree nodes, see a subsequent section.  The `decisionTree` object is present only if `sameAsParent == false`.
 
 ### Structure of a histogram object
 
@@ -185,3 +190,28 @@ It also contains a few statistics that could in principle be calculated by the c
 - `normInfGain`: the ratio `infGain / splitCost`.
 
 In leaf nodes, only `entropyBeforeSplit` is present.
+
+# The classifySamples function
+
+This function takes a model and one or more datapoints as input.  For each datapoint, it returns the number of the initial state whose centroid is closest to that datapoint.
+
+Usage: send an HTTP POST request to the StreamStory2 server with `/classifySamples` as the path and a JSON object in the body of the request.  The response returned by the server will likewise be a JSON object.
+
+Note: if the configuration object that was used when building the model included time-window operations on the input data (e.g. time delta, time shift, or linear trend), the service will also try to apply these operations to the input data provided to the classifySamples function.  In this case the caller should make sure to send enough data to cover the time window (and not e.g. send one sample at a time).  Additionally, since the results of time-window operations on the first few datapoints (those that do not have enough preceding datapoints to cover the time window) are likely to be dubious, it is recommended to disregard the classifications made on the first few datapoints.
+
+## Structure of the input JSON object
+
+It should contain the following sub-objects:
+
+- `dataSource`: specifies how and where to get the datapoints to be classified.  The structure of this object is exactly as in the request to the buildModel function.
+- `model`: the JSON representation of the model that is to be used to classify the datapoints.  This should be the entire `model` structure as returned by the buildModel function, including its undocumented attributes.
+
+## Structure of the output JSON object
+
+This object contains the following attributes:
+
+- `status`: a string value, may be either `"ok"` or `"error"`.
+
+- `classifications`: an array containing as many integers are there are datapoints in the input dataset.  For each `i`, `classifications[i]` is the number of the initial state whose centroid was closest to the `i`th datapoint of the input dataset.  This attribute is present only if `status == "ok"`.
+
+- `errors`: an array of string containing the error messages, if any.

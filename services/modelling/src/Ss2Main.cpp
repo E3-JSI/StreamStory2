@@ -170,6 +170,7 @@ public:
 		TStatePartitionV &selectedPartitions = model->statePartitions;
 		int nScales = TInt::GetMn(10, allPartitions.Len() / 2); if (nScales < 2 || nScales >= allPartitions.Len()) selectedPartitions = allPartitions;
 		else TStateAggScaleSelector::SelectScales(*model, allPartitions, nScales, selectedPartitions);
+		model->CalcParentChildStates();
 		// Calculate various statistics about the model.
 		if (config->includeHistograms) model->CalcHistograms();
 		model->CalcLabels();
@@ -178,6 +179,50 @@ public:
 		// Export the model to json.
 		req.outJson->AddToObj("model",  model->SaveToJson());
 		//
+		req.status = "ok"; return true;
+	}
+
+	virtual TStr ExecJSon(const TStrKdV& FldNmValPrV, const PSAppSrvRqEnv& RqEnv) {
+		TJsonRequest req;
+		if (req.InitInJson(RqEnv)) ProcessRequest(req);
+		return req.FinalizeResponse();
+	}
+}; 
+
+ClassTE(TClassifySamplesFun, TSAppSrvFun)//{
+private:
+public:
+    TClassifySamplesFun(): TSAppSrvFun("classifySamples", saotJSon){ }
+    static PSAppSrvFun New() { return new TClassifySamplesFun(); }
+
+protected:
+public:
+
+	// This function assumes that req.inJson has already been initialized.
+	static bool ProcessRequest(TJsonRequest &req)
+	{
+		PJsonVal jsonModel; if (! Json_GetObjKey(req.inJson, "model", false, false, jsonModel, "request object", req.errList)) { req.status = "error"; return false; }
+		if (jsonModel.Empty() || ! jsonModel->IsObj()) { req.errList.Add("The \'model\' value is not an object."); req.status = "error"; return false; }
+		PJsonVal jsonConfig; if (! Json_GetObjKey(jsonModel, "config", false, false, jsonConfig, "model config", req.errList)) { req.status = "error"; return false; }
+		if (jsonConfig.Empty() || ! jsonConfig->IsObj()) { req.errList.Add("The \'config\' value is not an object."); req.status = "error"; return false; }
+		// Read the configuration object.
+		PModelConfig config = new TModelConfig();
+		if (! config->InitFromJson(jsonConfig, req.errList)) { req.status = "error"; return false; }
+		// Initialize the dataset.
+		PDataset dataset = new TDataset();
+		dataset->InitColsFromConfig(config);
+		if (! dataset->ReadDataFromJsonDataSourceSpec(req.inJson->GetObjKey("dataSource"), req.errList)) { req.status = "error"; return false; }
+		if (! dataset->ApplyOps(req.errList)) { req.status = "error"; return false; }
+		if (dataset->nRows < config->numInitialStates) { req.status = "error"; req.errList.Add(TStr::Fmt("Not enough data (%d initial states were requested, %d rows are available).", config->numInitialStates, dataset->nRows)); return false; }
+		// dataset->CalcDefaultDistWeights(); // the config we loaded from the model has the actual distance weights used when building the model
+		// Initialize the model.
+		PModel model = new TModel({});
+		if (! model->InitFromJson(jsonModel, req.errList)) { req.status = "error"; return false; }
+		// Calculate the predictions.
+		TIntV allRowNos, predictions; for (int i = 0; i < dataset->nRows; ++i) allRowNos.Add(i);
+		if (! model->ClassifyInstances(*dataset, allRowNos, predictions, req.errList)) { req.status = "error"; return false; }
+		//
+		req.outJson->AddToObj("classifications", TJsonVal::NewArr(predictions));
 		req.status = "ok"; return true;
 	}
 
@@ -239,6 +284,7 @@ int main(int argc, char** argv)
 		TSAppSrvFunV SrvFunV;
 		SrvFunV.Add(TExitSFun::New());
 		SrvFunV.Add(TBuildModelFun::New());
+		SrvFunV.Add(TClassifySamplesFun::New());
 		// Start the web server.
 		//if (portNo == 0) portNo = settingsH.portNo; // QW
 		if (portNo == 0) portNo = 8096; // default port number

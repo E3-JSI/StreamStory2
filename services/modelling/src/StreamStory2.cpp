@@ -14,17 +14,25 @@ bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing,
 	value = val->GetStr(); return true;
 }
 
-bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList)
+bool Json_GetObjNumEx(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValueIfMissing, bool allowNull, double defaultValueIfNull, double& value, const TStr& whereForErrorMsg, TStrV& errList)
 {
 	if (jsonVal.Empty()) { errList.Add("Unexpected empty value in " + whereForErrorMsg + "."); return false; }
 	if (! jsonVal->IsObj()) { errList.Add("Unexpected non-object value in " + whereForErrorMsg + "."); return false; }
 	if (! jsonVal->IsObjKey(key))
-		if (allowMissing) { value = defaultValue; return true; }
+		if (allowMissing) { value = defaultValueIfMissing; return true; }
 		else { errList.Add(TStr("Missing value \"") + key + "\" in " + whereForErrorMsg + "."); return false; }
 	const PJsonVal& val = jsonVal->GetObjKey(key);
-	if (val.Empty()) { errList.Add(TStr("Unexpected null value of \"") + key + "\" in " + whereForErrorMsg + "."); return false; }
+	//if (val.Empty()) { errList.Add(TStr("Unexpected null value of \"") + key + "\" in " + whereForErrorMsg + "."); return false; }
+	if (val.Empty() || val->IsNull()) { 
+		if (allowNull) { value = defaultValueIfNull; return true; }
+		else { errList.Add(TStr("Unexpected null value of \"") + key + "\" in " + whereForErrorMsg + "."); return false; } }
 	if (! val->IsNum()) { errList.Add(TStr("The value of \"") + key + "\" in " + whereForErrorMsg + " should be a number."); return false; }
 	value = val->GetNum(); return true;
+}
+
+bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList)
+{
+	return Json_GetObjNumEx(jsonVal, key, allowMissing, defaultValue, allowMissing, defaultValue, value, whereForErrorMsg, errList);
 }
 
 bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing, int defaultValue, int& value, const TStr& whereForErrorMsg, TStrV& errList)
@@ -32,6 +40,27 @@ bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing,
 	double x; if (! Json_GetObjNum(jsonVal, key, allowMissing, defaultValue, x, whereForErrorMsg, errList)) return false;
 	value = (int) floor(x);
 	if (value != x) { errList.Add(TStr("The value of \"") + key + "\" in " + whereForErrorMsg + " is a number, but not an integer."); return false; }
+	return true;
+}
+
+bool Json_GetObjIntV(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, TIntV& value, const TStr& whereForErrorMsg, TStrV& errList)
+{
+	value.Clr();
+	PJsonVal jsonArr; if (! Json_GetObjKey(jsonVal, key, allowMissing, allowNull, jsonArr, whereForErrorMsg, errList)) return false;
+	if (jsonArr.Empty()) { if (allowMissing) return true; else { errList.Add(TStr::Fmt("Unexpected empty value of \"%s\" in %s.", key, whereForErrorMsg.CStr())); return false; } }
+	if (jsonArr->IsNull()) { if (allowNull) return true; else { errList.Add(TStr::Fmt("Unexpected null value of \"%s\" in %s.", key, whereForErrorMsg.CStr())); return false; } }
+	if (! jsonArr->IsArr()) { errList.Add(TStr::Fmt("Unexpected non-array value of \"%s\" in %s.", key, whereForErrorMsg.CStr())); return false; } 
+	int nVals = jsonArr->GetArrVals(); value.Gen(nVals);
+	for (int i = 0; i < nVals; ++i)
+	{
+		const PJsonVal &v = jsonArr->GetArrVal(i);
+		if (v.Empty()) { errList.Add(TStr::Fmt("Unexpected empty value of %s[%d] in %s.", key, i, whereForErrorMsg.CStr())); return false; }
+		if (! v->IsNum()) { errList.Add(TStr::Fmt("Unexpected non-number value of %s[%d] in %s.", key, i, whereForErrorMsg.CStr())); return false; }
+		double x = v->GetNum();
+		int xi = (int) floor(x);
+		if (xi != x) { errList.Add(TStr::Fmt("The value of %s[%d] in %s is a number, but not an integer.", key, i, whereForErrorMsg.CStr())); return false; }
+		value[i] = xi;
+	}
 	return true;
 }
 
@@ -79,6 +108,35 @@ POpDesc TOpDesc::New(const PJsonVal& jsonVal, TStrV& errList)
 	return o;
 }
 
+PJsonVal TOpDesc_TimeWindow::SaveToJson() const
+{
+	PJsonVal jsonVal = TJsonVal::NewObj();
+	jsonVal->AddToObj("inAttr", inAttr);
+	if (outAttr != inAttr) jsonVal->AddToObj("outAttr", outAttr);
+	if (timeAttr != "") jsonVal->AddToObj("timeAttr", timeAttr);
+	TStr opStr; if (op == TTimeWindowOp::Shift) opStr = "timeShift";
+	else if (op == TTimeWindowOp::Delta) opStr = "timeDelta";
+	else if (op == TTimeWindowOp::LinTrend) opStr = "linTrend"; 
+	else IAssert(false);
+	jsonVal->AddToObj("op", opStr);
+	if (windowType == TTimeWindowType::Samples) {
+		jsonVal->AddToObj("windowUnit", "samples");
+		jsonVal->AddToObj("windowSize", windowSize.GetInt()); }
+	else if (windowType == TTimeWindowType::Time) {
+		if (windowSize.ns != 0) { jsonVal->AddToObj("windowUnit", "seconds"); jsonVal->AddToObj("windowSize", windowSize.GetFlt()); }
+		else {
+			auto ws = windowSize.GetInt();
+			if (ws % (24 * 60 * 60) == 0) { jsonVal->AddToObj("windowUnit", "days"); jsonVal->AddToObj("windowSize", ws / (24 * 60 * 60)); }
+			else if (ws % (60 * 60) == 0) { jsonVal->AddToObj("windowUnit", "hours"); jsonVal->AddToObj("windowSize", ws / (60 * 60)); }
+			else if (ws % 60 == 0) { jsonVal->AddToObj("windowUnit", "minutes"); jsonVal->AddToObj("windowSize", ws / 60); }
+			else { jsonVal->AddToObj("windowUnit", "seconds"); jsonVal->AddToObj("windowSize", ws); } } }
+	else if (windowType == TTimeWindowType::TimeNumeric) {
+		jsonVal->AddToObj("windowUnit", "numeric");
+		jsonVal->AddToObj("windowSize", windowSize.GetFlt()); }
+	else IAssert(false);
+	return jsonVal;
+}
+
 bool TOpDesc_TimeWindow::InitFromJson(const PJsonVal& jsonVal, TStrV& errList) 
 { 
 	if (! TOpDesc::InitFromJson(jsonVal, errList)) return false;
@@ -96,7 +154,7 @@ bool TOpDesc_TimeWindow::InitFromJson(const PJsonVal& jsonVal, TStrV& errList)
 	s.ToLc();
 	if (s == "samples") windowType = TTimeWindowType::Samples;
 	else if (s == "num" || s == "numeric") windowType = TTimeWindowType::TimeNumeric;
-	else if (s == "s" || s == "sec" || s == "second" || s == "seconds" || s == "num" || s == "numeric") windowType = TTimeWindowType::Time;
+	else if (s == "s" || s == "sec" || s == "second" || s == "seconds") windowType = TTimeWindowType::Time;
 	else if (s == "m" || s == "min" || s == "minute" || s == "minutes") windowType = TTimeWindowType::Time, unitMultiplier = 60;
 	else if (s == "h" || s == "hour" || s == "hours") windowType = TTimeWindowType::Time, unitMultiplier = 60 * 60;
 	else if (s == "d" || s == "day" || s == "days") windowType = TTimeWindowType::Time, unitMultiplier = 60 * 60 * 24;
@@ -359,6 +417,38 @@ TStr TTimeStamp::ToStr() const
 //
 //-----------------------------------------------------------------------------
 
+PJsonVal TAttrDesc::SaveToJson() const
+{
+	PJsonVal jsonVal = TJsonVal::NewObj();
+	jsonVal->AddToObj("name", name);
+	if (sourceName != name) jsonVal->AddToObj("sourceName", sourceName);
+	if (userFriendlyLabel != name) jsonVal->AddToObj("label", userFriendlyLabel);
+	//
+	TStr s; if (type == TAttrType::Time) s = "time"; else if (type == TAttrType::Numeric) s = "numeric"; 
+	else if (type == TAttrType::Categorical) s = "categorical"; else if (type == TAttrType::Text) s = "text"; 
+	else IAssert(false);
+	jsonVal->AddToObj("type", s);
+	//
+	if (subType == TAttrSubtype::Flt) s = "float"; else if (subType == TAttrSubtype::Int) s = "int";
+	else if (subType == TAttrSubtype::String) s = "string"; else IAssert(false);
+	jsonVal->AddToObj("subType", s);
+	//
+	if (type == TAttrType::Time)
+	{
+		if (timeType == TTimeType::Flt) s = "float"; else if (timeType == TTimeType::Int) s = "int";
+		else if (timeType == TTimeType::Time) s = "time"; else IAssert(false);
+		jsonVal->AddToObj("timeType", s);
+	}
+	//
+	if (source == TAttrSource::Input) { }
+	else if (source == TAttrSource::Synthetic) jsonVal->AddToObj("source", "synthetic");
+	else IAssert(false);
+	//
+	jsonVal->AddToObj("format", formatStr);
+	jsonVal->AddToObj("distWeight", distWeight);
+	return jsonVal;
+}
+
 bool TAttrDesc::InitFromJson(const PJsonVal& jsonVal, const TStr& whatForErrMsg, TStrV& errList)
 {
 	if (jsonVal.Empty()) { errList.Add("The value of \'" + whatForErrMsg + "\' should not be null."); return false; }
@@ -408,6 +498,32 @@ bool TAttrDesc::InitFromJson(const PJsonVal& jsonVal, const TStr& whatForErrMsg,
 	//
 	if (! Json_GetObjNum(jsonVal, "distWeight", true, std::numeric_limits<double>::quiet_NaN(), distWeight, whatForErrMsg, errList)) return false;
 	return true;
+}
+
+PJsonVal TModelConfig::SaveToJson() const
+{
+	PJsonVal val = TJsonVal::NewObj();
+	val->AddToObj("numInitialStates", numInitialStates);
+	val->AddToObj("numHistogramBuckets", numHistogramBuckets);
+	val->AddToObj("ignoreConversionErrors", ignoreConversionErrors);
+	val->AddToObj("includeDecisionTrees", includeDecisionTrees);
+	val->AddToObj("includeHistograms", includeHistograms);
+	val->AddToObj("includeStateHistory", includeStateHistory);
+	val->AddToObj("distWeightOutliers", distWeightOutliers);
+	val->AddToObj("decTree_maxDepth", decTreeConfig.maxDepth);
+	val->AddToObj("decTree_minEntropyToSplit", decTreeConfig.minEntropyToSplit);
+	val->AddToObj("decTree_minNormInfGainToSplit", decTreeConfig.minNormInfGainToSplit);
+	//
+	PJsonVal vAttrs = TJsonVal::NewArr(); val->AddToObj("attributes", vAttrs);
+	for (const auto& attr : attrs) {
+		PJsonVal vAttr = attr.SaveToJson();
+		if (! vAttr.Empty()) vAttrs->AddToArr(vAttr); }
+	//
+	PJsonVal vOps = TJsonVal::NewArr(); val->AddToObj("ops", vOps);
+	for (const auto& op : ops) {
+		PJsonVal vOp = op->SaveToJson();
+		if (! vOp.Empty()) vOps->AddToArr(vOp); }
+	return val;
 }
 
 bool TModelConfig::InitFromJson(const PJsonVal& val, TStrV& errList)
@@ -907,6 +1023,50 @@ void TDataset::AddRow(const TConvertedValueV& values)
 	nRows += 1;
 }
 
+// Performs additional initialization after the initial empty dataset has been constructed
+// from TModelConfig.  This is the opportunity, when loading a saved model, to load anything 
+// important that isn't present in the TModelConfig instance.  Currently this mostly means 
+// the 'intKeyMap' and 'strKeyMap' hash tables of categorical attributes.
+bool TDataset::AdditionalInitFromJson(const PJsonVal &jsonVal, TStrV& errList)
+{
+	const TStr whereForErrorMsg = "the dataset object";
+	if (jsonVal.Empty() || ! jsonVal->IsObj()) { errList.Add("The \"dataset\" value is not an object."); return false; }
+	{
+		PJsonVal vCols; if (! Json_GetObjKey(jsonVal, "cols", false, false, vCols, whereForErrorMsg, errList)) return false;
+		for (int i = 0; i < vCols->GetArrVals(); ++i)
+		{
+			PJsonVal vCol = vCols->GetArrVal(i); if (vCol.Empty() || ! vCol->IsObj()) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d]\" is not an object.", i)); return false; }
+			TStr attrName; if (! Json_GetObjStr(vCol, "name", false, {}, attrName, whereForErrorMsg, errList)) return false;
+			int colIdx = this->GetColIdx(attrName); if (colIdx < 0) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].name\" is an unknown column name.", i)); return false; }
+			TDataColumn &col = cols[colIdx];
+			if (! Json_GetObjNum(vCol, "distWeight", false, std::numeric_limits<double>::quiet_NaN(), col.distWeight, whereForErrorMsg, errList)) return false; 
+			if (col.type == TAttrType::Categorical)
+			{
+				PJsonVal vKeys; if (! Json_GetObjKey(vCol, "keys", false, false, vKeys, whereForErrorMsg, errList)) return false;
+				if (vKeys.Empty() || ! vKeys->IsArr()) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].keys\" is not an array.", i)); return false; }
+				col.intKeyMap.Clr(); col.strKeyMap.Clr();
+				for (int j = 0; j < vKeys->GetArrVals(); ++j)
+				{
+					PJsonVal vKey = vKeys->GetArrVal(j);
+					if (col.subType == TAttrSubtype::Int) {
+						if (vKey.Empty() || ! vKey->IsNum()) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].keys[%d]\" is not a number.", i, j)); return false; }
+						double x = vKey->GetNum(); 
+						int xi = (int) floor(x); if (xi != x) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].keys[%d]\" is a number but not an integer.", i, j)); return false; }
+						int keyId = col.intKeyMap.AddKey(xi); if (keyId != j) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].keys[%d]\" is a duplicate of [%d].", i, j, keyId)); return false; }
+						col.intKeyMap[keyId] = keyId; }
+					else if (col.subType == TAttrSubtype::String) {
+						if (vKey.Empty() || ! vKey->IsStr()) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].keys[%d]\" is not a string.", i, j)); return false; }
+						TStr key = vKey->GetStr();
+						int keyId = col.strKeyMap.AddKey(key); if (keyId != j) { errList.Add(TStr::Fmt("The value of \"dataset.cols[%d].keys[%d]\" is a duplicate of [%d].", i, j, keyId)); return false; }
+						col.strKeyMap[keyId] = keyId; }
+					else IAssert(false);
+				}
+			}
+		}
+	}
+	return true;
+}
+
 void TDataset::InitColsFromConfig(const PModelConfig& config_)
 {
 	cols.Clr(); config = config_;
@@ -1199,9 +1359,9 @@ double TDataset::RowCentrDist2(int rowNo, const TCentroidComponentV& centroid) c
 				delta2 += d * d; } }
 		else if (col.type == TAttrType::Text) {
 			const auto &V = col.sparseVecData;
-			const auto &pr1 = col.sparseVecIndex[rowNo]; const auto *from1 = &V[pr1.Val1]; const auto *to1 = from1 + pr1.Val2;
+			const auto &pr1 = col.sparseVecIndex[rowNo]; const auto *from1 = V.begin() + pr1.Val1; const auto *to1 = from1 + pr1.Val2;
 			double sum11 = 0, sum12 = 0, sum22 = comp.GetSparseVec2();
-			while (from1 < to1) {
+			for ( ; from1 < to1; ++from1) {
 				auto key1 = from1->Key; auto dat1 = from1->Dat;
 				auto keyId2 = comp.sparseVec.GetKeyId(key1);
 				double dat2 = (keyId2 < 0) ? 0.0 : comp.sparseVec[keyId2].Val;
@@ -1326,6 +1486,56 @@ double TCentroidComponent::GetSparseVec2() const
 	return sparseVec2;
 }
 
+bool TCentroidComponent::InitFromJson(const TDataset& dataset, int& colNo, const PJsonVal& jsonVal, TStrV& errList)
+{
+	TStr whereForErrorMsg = "a centroid component";
+	TStr attrName; if (! Json_GetObjStr(jsonVal, "attrName", false, {}, attrName, whereForErrorMsg, errList)) return false;
+	colNo = dataset.GetColIdx(attrName); if (colNo < 0) { errList.Add("Unknown attribute name \"" + attrName + "\" in a centroid component."); return false; }
+	const TDataColumn &col = dataset.cols[colNo];
+	this->Clr(col);
+	if (col.type == TAttrType::Numeric)
+	{
+		if (! Json_GetObjNum(jsonVal, "value", false, std::numeric_limits<double>::quiet_NaN(), fltVal, whereForErrorMsg, errList)) return false;
+	}
+	else if (col.type == TAttrType::Categorical)
+	{
+		PJsonVal vArr; if (! Json_GetObjKey(jsonVal, "values", false, false, vArr, whereForErrorMsg, errList)) return false;
+		if (vArr.Empty() || ! vArr->IsArr()) { errList.Add("The value of \"values\" in " + whereForErrorMsg + " is not an array."); return false; }
+		int nKeys = vArr->GetArrVals();
+		denseVec.Gen(nKeys);
+		for (int i = 0; i < nKeys; ++i)
+		{
+			PJsonVal vVal = vArr->GetArrVal(i); if (vVal.Empty() || ! vVal->IsObj()) { errList.Add(TStr::Fmt("The value of \"values[%d]\" in %s is not an object.", i, whereForErrorMsg.CStr())); return false; }
+			double val; if (! Json_GetObjNum(vVal, "value", false, std::numeric_limits<double>::quiet_NaN(), val, whereForErrorMsg, errList)) return false;
+			if (col.subType == TAttrSubtype::Int) {
+				int key; if (! Json_GetObjInt(vVal, "key", false, -1, key, whereForErrorMsg, errList)) return false;
+				int keyId = col.intKeyMap.GetKeyId(key); if (keyId < 0 || keyId >= nKeys) { errList.Add(TStr::Fmt("In %s, \"values[%d].key\" is %d, which is not a valid key for this categorical attribute (\"%s\").", whereForErrorMsg.CStr(), i, key, attrName.CStr())); return false; }
+				denseVec[keyId] = val; }
+			else if (col.subType == TAttrSubtype::String) {
+				TStr key; if (! Json_GetObjStr(vVal, "key", false, {}, key, whereForErrorMsg, errList)) return false;
+				int keyId = col.strKeyMap.GetKeyId(key); if (keyId < 0 || keyId >= nKeys) { errList.Add(TStr::Fmt("In %s, \"values[%d].key\" is %d, which is not a valid key for this categorical attribute (\"%s\").", whereForErrorMsg.CStr(), i, key, attrName.CStr())); return false; }
+				denseVec[keyId] = val; }
+			else IAssert(false);
+		}
+	}
+	else if (col.type == TAttrType::Time)
+	{
+		if (col.timeType == TTimeType::Flt || col.timeType == TTimeType::Int) {
+			if (! Json_GetObjNum(jsonVal, "value", false, std::numeric_limits<double>::quiet_NaN(), fltVal, whereForErrorMsg, errList)) return false; }
+		else if (col.timeType == TTimeType::Time) {
+			if (! Json_GetObjNum(jsonVal, "fltValue", false, std::numeric_limits<double>::quiet_NaN(), fltVal, whereForErrorMsg, errList)) return false; }
+		else IAssert(false);
+	}
+	else if (col.type == TAttrType::Text)
+	{
+		// ToDo.
+		IAssert(false);
+	}
+	else
+		IAssert(false);
+	return true;
+}
+
 PJsonVal TCentroidComponent::SaveToJson(const TDataset& dataset, int colNo) const
 {
 	PJsonVal vComp = TJsonVal::NewObj();
@@ -1365,6 +1575,8 @@ PJsonVal TCentroidComponent::SaveToJson(const TDataset& dataset, int colNo) cons
 		// QW ToDo, build a 'values' array similar to categorical attributes, but using this->sparseVec
 		IAssert(false);
 	}
+	else
+		IAssert(false);
 	return vComp;
 }
 
@@ -1500,6 +1712,18 @@ bool TStateLabel::SetIfBetter(int nCoveredInState_, int nStateMembers, int nCove
 	return false; 
 }
 
+PState TState::Clone() const
+{
+	PState clone = new TState();
+	clone->centroid = centroid;
+	clone->members = members; clone->initialStates = initialStates;
+	clone->parentState = parentState; clone->childStates = childStates; clone->sameAsParent = sameAsParent;
+	clone->label = label;
+	clone->xCenter = xCenter; clone->yCenter = yCenter; clone->radius = radius;
+	IAssert(histograms.Empty()); IAssert(decTree.Empty());
+	return clone;
+}
+
 void TState::InitCentroid0(const TDataset& dataset) 
 { 
 	const int nCols = dataset.cols.Len(); centroid.Gen(nCols); 
@@ -1541,6 +1765,7 @@ TStr TTimeStamp::GetMonthName(int monthOneBased)
 
 void TState::CalcLabel(const TDataset& dataset, int thisStateNo, const THistogramV& totalHists, double eps)
 {
+	if (sameAsParent) return;
 	TStateLabel &bestLabel = this->label; bestLabel = TStateLabel(); bestLabel.label = TInt::GetStr(thisStateNo);
 	static const char *bucketNames[] = { "LOWEST", "LOW", "MEDIUM", "HIGH", "HIGHEST", "ERROR" };
 	const int nStateMembers = members.Len(), nAllInstances = dataset.nRows;
@@ -1574,7 +1799,48 @@ void TState::CalcLabel(const TDataset& dataset, int thisStateNo, const THistogra
 	}
 }
 
-PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PStatePartition& nextLowerScale) const
+void TState::CalcParentChildStates(const PStatePartition& nextLowerScale, const PStatePartition& nextHigherScale)
+{
+	parentState = -1; childStates.Clr(); sameAsParent = false;
+	if (! nextLowerScale.Empty()) {
+		for (int childStateNo = 0; childStateNo < nextLowerScale->aggStates.Len(); ++childStateNo)
+			if (IsAncestorOf(nextLowerScale->aggStates[childStateNo])) childStates.Add(childStateNo); }	
+	if (! nextHigherScale.Empty())
+	{
+		for (int i = 0; i < nextHigherScale->aggStates.Len(); ++i)
+			if (nextHigherScale->aggStates[i]->IsAncestorOf(*this)) { parentState = i; break; }
+		if (parentState >= 0 && IsAncestorOf(nextHigherScale->aggStates[parentState])) sameAsParent = true; 
+	}
+}
+
+bool TState::InitFromJson(TDataset& dataset, const PJsonVal &jsonVal, TStrV& errList)
+{
+	if (jsonVal.Empty() || ! jsonVal->IsObj()) { errList.Add("The state object is not an object."); return false; }
+	TStr whereForErrMsg = "a state object";
+	if (! Json_GetObjIntV(jsonVal, "initialStates", false, false, initialStates, whereForErrMsg, errList)) return false;
+	if (! Json_GetObjBool(jsonVal, "sameAsParent", false, false, sameAsParent, whereForErrMsg, errList)) return false;
+	if (! Json_GetObjIntV(jsonVal, "childStates", true, false, childStates, whereForErrMsg, errList)) return false;
+	if (! Json_GetObjInt(jsonVal, "parentState", true, -1, parentState, whereForErrMsg, errList)) return false;
+	PJsonVal vCentroid; if (! Json_GetObjKey(jsonVal, "centroid", sameAsParent, sameAsParent, vCentroid, whereForErrMsg, errList)) return false;
+	centroid.Clr();
+	if (! sameAsParent)
+	{
+		if (vCentroid.Empty() || ! vCentroid->IsArr()) { errList.Add("Unexpected non-array value of \"centroid\" in " + whereForErrMsg + "."); return false; }
+		int nVals = vCentroid->GetArrVals(); centroid.Gen(dataset.cols.Len());
+		for (int i = 0; i < nVals; ++i)
+		{
+			PJsonVal v = vCentroid->GetArrVal(i);
+			if (v.Empty() || ! v->IsObj()) { errList.Add(TStr::Fmt("Unexpected non-object value of \"centroid[%d]\" in %s.", i, whereForErrMsg.CStr())); return false; }
+			TCentroidComponent comp; int colNo;
+			if (! comp.InitFromJson(dataset, colNo, v, errList)) return false;
+			centroid[colNo] = comp;
+		}
+	}
+	// ToDo: read other things if needed.
+	return true;
+}
+
+PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset) const
 {
 	PJsonVal vState = TJsonVal::NewObj();
 	vState->AddToObj("stateNo", TJsonVal::NewNum(thisStateNo));
@@ -1583,33 +1849,27 @@ PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PSta
 	vState->AddToObj("xCenter", TJsonVal::NewNum(xCenter));
 	vState->AddToObj("yCenter", TJsonVal::NewNum(yCenter));
 	vState->AddToObj("radius", TJsonVal::NewNum(radius));
-	PJsonVal vLabel = TJsonVal::NewObj(); vState->AddToObj("suggestedLabel", vLabel);
-	vLabel->AddToObj("label", label.label);
-	vLabel->AddToObj("nCoveredInState", label.nCoveredInState);
-	vLabel->AddToObj("nCoveredOutsideState", label.nCoveredOutsideState);
-	vLabel->AddToObj("nNotCoveredInState", label.nNotCoveredInState);
-	vLabel->AddToObj("nNotCoveredOutsideState", label.nNotCoveredOutsideState);
-	vLabel->AddToObj("logOddsRatio", label.logOddsRatio);
-	PJsonVal vCentroid = TJsonVal::NewArr(); vState->AddToObj("centroid", vCentroid);
-	PJsonVal vHistograms; if (dataset.config->includeHistograms) { vHistograms = TJsonVal::NewArr(); vState->AddToObj("histograms", vHistograms); }
-	for (int colNo = 0; colNo < centroid.Len(); ++colNo)
+	if (! childStates.Empty()) vState->AddToObj("childStates", TJsonVal::NewArr(childStates));
+	if (parentState >= 0) vState->AddToObj("parentState", parentState);
+	vState->AddToObj("sameAsParent", sameAsParent);
+	if (! sameAsParent)
 	{
-		vCentroid->AddToArr(centroid[colNo].SaveToJson(dataset, colNo));
-		if (dataset.config->includeHistograms) vHistograms->AddToArr(histograms[colNo]->SaveToJson(dataset.cols[colNo]));
-	}
-	if (! nextLowerScale.Empty())
-	{
-		TIntV childStates;
-		for (int childStateNo = 0; childStateNo < nextLowerScale->aggStates.Len(); ++childStateNo)
+		PJsonVal vLabel = TJsonVal::NewObj(); vState->AddToObj("suggestedLabel", vLabel);
+		vLabel->AddToObj("label", label.label);
+		vLabel->AddToObj("nCoveredInState", label.nCoveredInState);
+		vLabel->AddToObj("nCoveredOutsideState", label.nCoveredOutsideState);
+		vLabel->AddToObj("nNotCoveredInState", label.nNotCoveredInState);
+		vLabel->AddToObj("nNotCoveredOutsideState", label.nNotCoveredOutsideState);
+		vLabel->AddToObj("logOddsRatio", label.logOddsRatio);
+		PJsonVal vCentroid = TJsonVal::NewArr(); vState->AddToObj("centroid", vCentroid);
+		PJsonVal vHistograms; if (dataset.config->includeHistograms) { vHistograms = TJsonVal::NewArr(); vState->AddToObj("histograms", vHistograms); }
+		for (int colNo = 0; colNo < centroid.Len(); ++colNo)
 		{
-			TState &child = *(nextLowerScale->aggStates[childStateNo]);
-			bool isChild = true;
-			for (int initState : child.initialStates) if (! this->initialStates.IsIn(initState)) { isChild = false; break; }
-			if (isChild) childStates.Add(childStateNo);
+			vCentroid->AddToArr(centroid[colNo].SaveToJson(dataset, colNo));
+			if (dataset.config->includeHistograms) vHistograms->AddToArr(histograms[colNo]->SaveToJson(dataset.cols[colNo]));
 		}
-		vState->AddToObj("childStates", TJsonVal::NewArr(childStates));
-	}	
-	if (! decTree.Empty()) vState->AddToObj("decisionTree", decTree->SaveToJson(dataset));
+		if (! decTree.Empty()) vState->AddToObj("decisionTree", decTree->SaveToJson(dataset));
+	}
 	return vState;
 }
 
@@ -1618,6 +1878,17 @@ PJsonVal TState::SaveToJson(int thisStateNo, const TDataset& dataset, const PSta
 // TModel
 //
 //-----------------------------------------------------------------------------
+
+void TModel::CalcParentChildStates()
+{
+	const int nScales = statePartitions.Len();
+	for (int scaleNo = 0; scaleNo < nScales; ++scaleNo)
+	{
+		statePartitions[scaleNo]->CalcParentChildStates((scaleNo == 0 ? PStatePartition{} : statePartitions[scaleNo - 1]), (scaleNo == nScales - 1 ? PStatePartition{} : statePartitions[scaleNo + 1]));
+		if (scaleNo > 0) IAssert(statePartitions[scaleNo]->aggStates.Len() < statePartitions[scaleNo - 1]->aggStates.Len());
+		else IAssert(statePartitions[scaleNo]->aggStates.Len() == initialStates.Len());
+	}
+}
 
 void TModel::CalcTransMx(TFltV& statProbs, TFltVV& transMx) const
 {
@@ -1750,6 +2021,7 @@ void TModel::BuildDecTrees(int maxDepth, double minEntropyToSplit, double minNor
 		for (int aggStateNo = 0; aggStateNo < nAggStates; ++aggStateNo)
 		{
 			const PState &state = scale->aggStates[aggStateNo];
+			if (state->sameAsParent) continue;
 			// Prepare a list of rows that belond to the state and a list of those that don't.
 			TIntV posList, negList; 
 			for (int rowNo = 0; rowNo < nRows; ++rowNo)
@@ -1767,6 +2039,47 @@ void TModel::BuildDecTrees(int maxDepth, double minEntropyToSplit, double minNor
 	}
 }
 
+bool TModel::InitFromJson(const PJsonVal &jsonVal, TStrV& errList)
+{
+	if (jsonVal.Empty()) { errList.Add("The \'model\' value is not empty."); return false; }
+	if (! jsonVal->IsObj()) { errList.Add("The \'model\' value is not an object."); return false; }
+	// Initialize a TModelConfig instance.
+	PJsonVal jsonConfig; if (! Json_GetObjKey(jsonVal, "config", false, false, jsonConfig, "model", errList)) return false; 
+	if (jsonConfig.Empty() || jsonConfig->IsNull() || ! jsonConfig->IsObj()) { errList.Add("The \'config\' value is not an object."); return false; }
+	PModelConfig modelConfig = new TModelConfig();
+	if (! modelConfig->InitFromJson(jsonConfig, errList)) return false;
+	// Initialize an empty dataset from that TModelConfig instance.
+	dataset = new TDataset();
+	dataset->InitColsFromConfig(modelConfig);
+	if (! dataset->ApplyOps(errList)) return false;
+	PJsonVal jsonDataset; if (! Json_GetObjKey(jsonVal, "dataset", false, false, jsonDataset, "model", errList)) return false;
+	if (jsonDataset.Empty() || ! jsonDataset->IsObj()) { errList.Add("The \'dataset\' value is not an object."); return false; }
+	// Let the dataset complete its initialization by reading additional data from the JSON.
+	if (! dataset->AdditionalInitFromJson(jsonDataset, errList)) return false;
+	// Read the states at all the scales.
+	PJsonVal jsonScales; if (! Json_GetObjKey(jsonVal, "scales", false, false, jsonScales, "model", errList)) return false; 
+	if (jsonScales.Empty() || ! jsonScales->IsArr()) { errList.Add("The \'model\' value is not an array."); return false; }
+	const int nScales = jsonScales->GetArrVals();
+	statePartitions.Clr(); statePartitions.Gen(nScales);
+	for (int scaleNo = 0; scaleNo < nScales; ++scaleNo)
+	{
+		PStatePartition &scale = statePartitions[scaleNo];
+		scale = new TStatePartition(0);
+		if (! scale->InitFromJson(*dataset, jsonScales->GetArrVal(scaleNo), errList)) return false;
+		if (scaleNo == 0) initialStates = scale->aggStates;
+	}
+	// For states that are the same as their parents, certain things were not saved
+	// in the JSON representation of the model.  Copy these structures from the parent states now.
+	for (int scaleNo = nScales - 2; scaleNo >= 0; --scaleNo)
+		for (auto &state : statePartitions[scaleNo]->aggStates) if (state->sameAsParent)
+		{
+			auto parentState = statePartitions[scaleNo + 1]->aggStates[state->parentState];
+			state->centroid = parentState->centroid;
+			// ToDo: copy the label, decision tree and histograms as well, if we start loading them.
+		}
+	return true;
+}
+
 PJsonVal TModel::SaveToJson() const
 {
 	PJsonVal vModel = TJsonVal::NewObj();
@@ -1774,7 +2087,7 @@ PJsonVal TModel::SaveToJson() const
 	for (int scaleNo = 0; scaleNo < statePartitions.Len(); ++scaleNo)
 	{
 		const PStatePartition scale = statePartitions[scaleNo];
-		PJsonVal vScale = scale->SaveToJson(*dataset, scale->aggStates.Len() == initialStates.Len(), (scaleNo == 0) ? PStatePartition{} : statePartitions[scaleNo - 1]);
+		PJsonVal vScale = scale->SaveToJson(*dataset, scale->aggStates.Len() == initialStates.Len());
 		vScales->AddToArr(vScale);
 	}
 	// Save the histograms of the entire dataset (as opposed to state-specific ones).
@@ -1817,7 +2130,120 @@ PJsonVal TModel::SaveToJson() const
 		}
 		NotifyInfo("TModel::SaveToJson: %d rows -> %d/%d stateHistory times/states\n", nRows, vShTimes->GetArrVals(), vShStates->GetArrVals());
 	}
+	// The following is included to support loading the model later and using it for classification.
+	{
+		vModel->AddToObj("config", dataset->config->SaveToJson());
+		PJsonVal vDataset = TJsonVal::NewObj(); vModel->AddToObj("dataset", vDataset); // loaded with TDataset::AdditionalInitFromJson
+		PJsonVal vCols = TJsonVal::NewArr(); vDataset->AddToObj("cols", vCols);
+		for (const TDataColumn &col : dataset->cols)
+		{		
+			PJsonVal vCol = TJsonVal::NewObj(); vCols->AddToArr(vCol);
+			vCol->AddToObj("name", col.name);
+			vCol->AddToObj("distWeight", col.distWeight);
+			if (col.type == TAttrType::Categorical)
+			{
+				PJsonVal vKeys = TJsonVal::NewArr(); vCol->AddToObj("keys", vKeys);
+				if (col.subType == TAttrSubtype::Int) for (auto keyId = col.intKeyMap.FFirstKeyId(); col.intKeyMap.FNextKeyId(keyId); ) vKeys->AddToArr(col.intKeyMap.GetKey(keyId));
+				else if (col.subType == TAttrSubtype::String) for (auto keyId = col.strKeyMap.FFirstKeyId(); col.strKeyMap.FNextKeyId(keyId); ) vKeys->AddToArr(col.strKeyMap.GetKey(keyId));
+				else IAssert(false);
+			}
+		}
+	}
 	return vModel;
+}
+
+
+bool TModel::ClassifyInstances(const TDataset& otherDataset, const TIntV& rowNos, TIntV& predictions, TStrV& errList) const
+{
+	// For each column of our model, find the corresponding column in 'otherDataset'
+	// and check that its type matches well enough.  We do allow some small mismatches,
+	// e.g. Numeric/Flt can match Numeric/Int.
+	const int nCols = dataset->cols.Len();
+	TIntV ourColToOtherCol; ourColToOtherCol.Gen(nCols); ourColToOtherCol.PutAll(-1);
+	bool hasErrors = false;
+	for (int colNo = 0; colNo < nCols; ++colNo)
+	{
+		const TDataColumn &ourCol = dataset->cols[colNo];
+		if (ourCol.distWeight == 0) continue;
+		if (ourCol.type == TAttrType::Time) continue; // time attributes aren't really used in the distance calculations
+		int otherColNo = otherDataset.GetColIdx(ourCol.name);
+		ourColToOtherCol[colNo] = otherColNo;
+		if (otherColNo < 0) { errList.Add("The target dataset lacks the attribute \"" + ourCol.name + "\", which is present in the model."); hasErrors = true; continue; }
+		const TDataColumn &otherCol = otherDataset.cols[otherColNo];
+		if (ourCol.type != otherCol.type) { errList.Add("The type of the attribute \"" + ourCol.name + "\" in the target dataset is different than in the model."); hasErrors = true; continue; }
+		if (ourCol.type == TAttrType::Time) {
+			bool ok = true;
+			if (ourCol.timeType == TTimeType::Time && otherCol.timeType != TTimeType::Time) ok = false;
+			if (ourCol.timeType != TTimeType::Time && otherCol.timeType == TTimeType::Time) ok = false;
+			if (! ok) { errList.Add("The timeType of the attribute \"" + ourCol.name + "\" in the target dataset is different than in the model."); hasErrors = true; continue; } }
+		if (ourCol.type == TAttrType::Categorical) {
+			if (ourCol.subType != otherCol.subType) { errList.Add("The subType of the categorical attribute \"" + ourCol.name + "\" in the target dataset is different than in the model."); hasErrors = true; continue; } }
+	}
+	if (hasErrors) return false;
+	// Classify all the target rows listed in 'rowNos'.
+	const int nTargets = rowNos.Len(); predictions.Gen(nTargets); predictions.PutAll(-1);
+	const int nInitialStates = initialStates.Len(); 
+	for (int targetNo = 0; targetNo < nTargets; ++targetNo)
+	{
+		const int rowNo = rowNos[targetNo];
+		int bestStateNo = -1; double bestDist = -1;
+		for (int stateNo = 0; stateNo < initialStates.Len(); ++stateNo)
+		{
+			const TCentroidComponentV &centroid = initialStates[stateNo]->centroid;
+			double dist = 0;
+			for (int colNo = 0; colNo < nCols; ++colNo)
+			{
+				const TDataColumn &ourCol = dataset->cols[colNo];
+				int otherColNo = ourColToOtherCol[colNo];
+				if (ourCol.distWeight == 0 || otherColNo < 0) continue;
+				const TDataColumn &otherCol = otherDataset.cols[otherColNo];
+				const TCentroidComponent &comp = centroid[colNo];
+				//
+				double delta2 = 0;
+				if (otherCol.type == TAttrType::Numeric) {
+					if (otherCol.subType == TAttrSubtype::Flt) delta2 = otherCol.fltVals[rowNo] - comp.fltVal;
+					else if (otherCol.subType == TAttrSubtype::Int) delta2 = double(otherCol.intVals[rowNo]) - comp.fltVal;
+					else Assert(false); 
+					delta2 *= delta2; }
+				else if (otherCol.type == TAttrType::Categorical) {
+					// The keyId in otherCol.intVals refers to otherCol.{str|int}KeyMap.  Get the corresponding
+					// key and then look it up in ourCol.{str|int}KeyMap.
+					int otherKeyId = otherCol.intVals[rowNo], otherKeyIdMappedToOur = -1;
+					if (otherCol.subType == TAttrSubtype::String) otherKeyIdMappedToOur = ourCol.strKeyMap.GetKeyId(otherCol.strKeyMap.GetKey(otherKeyId));
+					else if (otherCol.subType == TAttrSubtype::Int) otherKeyIdMappedToOur = ourCol.intKeyMap.GetKeyId(otherCol.intKeyMap.GetKey(otherKeyId));
+					else IAssert(false); 
+					for (int keyId = 0; keyId < comp.denseVec.Len(); ++keyId) {
+						double d = (otherKeyIdMappedToOur == keyId ? 1 : 0) - comp.denseVec[keyId];
+						delta2 += d * d; } }
+				else if (otherCol.type == TAttrType::Text) {
+					// Map the feature IDs in 'otherCol.sparseVecData' to our feature IDs.
+					// ToDo: doing this once per state is inefficient, we could save the results somewhere.
+					const auto &V = otherCol.sparseVecData;
+					const auto &pr1 = otherCol.sparseVecIndex[rowNo]; const auto *from1 = V.begin() + pr1.Val1; const auto *to1 = from1 + pr1.Val2;
+					TIntFltKdV VM; VM.Reserve(pr1.Val2);
+					for (const auto *from1 = &V[pr1.Val1], *to1 = from1 + pr1.Val2; from1 < to1; ++from1) {
+						int otherKey = from1->Key; double dat = from1->Dat;
+						int otherKeyMappedToOur = otherKey; // ToDo: implement mapping here once we have better support for text attributes.
+						if (otherKeyMappedToOur < 0) continue;
+						VM.Add({otherKeyMappedToOur, dat}); }
+					VM.Sort();
+					//
+					double sum11 = 0, sum12 = 0, sum22 = comp.GetSparseVec2();
+					for (int i = 0; i < VM.Len(); ++i) {
+						auto key1 = VM[i].Key; auto dat1 = VM[i].Dat;
+						auto keyId2 = comp.sparseVec.GetKeyId(key1);
+						double dat2 = (keyId2 < 0) ? 0.0 : comp.sparseVec[keyId2].Val;
+						sum11 += dat1 * dat1; sum12 = dat1 * dat2; }
+					// sum_i (x_i - y_i)^2 = sum_i x_i^2 + sum_i y_i^2 - 2 sum_i x_i y_i
+					delta2 = sum11 + sum22 - sum12 - sum12; }
+				else Assert(false);
+				dist += ourCol.distWeight * delta2;
+			}
+			if (bestStateNo < 0 || dist < bestDist) bestStateNo = stateNo, bestDist = dist;
+		}
+		predictions[targetNo] = bestStateNo;
+	}
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1988,7 +2414,7 @@ void TStatePartition::CalcEigenVals()
 	IAssert(eigenVals.Len() == n); IAssert(eigenVectors.GetXDim() == n); IAssert(eigenVectors.GetYDim() == n);
 }
 
-PJsonVal TStatePartition::SaveToJson(const TDataset& dataset, bool areTheseInitialStates, const PStatePartition& nextLowerScale) const
+PJsonVal TStatePartition::SaveToJson(const TDataset& dataset, bool areTheseInitialStates) const
 {
 	PJsonVal vPartition = TJsonVal::NewObj();
 	const int nStates = aggStates.Len();
@@ -1996,13 +2422,29 @@ PJsonVal TStatePartition::SaveToJson(const TDataset& dataset, bool areTheseIniti
 	PJsonVal vStates = TJsonVal::NewArr(); vPartition->AddToObj("states", vStates);
 	for (int i = 0; i < nStates; ++i)
 	{
-		PJsonVal vState = aggStates[i]->SaveToJson(i, dataset, nextLowerScale); vStates->AddToArr(vState);
+		PJsonVal vState = aggStates[i]->SaveToJson(i, dataset); vStates->AddToArr(vState);
 		vState->AddToObj("stationaryProbability", TJsonVal::NewNum(statProbs[i]));
 		PJsonVal vNextProb = TJsonVal::NewArr(); vState->AddToObj("nextStateProbDistr", vNextProb);
 		for (int j = 0; j < nStates; ++j) vNextProb->AddToArr(TJsonVal::NewNum(transMx(i, j)));
 	}
 	vPartition->AddToObj("areTheseInitialStates", TJsonVal::NewBool(areTheseInitialStates));
 	return vPartition;
+}
+
+bool TStatePartition::InitFromJson(TDataset& dataset, const PJsonVal &jsonVal, TStrV& errList)
+{
+	PJsonVal vStates; if (! Json_GetObjKey(jsonVal, "states", false, false, vStates, "scale object", errList)) return false;
+	if (vStates.Empty() || ! vStates->IsArr()) { errList.Add("The scale object is not an array."); return false; }
+	int nStates = vStates->GetArrVals(); aggStates.Gen(nStates);
+	for (int i = 0; i < nStates; ++i)
+	{
+		PJsonVal vState = vStates->GetArrVal(i);
+		if (vState.Empty() || ! vState->IsObj()) { errList.Add("The state object is not an object."); return false; }
+		PState &state = aggStates[i]; state = new TState();
+		if (! state->InitFromJson(dataset, vState, errList)) return false;
+		// ToDo: here we can also read statProbs and transMx if needed.
+	}
+	return true;
 }
 
 void PrintMatrix(const TFltVV& mx, const TStr& intro)
@@ -2207,7 +2649,7 @@ PStatePartition TStateAggregator::BuildNextPartition(const PStatePartition &part
 	for (int aggStateNo = 0; aggStateNo < nAggStates; ++aggStateNo)
 	{
 		if (aggStateNo == b1) continue;
-		if (aggStateNo != b2) { newPart->aggStates.Add(part->aggStates[aggStateNo]); continue; }
+		if (aggStateNo != b2) { newPart->aggStates.Add(part->aggStates[aggStateNo]->Clone()); continue; }
 		// Merge b1 and b2 into a new state.
 		const PState &state1 = part->aggStates[b1], &state2 = part->aggStates[b2];
 		PState newState = new TState();
