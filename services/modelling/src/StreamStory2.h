@@ -26,11 +26,11 @@ public:
 	int64_t GetInt() const {
 		if (type == TTimeType::Time || type == TTimeType::Int) return sec;
 		else if (type == TTimeType::Flt) return (int64_t) floor(flt);
-		else { Assert(false); return std::numeric_limits<double>::quiet_NaN(); } }
+		else { Assert(false); return -1; } }
 	double GetFlt() const {
 		if (type == TTimeType::Time) return double(sec) + double(ns) / 1e9;
 		else if (type == TTimeType::Flt) return flt;
-		else if (type == TTimeType::Int) return sec;
+		else if (type == TTimeType::Int) return (double) sec;
 		else { Assert(false); return std::numeric_limits<double>::quiet_NaN(); } }
 	void GetSecTm(TSecTm& secTm, int &ns_) const {
 		if (type == TTimeType::Time) { secTm = TSecTm(sec); ns_ = ns; }
@@ -74,6 +74,7 @@ public:
 	double distWeight; // weight of this attribute in the distance function
 
 	bool InitFromJson(const PJsonVal& jsonVal, const TStr& whatForErrMsg, TStrV& errList);
+	PJsonVal SaveToJson() const;
 };
 
 enum class TOpType { LinMap, LinTo01, SetMeanAndStd, Standardize, SubtractMean, RestrictRange };
@@ -111,6 +112,7 @@ public:
 	virtual bool Apply(TDataset& dataset, TStrV& errors) { return true; }
 	static POpDesc New(const PJsonVal& jsonVal, TStrV& errList);
 	static inline const TStr& WhereForErrMsg() { static const TStr s = "an op description"; return s; }
+	virtual PJsonVal SaveToJson() const { return {}; }
 };
 
 bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
@@ -163,6 +165,7 @@ public:
 	bool InitFromJson(const PJsonVal& jsonVal, TStrV& errList) override;
 	bool AddAttrsFromOps(TModelConfig& config, TStrV& errors) override;
 	bool Apply(TDataset& dataset, TStrV& errors) override;
+	PJsonVal SaveToJson() const override;
 };
 
 class TOpDesc_Resample : public TOpDesc
@@ -210,6 +213,7 @@ public:
 	TDecTreeConfig decTreeConfig;
 	void Clr() { ClrAll(attrs, ops); numInitialStates = -1; numHistogramBuckets = -1; decTreeConfig.Clr(); ignoreConversionErrors = true; distWeightOutliers = 0.05; includeHistograms = true; includeStateHistory = true; includeDecisionTrees = true; }
 	bool InitFromJson(const PJsonVal& val, TStrV& errors);
+	PJsonVal SaveToJson() const;
 	int GetAttrIdx(const TStr& name) const { for (int i = 0; i < attrs.Len(); ++i) if (attrs[i].name == name) return i; return -1; }
 	bool HasAttr(const TStr& name) const { return GetAttrIdx(name) >= 0; }
 	TStr SuggestUniqueAttrName(const TStr &baseName) const;
@@ -296,6 +300,7 @@ public:
 	void Add(const TDataColumn &col, const TCentroidComponent& other, double coef); // *this += coef * other.
 	void MulBy(double coef);
 	PJsonVal SaveToJson(const TDataset& dataset, int colNo) const;
+	bool InitFromJson(const TDataset& dataset, int& colNo, const PJsonVal& jsonVal, TStrV& errList);
 };
 
 class THistogram;
@@ -409,6 +414,7 @@ public:
 	TCentroidComponentV centroid; // index: column number from TDataset.cols
 	TIntV members; // contains row indices into the dataset
 	TIntV initialStates; // indexes of initial states from which this state has been aggregated; sorted incrementally
+	int parentState; TIntV childStates; bool sameAsParent;
 	THistogramV histograms; // index: column number, same as TDataset::cols
 	TStateLabel label;
 	PDecTreeNode decTree;
@@ -417,10 +423,16 @@ public:
 	void AddToCentroid(const TDataset& dataset, int rowNo, double coef);  // Works like centroid += coef * dataset[rowNo].
 	void AddToCentroid(const TDataset& dataset, const TCentroidComponentV& other, double coef); // centroid += coef * other.
 	void MulCentroidBy(double coef) { for (TCentroidComponent &comp : centroid) comp.MulBy(coef); }
-	void CalcHistograms(const TDataset& dataset) { THistogram::CalcHistograms(histograms, dataset, members, false); }
+	void CalcHistograms(const TDataset& dataset) { 	if (! sameAsParent) THistogram::CalcHistograms(histograms, dataset, members, false); }
 	void CalcLabel(const TDataset& dataset, int thisStateNo, const THistogramV& totalHists, double eps);
+	void CalcParentChildStates(const PStatePartition& nextLowerScale, const PStatePartition& nextHigherScale);
+	bool IsAncestorOf(const TIntV& otherInitialStates) const { for (auto initialStateNo : otherInitialStates) if (! initialStates.IsIn(initialStateNo)) return false; return true; }
+	bool IsAncestorOf(const TState& other) const { return IsAncestorOf(other.initialStates); }
+	bool IsAncestorOf(const PState& other) const { return (! other.Empty()) && IsAncestorOf(other->initialStates); }
 	static void CalcLabels(const TDataset& dataset, const TStateV& states, const THistogramV& totalHists);
-	PJsonVal SaveToJson(int thisStateNo, const TDataset& dataset, const PStatePartition& nextLowerScale) const;
+	PJsonVal SaveToJson(int thisStateNo, const TDataset& dataset) const;
+	bool InitFromJson(TDataset& dataset, const PJsonVal &jsonVal, TStrV& errList);
+	PState Clone() const;
 };
 
 // Represents a partition of initial states into a smaller number of aggregate states.
@@ -438,9 +450,11 @@ public:
 	TStatePartition(int nInitialStates) : initToAggState(nInitialStates) { initToAggState.PutAll(-1); }
 	void CalcTransMx(const TFltVV& initStateTransMx, const TFltV& initStateStatProbs);
 	void CalcEigenVals();
+	void CalcParentChildStates(const PStatePartition& nextLowerScale, const PStatePartition& nextHigherScale) { for (auto &state : aggStates) state->CalcParentChildStates(nextLowerScale, nextHigherScale); }
 	void CalcHistograms(const TDataset& dataset) { for (const PState& state : aggStates) state->CalcHistograms(dataset); }
 	void CalcLabels(const TDataset& dataset, const THistogramV& totalHists) { TState::CalcLabels(dataset, aggStates, totalHists); }
-	PJsonVal SaveToJson(const TDataset& dataset, bool areTheseInitialStates, const PStatePartition& nextLowerScale) const;
+	PJsonVal SaveToJson(const TDataset& dataset, bool areTheseInitialStates) const;
+	bool InitFromJson(TDataset& dataset, const PJsonVal &jsonVal, TStrV& errList);
 	void CalcRadiuses() { for (int stateNo = 0; stateNo < aggStates.Len(); ++stateNo) aggStates[stateNo]->radius = sqrt(statProbs[stateNo] / TMath::Pi); }
 	void CalcCentersUsingSvd(const TDataset& dataset); // assumes that centroids and statProbs are already available; doesn't try to avoid overlaps
 };
@@ -498,6 +512,7 @@ public:
 	int GetColIdx(const TStr& name) const { for (int i = 0; i < cols.Len(); ++i) if (cols[i].name == name) return i; return -1; }
 	TDataColumn &GetCol(const TStr& name) { int i = GetColIdx(name); AssertR(i >= 0, TStr("TDataColumn::GetCol: cannot find column \"") + name + "\"."); return cols[i]; }
 	const TDataColumn &GetCol(const TStr& name) const { return cols[GetColIdx(name)]; }
+	bool AdditionalInitFromJson(const PJsonVal &jsonVal, TStrV& errList);
 protected:
 	bool AddRowFromJson(const PJsonVal &jsonRow, int jsonRowIdx, TConversionProgress& convProg);
 };
@@ -520,18 +535,22 @@ public:
 	void CalcTransMx(TFltV& statProbs, TFltVV& transMx) const;
 	void BuildRowToInitialState();
 	double RowCentrDist2(int rowNo, int initialStateNo) const { return dataset->RowCentrDist2(rowNo, initialStates[initialStateNo]->centroid); }
+	void CalcParentChildStates();
 	void CalcHistograms() { 
 		THistogram::CalcHistograms(totalHistograms, *dataset, {}, true); 
-		for (const PState& state : initialStates) state->CalcHistograms(*dataset); 
+		//for (const PState& state : initialStates) state->CalcHistograms(*dataset);  // no need - the same TState instances are included in the first state partition
 		for (const PStatePartition& scale : statePartitions) scale->CalcHistograms(*dataset); }
 	void CalcLabels() { 
 		THistogramV totalHists; THistogram::CalcHistograms(totalHists, *dataset, {}, true, 5); 
-		TState::CalcLabels(*dataset, initialStates, totalHists);
+		//TState::CalcLabels(*dataset, initialStates, totalHists);  // no need - the same TState instances are included in the first state partition
 		for (const PStatePartition& scale : statePartitions) scale->CalcLabels(*dataset, totalHists); }
 	void CalcStatePositions(); // requires static probabilities and centroids
 	void BuildDecTrees(int maxDepth, double minEntropyToSplit, double minNormInfGainToSplit);
+	// Returns the initial state whose centroid is closest to row 'rowNo' from 'otherDataset'.
+	bool ClassifyInstances(const TDataset& otherDataset, const TIntV& rowNos, TIntV& predictions, TStrV& errList) const;
 
 	PJsonVal SaveToJson() const;
+	bool InitFromJson(const PJsonVal &jsonVal, TStrV& errList);
 };
 
 class TKMeansRunner
@@ -600,9 +619,11 @@ public:
 
 bool Json_GetObjStr(const PJsonVal& jsonVal, const char *key, bool allowMissing, const TStr& defaultValue, TStr& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjNum(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValue, double& value, const TStr& whereForErrorMsg, TStrV& errList);
+bool Json_GetObjNumEx(const PJsonVal& jsonVal, const char *key, bool allowMissing, double defaultValueIfMissing, bool allowNull, double defaultValueIfNull, double& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjInt(const PJsonVal& jsonVal, const char *key, bool allowMissing, int defaultValue, int& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjBool(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool defaultValue, bool& value, const TStr& whereForErrorMsg, TStrV& errList);
 bool Json_GetObjKey(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, PJsonVal& value, const TStr& whereForErrorMsg, TStrV& errList);
+bool Json_GetObjIntV(const PJsonVal& jsonVal, const char *key, bool allowMissing, bool allowNull, TIntV& value, const TStr& whereForErrorMsg, TStrV& errList);
 
 bool StrPTime_HomeGrown(const char *s, const char *format, TSecTm &secTm, int &ns);
 bool StrFTime_HomeGrown(TChA& dest, const char *format, const TSecTm &secTm, int ns, bool clrDest = false);
