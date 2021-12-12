@@ -1,46 +1,26 @@
 {
-    "name": "api",
+    "name": "data",
     "version": "0.1.0",
     "private": true,
     "scripts": {
         "dev": "nodemon src/index.ts",
         "build": "tsc --project ./",
         "start": "node index.js",
-        "test": "jest",
         "lint": "eslint src/**/*.{js,jsx,ts,tsx}",
         "lint:fix": "eslint --fix src/**/*.{js,jsx,ts,tsx}",
-        "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,md}"
+        "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,md}",
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
-        "axios": "^0.23.0",
-        "bcryptjs": "^2.4.3",
-        "connect-pg-simple": "^6.2.1",
-        "cookie-parser": "^1.4.5",
-        "helmet": "^4.6.0",
         "csv-parse": "^4.16.0",
-        "dotenv": "^10.0.0",
         "express": "^4.17.1",
-        "express-session": "^1.17.2",
-        "morgan": "^1.10.0",
-        "multer": "^1.4.3",
-        "nodemailer": "^6.6.2",
-        "pg": "^8.6.0",
-        "slugify": "^1.6.0",
-        "uuid": "^8.3.2"
+        "morgan": "^1.10.0"
     },
     "devDependencies": {
-        "@types/bcryptjs": "^2.4.2",
-        "@types/connect-pg-simple": "^4.2.2",
-        "@types/cookie-parser": "^1.4.2",
         "@types/csv-parse": "^1.2.2",
         "@types/express": "^4.17.12",
-        "@types/express-session": "^1.17.3",
-        "@types/jest": "^26.0.23",
         "@types/morgan": "^1.9.2",
-        "@types/multer": "^1.4.7",
         "@types/node": "^15.3.0",
-        "@types/nodemailer": "^6.4.2",
-        "@types/pg": "^8.6.0",
         "@typescript-eslint/eslint-plugin": "^4.24.0",
         "@typescript-eslint/parser": "^4.24.0",
         "eslint": "^7.26.0",
@@ -48,10 +28,8 @@
         "eslint-config-prettier": "^8.3.0",
         "eslint-import-resolver-typescript": "^2.4.0",
         "eslint-plugin-import": "^2.23.2",
-        "jest": "^27.0.4",
         "nodemon": "^2.0.7",
         "prettier": "^2.3.0",
-        "ts-jest": "^27.0.3",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.4"
     }

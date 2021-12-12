@@ -48,6 +48,19 @@ services:
             PORT: 3000
             REACT_APP_PROXY: http://api:8080
 
+    data:
+        # container_name: streamstory_data
+        build:
+            context: .
+            dockerfile: ./services/data/Dockerfile.dev
+            args:
+                ROOT: ./services/data
+        volumes:
+            - ./services/data:/app
+            - /app/node_modules
+        ports:
+            - ${DATA_PORT:-3002}:8081
+
     db:
         # container_name: streamstory_db
         # image: postgres:11.12

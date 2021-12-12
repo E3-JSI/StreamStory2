@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        /* Visit https://aka.ms/tsconfig.json to read more about this file */
+        "target": "es5",
+        "module": "commonjs",
+        "lib": ["esnext"],
+        "allowJs": true,
+        "outDir": "./build",
+        "rootDir": "./src",
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "moduleResolution": "node",
+        "typeRoots": ["src/types", "node_modules/@types"],
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
+}
