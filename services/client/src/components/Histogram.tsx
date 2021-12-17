@@ -17,8 +17,6 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
             let totalFreqFn = null;
             let boundLen = 0;
             if (!Object.prototype.hasOwnProperty.call(histogram, 'bounds')) {
-                console.log('if hist time, histogram=', histogram);
-
                 if (timeType === 'dayOfWeek') {
                     boundLen = totalHistogram.dayOfWeekFreqs.length;
                     freqFn = (data: any) => data.dayOfWeekFreqs;
@@ -49,7 +47,6 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                     domain = Array.from(Array(boundLen), (_, i) => i + 1);
                 }
             } else {
-                console.log('if hist NOT time, histogram=', histogram);
                 domain = histogram.bounds;
                 freqFn = (data: any) => data.freqs;
                 totalFreqFn = () => totalHistogram.freqs;
