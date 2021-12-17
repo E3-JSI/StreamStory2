@@ -7,6 +7,7 @@ import {
     addColorsToScaleStates,
     createGraphContainer,
     getGraphContainer,
+    createCommonStateData,
 } from '../utils/markovChainUtils';
 import { StateVisualizationProps } from './StateVisualization';
 
@@ -17,7 +18,8 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
 
     useEffect(() => {
         if (model && model.model && model.model.scales && model.model.scales.length) {
-            addColorsToScaleStates(model.model.scales);
+            const commonStateData = createCommonStateData(model.model.scales);
+            addColorsToScaleStates(model.model.scales, commonStateData);
             createStateHistory();
             console.log("\n")
         }
@@ -45,7 +47,7 @@ const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizat
         const xWidth = width - chart.left - margin.left - margin.right;
         const baseHeight = height - chart.top - margin.top  - margin.bottom;
         const subChartOffset = baseHeight * 0.1; // dist between top bars and brushBars
-        const yWidth = 0.95 * (baseHeight- 2*subChartOffset); // height of bars
+        const yWidth = 0.90 * (baseHeight- 2*subChartOffset); // height of bars
         const yWidthPreview = 0.1 * (baseHeight-2*subChartOffset) // height of brushBars
         const xExtent: any = d3.extent(model.model.stateHistoryTimes, (d: number) => createDate(d));
         const yCategories: any = model.model.scales.map((el: any, i: any) => `${i}`);

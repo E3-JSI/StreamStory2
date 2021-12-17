@@ -44,9 +44,9 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                         'Dec',
                     ];
                 } else {
-                    boundLen = totalHistogram.dayOfWeekFreqs.length;
-                    freqFn = (data: any) => data.dayOfWeekFreqs;
-                    totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
+                    boundLen = totalHistogram.hourFreqs.length;
+                    freqFn = (data: any) => data.hourFreqs;
+                    totalFreqFn = () => totalHistogram.hourFreqs;
                     domain = Array.from(Array(boundLen), (_, i) => i + 1);
                 }
             } else {

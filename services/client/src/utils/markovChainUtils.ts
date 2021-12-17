@@ -203,6 +203,7 @@ export function createNodes(
     x: any,
     y: any,
     r: any,
+    commonStateData: any,
     transitionProps: ITransitionProps,
     onNodeClickCallBack: any,
 ) {
@@ -213,7 +214,7 @@ export function createNodes(
     selectAllNodeGroups(gNodes)
         .data(data.states, (d: any) => `node_${uniqueId(d)}`)
         .join(
-            (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter),
+            (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter, commonStateData),
             (update: any) => update,
             (exit: any) => {
                 exit.remove();
@@ -226,10 +227,6 @@ export function createNodes(
     selectAllNodeGroups(gNodes)
         .on('click', function (this: any, event: any) {
             const nodeGroupClicked: any = d3.select(this);
-
-            console.log("d.scaleIx=", nodeGroupClicked.data()[0].scaleIx, "d.stateNo=", nodeGroupClicked.data()[0].stateNo);
-            console.log("\n")
-
             colorBlueNodeAndLinks(nodeGroupClicked, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
@@ -249,7 +246,7 @@ export function createNodes(
                 .style("word-wrap", "break-word")
                 .style("opacity", 0)
                 .html(`<div style="color:black">
-                <h3><span>${d.suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
+                <h3><span>${commonStateData[d.initialStates.toString()].suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
                 </div>
                 `)
                 .transition()
@@ -268,7 +265,7 @@ export function createNodes(
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
 }
 
-function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any) {
+function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any, commonStateData: any) {
     const enterTmp = selection
         .append('g')
         .attr('id', (d: any) => stateId(d))
@@ -290,7 +287,8 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
     enterTmp
         .each(function (this: any) {
             const d: any = d3.select(this).data()[0];
-            const lines = createLines(d.suggestedLabel.label, lineHeight);
+            const key = d.initialStates.toString();
+            const lines = createLines(commonStateData[key].suggestedLabel.label, lineHeight);
             linesDict[uniqueId(d)] = lines;
         });
 
@@ -657,16 +655,13 @@ export function findMinMaxValues(scales: any) {
     return rez;
 }
 
-export function stateNoScaleIxId(state: any) {
-    return `scaleIx_${state.scaleIx}_stateNo_${state.stateNo}`
-}
-
 export function uniqueId(state: any) {
-    return `uid=${state.suggestedLabel.label}_statProb=${state.stationaryProbability}`;
+    return `uid=${state.initialStates.toString()}`;
 }
 
-export function pseudoUniqueId(state: any) {
-    return `uid=${state.suggestedLabel.label}`;
+export function pseudoUniqueId(state: any, commonStateData: any) {
+    const key = state.initialStates;
+    return `uid=${commonStateData[key].suggestedLabel.label}`;
 }
 
 export function stateId(state: any) {
@@ -717,7 +712,7 @@ export function createGraphData(scales: any, pThreshold: number) {
     });
 }
 
-export function addColorsToScaleStates(scales: any) {
+export function addColorsToScaleStates(scales: any, commonStateData: any) {
     const dict: any = {};
     const colorDict: any = {}
     let degOffset = 0;
@@ -731,8 +726,8 @@ export function addColorsToScaleStates(scales: any) {
                     childStates.forEach((childState: any) => {
                         const angle = 360 * childState.stationaryProbability;
                         const angleMiddle = degOffset + angle / 2;
-                        dict[pseudoUniqueId(childState)] = { middle: angleMiddle, w: childState.stationaryProbability };
-                        colorDict[pseudoUniqueId(childState)] = generateColor(dict[pseudoUniqueId(childState)].middle, scaleIx - 1, scales.length);
+                        dict[pseudoUniqueId(childState, commonStateData)] = { middle: angleMiddle, w: childState.stationaryProbability };
+                        colorDict[pseudoUniqueId(childState, commonStateData)] = generateColor(dict[pseudoUniqueId(childState, commonStateData)].middle, scaleIx - 1, scales.length);
                         degOffset += angle;
                     });
                 } else {
@@ -740,17 +735,17 @@ export function addColorsToScaleStates(scales: any) {
                         let w = 0;
                         let ix = 0;
                         let sum = 0;
-                        const objCurr = dict[pseudoUniqueId(childState)];
+                        const objCurr = dict[pseudoUniqueId(childState, commonStateData)];
 
                         if (objCurr) {
                             sum += objCurr.w * objCurr.middle;
                             w += objCurr.w;
                             ix += 1;
-                            dict[pseudoUniqueId(childState)] = { middle: sum / w, w };
+                            dict[pseudoUniqueId(childState, commonStateData)] = { middle: sum / w, w };
                             const color = generateColor(objCurr.middle, scaleIx - 1, scales.length); // eslint-disable-line  no-param-reassign
-                            colorDict[pseudoUniqueId(childState)] = color;
+                            colorDict[pseudoUniqueId(childState, commonStateData)] = color;
                         }
-                        dict[pseudoUniqueId(state)] = { middle: sum / w, w };
+                        dict[pseudoUniqueId(state, commonStateData)] = { middle: sum / w, w };
                     });
                 }
             });
@@ -765,7 +760,7 @@ export function addColorsToScaleStates(scales: any) {
     scales
         .map((sc: any) => sc.states).flat()
         .forEach((state: any) => {
-            state.color = colorDict[pseudoUniqueId(state)]; // eslint-disable-line no-param-reassign
+            state.color = colorDict[pseudoUniqueId(state, commonStateData)]; // eslint-disable-line no-param-reassign
         });
 }
 
@@ -782,4 +777,23 @@ function findChildStates(state: any, prevScale: any) {
         const a = 1;
         return prevScale.states.find((el: any) => el.stateNo === stateNo);
     });
+}
+
+export function createCommonStateData(scales: any) {
+    const commonStateData: any = {};
+
+    scales.forEach((sc: any) => {
+        sc.states.forEach((state: any) => {
+            if (!state.sameAsParent) {
+                const key = state.initialStates.toString();
+                commonStateData[key] = {
+                    centroid: state.centroid,
+                    suggestedLabel: state.suggestedLabel,
+                    histograms: state.histograms,
+                    decisionTree: state.decisionTree,
+                };
+            }
+        });
+    });
+    return commonStateData;
 }
