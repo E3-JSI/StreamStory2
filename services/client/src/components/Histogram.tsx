@@ -16,10 +16,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
             let freqFn = null;
             let totalFreqFn = null;
             let boundLen = 0;
-            if (
-                histogram.attrName.toLowerCase() === 'time' ||
-                histogram.attrName.toLowerCase() === 'timestamp'
-            ) {
+            if (!Object.prototype.hasOwnProperty.call(histogram, 'bounds')) {
                 if (timeType === 'dayOfWeek') {
                     boundLen = totalHistogram.dayOfWeekFreqs.length;
                     freqFn = (data: any) => data.dayOfWeekFreqs;
@@ -44,9 +41,9 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                         'Dec',
                     ];
                 } else {
-                    boundLen = totalHistogram.dayOfWeekFreqs.length;
-                    freqFn = (data: any) => data.dayOfWeekFreqs;
-                    totalFreqFn = () => totalHistogram.dayOfWeekFreqs;
+                    boundLen = totalHistogram.hourFreqs.length;
+                    freqFn = (data: any) => data.hourFreqs;
+                    totalFreqFn = () => totalHistogram.hourFreqs;
                     domain = Array.from(Array(boundLen), (_, i) => i + 1);
                 }
             } else {
@@ -58,7 +55,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 renderHistogram(domain, freqFn, totalFreqFn);
             }
         }
-    }, [histogram, totalHistogram, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [histogram, totalHistogram, timeType, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function countDecimals(value: number) {
         if (Math.floor(value) === value) return 0;

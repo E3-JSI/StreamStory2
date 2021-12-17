@@ -12,6 +12,7 @@ import TabPanel, { getTabA11yProps } from './TabPanel';
 import useStyles from './StateVisualization.styles';
 import Histogram from './Histogram';
 import StateHistory from './StateHistory';
+import { createCommonStateData } from '../utils/markovChainUtils';
 
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
@@ -29,10 +30,13 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
     const stateTabPrefix = 'model-state';
 
     useEffect(() => {
-        if(selectedState != null) {
-            const histIx = selectedState.histograms.findIndex((hist:any)=> ((hist.attrName.toLowerCase() === 'time') || (hist.attrName.toLowerCase() === 'timestamp')));
-           const currHist = selectedState.histograms[histIx];
-            const totalHist = model?.model?.totalHistograms[histIx];
+        if(selectedState != null && model && model.model && model.model.scales) {
+            const commonStateData = createCommonStateData(model.model.scales)
+            const key = selectedState.initialStates.toString();
+
+            const histIx = commonStateData[key].histograms.findIndex((hist:any)=> !Object.prototype.hasOwnProperty.call(hist, 'bounds'));
+            const currHist = commonStateData[key].histograms[histIx];
+            const totalHist = model.model.totalHistograms[histIx];
             setTotalHistogram(totalHist);
                 
             if(currHist) {

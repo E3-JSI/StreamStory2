@@ -15,6 +15,7 @@ import {
     createGraphData,
     addColorsToScaleStates,
     colorBlueNodeAndLinks,
+    createCommonStateData,
     stateId,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
@@ -29,6 +30,7 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(-1);
     const [currentState, setCurrentState] = useState<any>();
     const [data, setData] = useState<any>();
+    const [commonStateDataCurr, setCommonStateDataCurr] = useState<any>();
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
@@ -103,11 +105,15 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
                     state.r = state.radius * maxRadius; // eslint-disable-line no-param-reassign
                 });
             });
+
+            const commonStateData = createCommonStateData(model.model.scales);
+
+            setCommonStateDataCurr(commonStateData);
             setCurrentScaleIx(model.model.scales.length - 1);
-            addColorsToScaleStates(model.model.scales);
+            addColorsToScaleStates(model.model.scales, commonStateData);
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
-            renderMarkovChain(graphData);
+            renderMarkovChain(graphData, commonStateData);
         }
     }, [model.model.scales]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -122,19 +128,18 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
         ) {
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
-            renderMarkovChain(graphData);
+            renderMarkovChain(graphData, commonStateDataCurr);
         }
     }, [windowSize, pThreshold, currentScaleIx, useThemeLoaded, currentState]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (selectedState) {
-            console.log('scaleIx=', selectedState.scaleIx, ', stateNo=', selectedState.stateNo);
             setCurrentState(selectedState);
             setCurrentScaleIx(selectedState.scaleIx);
         }
     }, [selectedState]);
 
-    function renderMarkovChain(graphData: any): void {
+    function renderMarkovChain(graphData: any, commonStateData: any): void {
         const format2Decimals = d3.format(`.${sliderProbPrecision}f`); // FIXME: move to another file
         const theme = createTheme();
         const boundary = findMinMaxValues(model.model.scales);
@@ -225,6 +230,7 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
                 x,
                 y,
                 r,
+                commonStateData,
                 TRANSITION_PROPS,
                 handleOnStateSelected,
             );
@@ -268,8 +274,6 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
 
             if (currentState) {
                 const selectedNodeGroup: any = d3.select(`#${stateId(currentState)}`);
-
-                console.log('selectedNodeGroup=', selectedNodeGroup);
 
                 if (selectedNodeGroup) {
                     colorBlueNodeAndLinks(selectedNodeGroup, theme, gNodes, gLinks, gMarkers);

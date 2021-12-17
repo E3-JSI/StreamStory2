@@ -15,6 +15,7 @@ import LoadingButton from './LoadingButton';
 
 import useStyles from './StateDetails.styles';
 import Histogram from './Histogram';
+import { createCommonStateData } from '../utils/markovChainUtils';
 
 export interface StateDetailsProps extends PaperProps {
     model?: Model;
@@ -27,25 +28,31 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
 
     const [histograms, setHistograms] = useState<any>([]);
     const [totalHistograms, setTotalHistograms] = useState<any>([]);
+    const [label, setLabel] = useState<any>();
 
     useEffect(()=> {
-        if(selectedState) {
-            const histIndices = selectedState.histograms
+        if(selectedState && model && model.model && model.model.scales) {
+            const commonStateData = createCommonStateData(model.model.scales);
+            const key = selectedState.initialStates.toString();
+            setLabel(commonStateData[key].suggestedLabel.label);
+            
+            const histIndices = commonStateData[key].histograms
             .map((hist:any, ix:any) => ((hist.attrName.toLowerCase() !== 'time') && (hist.attrName.toLowerCase() !== 'timestamp')) ? ix: null)
             .filter((el:any)=> el!= null);
 
             const hists:any[] =[]
             const totalHists:any[] =[]
 
-
             for(let i = 0; i<  histIndices.length; i++) {
 
                 if(model && model.model && model.model.totalHistograms) {
                     const index = histIndices[i];
-                    hists.push(selectedState.histograms[index]);
-                    totalHists.push(model.model.totalHistograms[index]);
-               } else {
-                   console.log("problem!!")
+                    const hist = commonStateData[key].histograms[index];
+
+                    if(Object.prototype.hasOwnProperty.call(hist, 'bounds')) { // if not time hists
+                        hists.push(commonStateData[key].histograms[index]);
+                        totalHists.push(model.model.totalHistograms[index]);
+                    }
                }
             }
             setHistograms(hists);
@@ -63,7 +70,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
     }));
 
     return (
-        <Paper key={selectedState?.suggestedLabel?.label} {...other}>
+        <Paper key={label} {...other}>
             <Toolbar className={classes.toolbar} variant="dense">
                 <Typography className={classes.title} component="h2" variant="h6">
                     {t('details')}
@@ -76,7 +83,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                         <TextField
                             name="stateName"
                             label={t('state_name')}
-                            defaultValue={selectedState.suggestedLabel.label}
+                            defaultValue={label}
                             variant="standard"
                             margin="none"
                             InputLabelProps={{
@@ -126,17 +133,19 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                             <Typography className={classes.attributesTitle} component="h3">
                                 {t('attributes')}
                             </Typography>
-                            <Grid container spacing={2}>
-                                {histograms.map((histogram: any, i: number) => (
-                                    <Grid key={histogram.attrName} item xs={6}>
-                                        <Item>
-                                            <Histogram
-                                                histogram={histogram}
-                                                totalHistogram={totalHistograms[i]}
-                                                key={selectedState.stateNo + Math.random()}
-                                                />
-                                                <h4>{histogram.attrName}</h4>
+                            <Grid container spacing={1}>
+                                {histograms.map((hist: any, i: number) => (
+                                    <Grid key={hist.attrName} item xs={6}>
+                                       
+                                       <Item>
+                                                <Histogram
+                                                    histogram={hist}
+                                                    totalHistogram={totalHistograms[i]}
+                                                    key={selectedState.stateNo + Math.random()}
+                                                    />
+                                                    <h4>{hist.attrName}</h4>
                                         </Item>
+
                                     </Grid>
                                 ))}
                             </Grid>
