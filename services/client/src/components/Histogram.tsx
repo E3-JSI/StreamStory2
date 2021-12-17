@@ -16,10 +16,9 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
             let freqFn = null;
             let totalFreqFn = null;
             let boundLen = 0;
-            if (
-                histogram.attrName.toLowerCase() === 'time' ||
-                histogram.attrName.toLowerCase() === 'timestamp'
-            ) {
+            if (!Object.prototype.hasOwnProperty.call(histogram, 'bounds')) {
+                console.log('if hist time, histogram=', histogram);
+
                 if (timeType === 'dayOfWeek') {
                     boundLen = totalHistogram.dayOfWeekFreqs.length;
                     freqFn = (data: any) => data.dayOfWeekFreqs;
@@ -50,6 +49,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                     domain = Array.from(Array(boundLen), (_, i) => i + 1);
                 }
             } else {
+                console.log('if hist NOT time, histogram=', histogram);
                 domain = histogram.bounds;
                 freqFn = (data: any) => data.freqs;
                 totalFreqFn = () => totalHistogram.freqs;
@@ -58,7 +58,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 renderHistogram(domain, freqFn, totalFreqFn);
             }
         }
-    }, [histogram, totalHistogram, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [histogram, totalHistogram, timeType, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function countDecimals(value: number) {
         if (Math.floor(value) === value) return 0;

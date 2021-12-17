@@ -34,7 +34,7 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
             const commonStateData = createCommonStateData(model.model.scales)
             const key = selectedState.initialStates.toString();
 
-            const histIx = commonStateData[key].histograms.findIndex((hist:any)=> ((hist.attrName.toLowerCase() === 'time') || (hist.attrName.toLowerCase() === 'timestamp')));
+            const histIx = commonStateData[key].histograms.findIndex((hist:any)=> !Object.prototype.hasOwnProperty.call(hist, 'bounds'));
             const currHist = commonStateData[key].histograms[histIx];
             const totalHist = model.model.totalHistograms[histIx];
             setTotalHistogram(totalHist);
