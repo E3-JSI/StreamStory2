@@ -13,6 +13,7 @@ import useStyles from './StateVisualization.styles';
 import Histogram from './Histogram';
 import StateHistory from './StateHistory';
 import { createCommonStateData } from '../utils/markovChainUtils';
+import DecisionTree from './DecisionTree';
 
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
@@ -129,6 +130,9 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
             </TabPanel>
             <TabPanel value={tabValue} index={3} prefix={stateTabPrefix}>
                 {t('explanation_tree')}
+
+                <DecisionTree selectedState={selectedState}/>
+
             </TabPanel>
         </Box>
     );
