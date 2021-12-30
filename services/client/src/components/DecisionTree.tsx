@@ -155,18 +155,20 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
                 const nodeEnter = enterTmp
                     .append("g")
                     .attr("class", "node")
-                    .attr("id", (d:any) => `n_${d.id}`)
-                    .classed("leaf", (d:any) => !d.data.hasOwnProperty("splitAttr")) // eslint-disable-line no-prototype-builtins
-                    .attr("transform", (d:any) => `translate(${source.x0}, ${source.y0})`)
-                    .attr("data-id", (d:any) => d.id);
+                    .attr("id", (d:any) => `n_${nodeLabel(d)}`)
+                    .attr("transform", (d:any) => `translate(${d.x}, ${d.y})`)
 
                 nodeEnter
                     .append("rect")
-                    .attr("width", 133 + 8)
-                    .attr("height", 70)
+                    .attr("width", (d:any) => {
+                        const label = nodeLabel(d);
+                        const textLen = label.length * opt.char_to_pxl;
+                        const width = d3.max([opt.node.width, textLen]);
+                        return width;
+                    })
+                    .attr("height", opt.node.height)
                     .attr("x", (d:any) => {
                         const label = nodeLabel(d);
-        
                         const textLen = label.length * opt.char_to_pxl;
                         const width = d3.max([opt.node.width, textLen]);
                         return -width / 2;
@@ -188,30 +190,12 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
                     .attr("dy", "18px")
                     .attr("text-anchor", "middle")
                     .text((d:any) => nodeLabel(d))
-                    .style("fill-opacity", 1e-6)
+                    .style("fill-opacity", 1)
                     .style("filter", "drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))")
                     .style("fill", "white");
 
-                // Transition nodes to their new position.
-                const nodeUpdate = nodeEnter
-                    .transition()
-                    .duration(duration)
-                    .attr("transform", (d:any) =>  `translate(${d.x}, ${d.y})`);
-        
-                nodeUpdate
-                    .select("rect")
-                    .attr("width", (d:any) => {
-                        const label = nodeLabel(d);
-                        const textLen = label.length * opt.char_to_pxl;
-                        const width = d3.max([opt.node.width, textLen]);
-                        return width;
-                    })
-                    .attr("height", opt.node.height);
-    
-                nodeUpdate.select("text").style("fill-opacity", 1);
-
-
-                return nodeUpdate
+          
+              return nodeEnter
 
             },
             (update:any) => {
