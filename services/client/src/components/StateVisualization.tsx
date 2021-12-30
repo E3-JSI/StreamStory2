@@ -27,12 +27,16 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
     const [tabValue, setTabValue] = useState(0);
     const [histogram, setHistogram] = useState<any>();
     const [totalHistogram, setTotalHistogram] = useState<any>();
+    const [commStateData, setCommStateData] = useState<any>();
     
     const stateTabPrefix = 'model-state';
 
     useEffect(() => {
         if(selectedState != null && model && model.model && model.model.scales) {
             const commonStateData = createCommonStateData(model.model.scales)
+
+            setCommStateData(commonStateData);
+
             const key = selectedState.initialStates.toString();
 
             const histIx = commonStateData[key].histograms.findIndex((hist:any)=> !Object.prototype.hasOwnProperty.call(hist, 'bounds'));
@@ -131,7 +135,7 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
             <TabPanel value={tabValue} index={3} prefix={stateTabPrefix}>
                 {t('explanation_tree')}
 
-                <DecisionTree selectedState={selectedState}/>
+                <DecisionTree selectedState={selectedState} commonStateData={commStateData}/>
 
             </TabPanel>
         </Box>

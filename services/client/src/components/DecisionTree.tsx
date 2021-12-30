@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { scaleOrdinal, easeQuadIn } from 'd3';
 import React, { useRef, useEffect, useState } from 'react';
 
-const DecisionTree = ({ selectedState }: any) => {
+const DecisionTree = ({ selectedState, commonStateData }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [windowSize] = useState<any>({
@@ -11,20 +11,19 @@ const DecisionTree = ({ selectedState }: any) => {
     });
     const [initialized, setInitialized] = useState<boolean>();
 
-    useEffect(() => {
-        console.log("start: useEffect, selectedState=", selectedState)
-
-
-        if(selectedState) {
-            console.log("if selectedState")
-            plotDecisionTree(selectedState);
+    useEffect(() => {        
+        if(selectedState && commonStateData) {
+            
+            const key = selectedState.initialStates.toString();
+            const data = commonStateData[key];
+    
+            plotDecisionTree(selectedState, data);
         }
-    }, [selectedState, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [selectedState, commonStateData, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    function  plotDecisionTree(state:any) {
+    function  plotDecisionTree(state:any, data:any) {
 
-        console.log("start: plotDecisionTree, state=", state)
-
+        
         const opt = {
             margin: {
                     top: 20,
@@ -68,8 +67,7 @@ const DecisionTree = ({ selectedState }: any) => {
             container = d3.select(containerRef.current);
 
             graph = container
-                .style("position", "relative")
-                .append("svg:svg")
+                .append("svg")
                 .attr("width", width)
                 .attr("height", height)
                 .attr("class", classNames.decisionTree)
@@ -78,6 +76,8 @@ const DecisionTree = ({ selectedState }: any) => {
             
             gNodes = graph.append("g").attr("class", "nodes");
             gLinks = graph.append("g").attr("class", "links");
+
+            setInitialized(true);
             
         }  else{
             container = d3.select(containerRef.current);
@@ -86,25 +86,26 @@ const DecisionTree = ({ selectedState }: any) => {
             gLinks = graph.select("g.links")
         }
 
-        const data = state.decisionTree;
-
-        if(data) {
+        if(state && data.decisionTree) {
          
             const treemap = d3.tree().size([opt.width, opt.height]);
 
-            root = d3.hierarchy(data,  (d:any) => d.children );
+            root = d3.hierarchy( data.decisionTree, (d:any) => d.children );
             root.x0 = height / 2;
             root.y0 = 0;
 
 
-            update(gNodes, gLinks,root, opt, colorMap, treemap);
+            updateChart(gNodes, gLinks, root, opt, colorMap, treemap, selectedState);
         } else {
             console.log("Decision tree data not found");
         }
     }
 
-    function update(gNodes:any, gLinks:any, source:any, opt:any, colorMap:any, treemap:any) {
-        console.log("start: update")
+    function updateChart(gNodes:any, gLinks:any, source:any, opt:any, colorMap:any, treemap:any, state:any) {
+        console.log("start: updateChart")
+
+        console.log("source=", source)
+        console.log("state=", state)
 
         const duration = 500;
 
@@ -121,150 +122,207 @@ const DecisionTree = ({ selectedState }: any) => {
         const nodes = treeData.descendants();
         const links = treeData.links();
 
+        console.log("links=", links)
+
         nodes.forEach((d:any) => {
             d.y = d.depth * opt.depth; // eslint-disable-line no-param-reassign
         });
 
-        let i = 0; // FIXME: before global
-
         // Update the nodes…
-        const node = gNodes.selectAll("g.node").data(nodes, (d:any) => {
-            d.id || (d.id = ++i); // eslint-disable-line
-        });
+        const node = gNodes
+            .selectAll("g.node")
+            .data(nodes, (d:any) => {
+                
 
-        // Enter any new nodes at the parent's previous position.
-        const nodeEnter = node
-            .enter()
-            .append("g")
-            .attr("class", "node")
-            .attr("id", (d:any) => `n_${d.id}`)
-            .classed("leaf", (d:any) => !d.data.hasOwnProperty("splitAttr")) // eslint-disable-line no-prototype-builtins
-            .attr("transform", (d:any) => `translate(${source.x0}, ${source.y0})`)
-            .attr("data-id", (d:any) => d.id);
-
-        nodeEnter
-            .append("rect")
-            .attr("width", 133 + 8)
-            .attr("height", 70)
-            .attr("x", (d:any) => {
                 const label = nodeLabel(d);
 
-                const textLen = label.length * opt.char_to_pxl;
-                const width = d3.max([opt.node.width, textLen]);
-                return -width / 2;
-            })
-            .attr("rx", 6)
-            .attr("ry", 6)
-            .style("fill", (d:any) => {
-                d.color = colorMap( // eslint-disable-line
-                d.data.hasOwnProperty("splitLabel") // eslint-disable-line
-                    ? d.parent.data.splitAttr
-                    : d.data.splitAttr
-                );
-                return d.color;
-            })
-            .style("filter", "drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))");
+                const rez = `initstates=${state.initialStates}_label_${label}`
 
-            const radius = 20;
-            const colorPie = d3.scaleOrdinal().range(["green", "red"]);
-            const pie = d3.pie().value((d:any) => d[1]);
+                console.log("rez=", rez)
 
-        nodeEnter
-            .selectAll(".pie_chart")
-            .data((d:any) => {
-                const obj ={ nPos: d.data.nPos, nNeg: d.data.nNeg };
-                const entries:any[] = Object.entries(obj);
-                const rez = pie(entries);
                 return rez;
-            })
-            .join("path")
-            .attr("class", "pie_chart")
-            .attr("d", d3.arc().innerRadius(0).outerRadius(radius))
-            .attr("fill", (d:any) => colorPie(d.data[1]))
-            .attr("stroke", "black")
-            .style("stroke-width", "2px")
-            .style("opacity", 0.7);
-
-        nodeEnter
-            .append("text")
-            .attr("dy", "18px")
-            .attr("text-anchor", "middle")
-            .text((d:any) => nodeLabel(d))
-            .style("fill-opacity", 1e-6)
-            .style("filter", "drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))")
-            .style("fill", "white");
-
-        // Transition nodes to their new position.
-        const nodeUpdate = nodeEnter
-            .transition()
-            .duration(duration)
-            .attr("transform", (d:any) =>  `translate(${d.x}, ${d.y})`);
-
-        nodeUpdate
-            .select("rect")
-            .attr("width", (d:any) => {
-                const label = nodeLabel(d);
-                const textLen = label.length * opt.char_to_pxl;
-                const width = d3.max([opt.node.width, textLen]);
-                return width;
-            })
-            .attr("height", opt.node.height);
-
-        nodeUpdate.select("text").style("fill-opacity", 1);
-
-        // Transition exiting nodes to the parent's new position.
-        const nodeExit = node
-            .exit()
-            .transition()
-            .duration(duration)
-            .attr("transform", (d:any) => `translate(${source.x}, ${source.y})`)
-            .remove();
-
-        nodeExit.select("rect").attr("width", 1e-6).attr("height", 1e-6);
-
-        nodeExit.select("text").style("fill-opacity", 1e-6);
-
-        // Update the links
-        const link = gLinks.selectAll("path.link").data(links, (d:any) => d.target.id);
-
-        // Enter any new links at the parent's previous position.
-        link
-            .enter()
-            .insert("svg:path", "g")
-            .attr("class", "link")
-            .attr("d", (d:any) => {
-                const o = { x: source.x0, y: source.y0 };
-                return diagonal({ source: o, target: o });
-            })
-            .attr("data-id", (d:any) => d.target.id)
-            .transition()
-            .duration(duration)
-            .attr("d", diagonal)
-            .style("stroke-width", (d:any) => {
-                const n = d.target.data.nPos + d.target.data.nNeg;
-                return `${linkStokeScale(n)}`;
             });
 
-        // Transition links to their new position.
-        link
-            .transition()
-            .duration(duration)
-            .attr("d", diagonal)
-            .style("stroke-width", (d:any) => {
-                const n = d.target.data.nPos + d.target.data.nNeg;
-                return `${linkStokeScale(n)}`;
+
+         node
+         .join(
+            (enter:any) => {
+
+                console.log("node enter=", enter._groups)  // eslint-disable-line
+
+                const enterTmp = enter;
+
+                const nodeEnter = enterTmp
+                    .append("g")
+                    .attr("class", "node")
+                    .attr("id", (d:any) => `n_${d.id}`)
+                    .classed("leaf", (d:any) => !d.data.hasOwnProperty("splitAttr")) // eslint-disable-line no-prototype-builtins
+                    .attr("transform", (d:any) => `translate(${source.x0}, ${source.y0})`)
+                    .attr("data-id", (d:any) => d.id);
+
+                nodeEnter
+                    .append("rect")
+                    .attr("width", 133 + 8)
+                    .attr("height", 70)
+                    .attr("x", (d:any) => {
+                        const label = nodeLabel(d);
+        
+                        const textLen = label.length * opt.char_to_pxl;
+                        const width = d3.max([opt.node.width, textLen]);
+                        return -width / 2;
+                    })
+                    .attr("rx", 6)
+                    .attr("ry", 6)
+                    .style("fill", (d:any) => {
+                        d.color = colorMap( // eslint-disable-line
+                        d.data.hasOwnProperty("splitLabel") // eslint-disable-line
+                            ? d.parent.data.splitAttr
+                            : d.data.splitAttr
+                        );
+                        return d.color;
+                    })
+                    .style("filter", "drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))");
+        
+                nodeEnter
+                    .append("text")
+                    .attr("dy", "18px")
+                    .attr("text-anchor", "middle")
+                    .text((d:any) => nodeLabel(d))
+                    .style("fill-opacity", 1e-6)
+                    .style("filter", "drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))")
+                    .style("fill", "white");
+
+                // Transition nodes to their new position.
+                const nodeUpdate = nodeEnter
+                    .transition()
+                    .duration(duration)
+                    .attr("transform", (d:any) =>  `translate(${d.x}, ${d.y})`);
+        
+                nodeUpdate
+                    .select("rect")
+                    .attr("width", (d:any) => {
+                        const label = nodeLabel(d);
+                        const textLen = label.length * opt.char_to_pxl;
+                        const width = d3.max([opt.node.width, textLen]);
+                        return width;
+                    })
+                    .attr("height", opt.node.height);
+    
+                nodeUpdate.select("text").style("fill-opacity", 1);
+
+
+                return nodeUpdate
+
+            },
+            (update:any) => {
+
+                console.log("node update=", update._groups) // eslint-disable-line
+                
+                const updateTmp = update.select(".node")
+                updateTmp
+                    .select("rect")
+                    .attr("width", 133 + 8)
+                    .attr("height", 70)
+                    .attr("x", (d:any) => {
+                        const label = nodeLabel(d);
+        
+                        const textLen = label.length * opt.char_to_pxl;
+                        const width = d3.max([opt.node.width, textLen]);
+                        return -width / 2;
+                    })
+                    .attr("rx", 6)
+                    .attr("ry", 6)
+
+                return updateTmp;
+
+
+            },
+            (exit:any) => {         
+                                
+                console.log("node exit=", exit._groups)  // eslint-disable-line
+
+                const exitTmp = exit;
+
+                const nodeExit = exitTmp
+                    .transition()
+                    .duration(duration)
+                    .attr("transform", (d:any) => `translate(${source.x}, ${source.y})`)
+                    .remove();
+        
+                nodeExit.select("rect").attr("width", 1e-6).attr("height", 1e-6);
+        
+                nodeExit.select("text").style("fill-opacity", 1e-6);
+
+                return nodeExit;
+            },
+        )
+
+
+        const link = gLinks
+            .selectAll("path.link")
+            .data(links, (d:any) => {
+
+                const sourceLabel = nodeLabel(d.source)
+                const targetLabel = nodeLabel(d.target)
+                const rez = `initialStates_${state.initialStates}_sourceLabel_${sourceLabel}_targetLabel_${targetLabel}`;
+
+                console.log("rez=", rez)
+
+                return rez;
             });
 
-        // Transition exiting nodes to the parent's new position.
+
         link
-            .exit()
-            .transition()
-            .duration(duration)
-            .attr("d", (d:any) => {
-                const o = { x: source.x, y: source.y };
-                return diagonal({ source: o, target: o });
-            })
-            .remove();
+            .join(
+                (enter:any) => {
+
+                    console.log("link enter=", enter._groups) // eslint-disable-line
+                    
+                    const enterTmp = enter;
+
+                    const rez = enterTmp
+                        .insert("svg:path", "g")
+                        .attr("class", "link")
+                        .attr("d", (d:any) => {
+                            const o = { x: source.x0, y: source.y0 };
+                            return diagonal({ source: o, target: o });
+                        })
+                        .attr("data-id", (d:any) => d.target.id)
+                        .transition()
+                        .duration(duration)
+                        .attr("d", diagonal)
+                        .style("stroke-width", (d:any) => {
+                            const n = d.target.data.nPos + d.target.data.nNeg;
+                            return `${linkStokeScale(n)}`;
+                        });
+
+                    // Transition links to their new position.
+                    rez
+                        .transition()
+                        .duration(duration)
+                        .attr("d", diagonal)
+                        .style("stroke-width", (d:any) => {
+                            const n = d.target.data.nPos + d.target.data.nNeg;
+                            return `${linkStokeScale(n)}`;
+                        });
+
+
+                    return rez;
+                },
+                (update:any) => {
+
+                    console.log("link update=", update._groups) // eslint-disable-line
+
+
+                    return update;
+                },
+                (exit:any) =>{
+                    console.log("link exit=", exit._groups) // eslint-disable-line
+
+                    return exit.remove()
+                },
+            )
+
 
         // Stash the old positions for transition.
         nodes.forEach(function (d:any) { // eslint-disable-line
@@ -274,7 +332,7 @@ const DecisionTree = ({ selectedState }: any) => {
     }    
 
     function diagonal(data:any) {
-        return d3
+         return d3
             .linkHorizontal()
             .x((d:any) => d.x)
             .y((d:any) => d.y)(data);
