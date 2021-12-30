@@ -217,23 +217,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
             (update:any) => {
 
                 console.log("node update=", update._groups) // eslint-disable-line
-                
-                const updateTmp = update.select(".node")
-                updateTmp
-                    .select("rect")
-                    .attr("width", 133 + 8)
-                    .attr("height", 70)
-                    .attr("x", (d:any) => {
-                        const label = nodeLabel(d);
-        
-                        const textLen = label.length * opt.char_to_pxl;
-                        const width = d3.max([opt.node.width, textLen]);
-                        return -width / 2;
-                    })
-                    .attr("rx", 6)
-                    .attr("ry", 6)
-
-                return updateTmp;
+                return update;
 
 
             },
@@ -312,8 +296,6 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
                 (update:any) => {
 
                     console.log("link update=", update._groups) // eslint-disable-line
-
-
                     return update;
                 },
                 (exit:any) =>{
