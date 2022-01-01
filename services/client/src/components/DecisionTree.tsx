@@ -124,7 +124,11 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
         });
     
         // Update the nodes…
-        const node = gNodes.selectAll("g.node").data(nodes, (d:any) => nodeLabel(d));
+        const node = gNodes.selectAll("g.node").data(nodes, (d:any) => {
+            const id = `initial_states_${state.initialStates}_nodeLabel_${nodeLabel(d)}`;
+            console.log("nodeId=", id)
+            return id;
+        });
     
         node.join(
           (enter:any) => {
@@ -191,7 +195,6 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
             const exitTmp = exit;
     
             const nodeExit = exitTmp
-              .exit()
               .transition()
               .duration(duration)
               .attr("transform", (d:any) => `translate(${source.x}, ${source.y})`)
@@ -201,7 +204,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
     
             nodeExit.select("text").style("fill-opacity", 1e-6);
     
-            return exitTmp;
+            return nodeExit;
           }
         );
     
@@ -210,7 +213,11 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
           .selectAll("path.link")
           .data(
             links,
-            (d:any) => `source=${nodeLabel(d.source)}_target=${nodeLabel(d.target)}`
+            (d:any) => {
+                const id = `initial_states_${state.initialStates}_source=${nodeLabel(d.source)}_target=${nodeLabel(d.target)}`;
+                console.log("linkId=", id)
+                return id
+            }
           );
     
         link.join(
@@ -250,7 +257,6 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
           },
           (update:any) => update,
           (exit:any) => exit
-              .exit()
               .transition()
               .duration(duration)
               .attr("d", (d:any) => {
