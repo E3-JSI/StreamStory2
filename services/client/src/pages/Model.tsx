@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { useHistory, useParams } from 'react-router-dom';
@@ -33,6 +33,7 @@ function Model(): JSX.Element {
     const model = currentModel.find((m) => m.id === Number(id));
     const [isLoading, setIsLoading] = useState(!model);
     const [selectedState, setSelectedState] = useState<any>();
+    const [stateDetailsVisible, setStateDetailsVisible] = useState(true);
 
     useMountEffect(() => {
         async function loadModel() {
@@ -55,6 +56,16 @@ function Model(): JSX.Element {
             loadModel();
         }
     });
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const hide = params.get('hide');
+        console.log('hide=', hide);
+
+        if (hide != null) {
+            setStateDetailsVisible(hide.indexOf('state_details') === -1);
+        }
+    }, []);
 
     function handleCloseClick() {
         const nextModels = currentModel.filter((m) => m.id !== Number(id));
@@ -104,7 +115,12 @@ function Model(): JSX.Element {
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12} lg={4}>
+                    <Grid
+                        item
+                        xs={12}
+                        lg={4}
+                        style={stateDetailsVisible ? {} : { display: 'none' }}
+                    >
                         <StateDetails
                             className={classes.details}
                             model={model}

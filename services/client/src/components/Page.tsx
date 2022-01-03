@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 
 import clsx from 'clsx';
 import { Theme } from '@material-ui/core/styles';
@@ -24,6 +24,9 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
     const isUserLoggedIn = user !== null;
     const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
+    const [topNavVisible, setTopNavVisible] = useState(true);
+    const [sideNavVisible, setSideNavVisible] = useState(true);
+
     if (variant === 'application') {
         const className = 'overflowHidden';
         document.documentElement.className = className;
@@ -32,6 +35,17 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
         document.documentElement.className = '';
         document.body.className = '';
     }
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const hide = params.get('hide');
+        console.log("hide=", hide);
+
+        if(hide != null) {
+            setTopNavVisible(hide.indexOf("top_nav") === -1);
+            setSideNavVisible(hide.indexOf("side_nav") === -1);
+        }
+    }, [])
 
     switch (variant) {
         case 'simple':
@@ -54,8 +68,12 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
         default:
             return (
                 <Box className={classes.root}>
-                    <Header variant="application" />
-                    <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'} />
+                    <div style={topNavVisible ? {} : { display: 'none' }} >
+                        <Header variant="application"/>
+                    </div>
+                    <div style={sideNavVisible ? {} : { display: 'none' }}>
+                        <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'}/>
+                    </div>
                     <main className={clsx(classes.main, classes.mainApplication)}>
                         <div className={classes.mainContent}>{children}</div>
                     </main>

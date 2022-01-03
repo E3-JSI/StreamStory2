@@ -28,6 +28,10 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
     const [histogram, setHistogram] = useState<any>();
     const [totalHistogram, setTotalHistogram] = useState<any>();
     const [commStateData, setCommStateData] = useState<any>();
+    const [stateHistoryVisible, setStateHistoryVisible] = useState(true);
+    const [coordinatesVisible, setCoordinatesVisible] = useState(true);
+    const [timeVisible, setTimeVisible] = useState(true);
+    const [explanationTreeVisible, setExplanationTreeVisible] = useState(true);
     
     const stateTabPrefix = 'model-state';
 
@@ -51,6 +55,18 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
        
     }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
 
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const hide = params.get('hide');
+        console.log("hide=", hide);
+
+        if(hide != null) {
+            setStateHistoryVisible(hide.indexOf("state_history") === -1);
+            setCoordinatesVisible(hide.indexOf("coordinates") === -1);
+            setTimeVisible(hide.indexOf("time") === -1);
+            setExplanationTreeVisible(hide.indexOf("explanation_tree") === -1);
+        }
+    }, [])
 
     function handleTabChange(event: React.ChangeEvent<Record<string, never>>, newValue: number) {
         setTabValue(newValue);
@@ -72,17 +88,24 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                     <Tab
                         value={0}
                         label={t('state_history')}
+                        style={stateHistoryVisible ? {} : { display: 'none' }}
                         {...getTabA11yProps(0, stateTabPrefix)}
                     />
                     <Tab
                         value={1}
                         label={t('coordinates')}
+                        style={coordinatesVisible ? {} : { display: 'none' }}
                         {...getTabA11yProps(1, stateTabPrefix)}
                     />
-                    <Tab value={2} label={t('time')} {...getTabA11yProps(2, stateTabPrefix)} />
+                    <Tab 
+                        value={2} 
+                        label={t('time')} 
+                        style={timeVisible ? {} : { display: 'none' }}
+                        {...getTabA11yProps(2, stateTabPrefix)} />
                     <Tab
                         value={3}
                         label={t('explanation_tree')}
+                        style={explanationTreeVisible ? {} : { display: 'none' }}
                         {...getTabA11yProps(3, stateTabPrefix)}
                     />
                 </Tabs>

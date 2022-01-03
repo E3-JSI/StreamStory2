@@ -103,6 +103,12 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
 
     function updateChart(gNodes:any, gLinks:any, source:any, opt:any, colorMap:any, treemap:any, state:any) {
 
+        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        console.log("stateNo=", state.stateNo, ", initialSt=", state.initialStates)
+        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+        console.log("source=", source)
+
       
         const duration = 500;
 
@@ -125,7 +131,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
     
         // Update the nodes…
         const node = gNodes.selectAll("g.node").data(nodes, (d:any) => {
-            const id = `initial_states_${state.initialStates}_nodeLabel_${nodeLabel(d)}`;
+            const id = `init_st_${state.initialStates}_l_${nodeLabel(d)}`;
             console.log("nodeId=", id)
             return id;
         });
@@ -214,7 +220,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
           .data(
             links,
             (d:any) => {
-                const id = `initial_states_${state.initialStates}_source=${nodeLabel(d.source)}_target=${nodeLabel(d.target)}`;
+                const id = `init_st_${state.initialStates}_s_${nodeLabel(d.source)}_t_${nodeLabel(d.target)}`;
                 console.log("linkId=", id)
                 return id
             }
@@ -255,7 +261,17 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
     
             return linkRez;
           },
-          (update:any) => update,
+          (update:any) => {
+              const updateTmp = update;
+            
+              return updateTmp .attr("d", (d:any) => {
+                const o = { x: source.x0, y: source.y0 };
+                return diagonal({ source: o, target: o });
+              })
+            
+
+
+          },
           (exit:any) => exit
               .transition()
               .duration(duration)
