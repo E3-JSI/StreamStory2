@@ -85,29 +85,39 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                     aria-label={t('model_state')}
                     // centered
                 >
-                    <Tab
-                        value={0}
-                        label={t('state_history')}
-                        style={stateHistoryVisible ? {} : { display: 'none' }}
-                        {...getTabA11yProps(0, stateTabPrefix)}
-                    />
-                    <Tab
-                        value={1}
-                        label={t('coordinates')}
-                        style={coordinatesVisible ? {} : { display: 'none' }}
-                        {...getTabA11yProps(1, stateTabPrefix)}
-                    />
-                    <Tab 
+                    {stateHistoryVisible ? (
+                        <Tab
+                            value={0}
+                            label={t('state_history')}
+                            {...getTabA11yProps(0, stateTabPrefix)}
+                        />
+                    ) : <></>}
+
+                    {coordinatesVisible ? (
+                            <Tab
+                                value={1}
+                                label={t('coordinates')}
+                                {...getTabA11yProps(1, stateTabPrefix)}
+                            />
+                    ): null}
+
+                    {timeVisible ? (
+
+                        <Tab 
                         value={2} 
                         label={t('time')} 
-                        style={timeVisible ? {} : { display: 'none' }}
                         {...getTabA11yProps(2, stateTabPrefix)} />
-                    <Tab
-                        value={3}
-                        label={t('explanation_tree')}
-                        style={explanationTreeVisible ? {} : { display: 'none' }}
-                        {...getTabA11yProps(3, stateTabPrefix)}
-                    />
+                    ): null}
+
+                    {explanationTreeVisible ? (
+                         <Tab
+                         value={3}
+                         label={t('explanation_tree')}
+                         style={explanationTreeVisible ? {} : { display: 'none' }}
+                         {...getTabA11yProps(3, stateTabPrefix)}
+                     />
+                    ): null}
+        
                 </Tabs>
             </Paper>
             <TabPanel value={tabValue} index={0} prefix={stateTabPrefix}>
