@@ -22,7 +22,10 @@ import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
 
+import useStyles from './MarkovChain.styles';
+
 const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizationProps) => {
+    const classes = useStyles();
     const useThemeLoaded = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
@@ -302,6 +305,7 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
         <>
             <div ref={tooltipRef} />
             <div ref={containerRef} />
+            <div className={classes.statePulse} />
         </>
     );
 };
