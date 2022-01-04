@@ -31,8 +31,8 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
                     bottom: 20,
                     left: 20,
                 },
-                width: 800,
-                height: 1800,
+                width: containerRef?.current?.offsetWidth || 150,
+                height: 389,
                 node: {
                 width: 90,
                 height: 40,
