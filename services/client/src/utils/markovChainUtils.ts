@@ -204,6 +204,7 @@ export function createNodes(
     y: any,
     r: any,
     commonStateData: any,
+    classes: any,
     transitionProps: ITransitionProps,
     onNodeClickCallBack: any,
 ) {
@@ -214,7 +215,7 @@ export function createNodes(
     selectAllNodeGroups(gNodes)
         .data(data.states, (d: any) => `node_${uniqueId(d)}`)
         .join(
-            (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter, commonStateData),
+            (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter, commonStateData, classes),
             (update: any) => update,
             (exit: any) => {
                 exit.remove();
@@ -265,7 +266,7 @@ export function createNodes(
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
 }
 
-function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any, commonStateData: any) {
+function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any, commonStateData: any, classes: any) {
     const enterTmp = selection
         .append('g')
         .attr('id', (d: any) => stateId(d))
@@ -273,13 +274,15 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('opacity', 0);
     enterTmp
         .append('circle')
-        .attr('class', 'node_circle')
+        // .attr('class', `node_circle ${classes.statePulse}`)
+        .attr('class', `node_circle`)
+        .classed(classes.statePulse, (d: any) => commonStateData[d.initialStates.toString()].pulse === true)
         .attr('cx', (d: any) => scale(x, d.x))
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
-        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
+    // .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
 
     const lineHeight = 40; // FIXME: hardcoded
     const linesDict: any = {}
@@ -298,7 +301,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
         .style('fill', (d: any) => (d.color == null) ? "white" : theme.stateText.default.fill)
-        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
+        // .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
         .attr(
             "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")

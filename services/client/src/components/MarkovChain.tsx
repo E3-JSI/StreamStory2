@@ -234,6 +234,7 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
                 y,
                 r,
                 commonStateData,
+                classes,
                 TRANSITION_PROPS,
                 handleOnStateSelected,
             );
@@ -305,7 +306,10 @@ const MarkovChain = ({ model, selectedState, onStateSelected }: ModelVisualizati
         <>
             <div ref={tooltipRef} />
             <div ref={containerRef} />
-            <div className={classes.statePulse} />
+
+            {/* <svg className={classes.statePulse} height="100" width="100">
+                <circle cx="50" cy="50" r="40" stroke="black" strokeWidth="3" fill="red" />
+            </svg> */}
         </>
     );
 };

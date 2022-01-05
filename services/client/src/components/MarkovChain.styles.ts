@@ -6,39 +6,19 @@ const useStyles = makeStyles((theme: Theme) => {
 
     return createStyles({
         statePulse: {
-            margin: '100px',
-            display: 'block',
-            width: '22px',
-            height: '22px',
             borderRadius: '50%',
-            background: '#cca92c',
-            cursor: 'pointer',
-            boxShadow: '0 0 0 rgba(204, 169, 44, 0.4)',
-            animation: '$pulse 2s infinite',
-        },
-        '@-webkit-keyframes pulse': {
-            '0%': {
-                '-webkit-box-shadow': '0 0 0 0 rgba(204, 169, 44, 0.4)',
-            },
-            '70%': {
-                '-webkit-box-shadow': '0 0 0 10px rgba(204,169,44, 0)',
-            },
-            '100%': {
-                '-webkit-box-shadow': '0 0 0 0 rgba(204, 169, 44, 0)',
-            }
+            filter: 'drop-shadow(0px 1px 1px #0000001a)',
+            animationName: '$pulse',
+            animationDuration: '1.25s',
+            animationIterationCount: 'infinite',
+            animationTimingFunction: 'bezier(0.215, 0.61, 0.355, 1)',
         },
         '@keyframes pulse': {
             '0%': {
-                '-moz-box-shadow': '0 0 0 0 rgba(204,169,44, 0.4)',
-                'box-shadow': '0 0 0 0 rgba(204,169,44, 0.4)',
-            },
-            '70%': {
-                '-moz-box-shadow': '0 0 0 10px rgba(204,169,44, 0)',
-                'box-shadow': '0 0 0 10px rgba(204,169,44, 0)',
+                filter: 'drop-shadow(0 0 0 rgba(1,164,233, 1))',
             },
             '100%': {
-                '-moz-box-shadow': '0 0 0 0 rgba(204,169,44, 0)',
-                'box-shadow': '0 0 0 0 rgba(204,169,44, 0)'
+                filter: 'drop-shadow(0 0 3em rgba(0,0,0, 0))',
             }
         }
     });

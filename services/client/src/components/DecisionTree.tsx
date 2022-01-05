@@ -1,10 +1,8 @@
 import * as d3 from 'd3';
-import { scaleOrdinal, easeQuadIn } from 'd3';
 import React, { useRef, useEffect, useState } from 'react';
 
 const DecisionTree = ({ selectedState, commonStateData }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
     const [windowSize] = useState<any>({
         width: undefined,
         height: undefined,
@@ -146,7 +144,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
               .attr("class", "node")
               .attr("id", (d:any) => `n_${d.id}`)
               .classed("leaf", (d:any) => !d.data.hasOwnProperty("splitAttr")) // eslint-disable-line
-              .attr("transform", (d:any) => `translate(${source.x0},${source.y0})`);
+              .attr("transform", () => `translate(${source.x0},${source.y0})`);
     
             nodeEnter
               .append("rect")
@@ -203,7 +201,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
             const nodeExit = exitTmp
               .transition()
               .duration(duration)
-              .attr("transform", (d:any) => `translate(${source.x}, ${source.y})`)
+              .attr("transform", () => `translate(${source.x}, ${source.y})`)
               .remove();
     
             nodeExit.select("rect").attr("width", 1e-6).attr("height", 1e-6);
@@ -234,7 +232,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
             const linkRez = enterTmp
               .insert("svg:path", "g")
               .attr("class", "link")
-              .attr("d", (d:any) => {
+              .attr("d", () => {
                 const o = { x: source.x0, y: source.y0 };
                 return diagonal({ source: o, target: o });
               })
@@ -261,21 +259,14 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
     
             return linkRez;
           },
-          (update:any) => {
-              const updateTmp = update;
-            
-              return updateTmp .attr("d", (d:any) => {
-                const o = { x: source.x0, y: source.y0 };
-                return diagonal({ source: o, target: o });
-              })
-            
-
-
-          },
+          (update:any) => update.attr("d", () => {
+              const o = { x: source.x0, y: source.y0 };
+              return diagonal({ source: o, target: o });
+            }),
           (exit:any) => exit
               .transition()
               .duration(duration)
-              .attr("d", (d:any) => {
+              .attr("d", () => {
                 const o = { x: source.x, y: source.y };
                 return diagonal({ source: o, target: o });
               })
