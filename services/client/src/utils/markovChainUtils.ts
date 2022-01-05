@@ -276,13 +276,16 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .append('circle')
         // .attr('class', `node_circle ${classes.statePulse}`)
         .attr('class', `node_circle`)
-        .classed(classes.statePulse, (d: any) => commonStateData[d.initialStates.toString()].pulse === true)
+        .classed(classes.statePulse, true)
+        // .classed("trigger", (d: any) => commonStateData[d.initialStates.toString()].trigger === true)
+        // .classed(classes.statePulse, (d: any) => commonStateData[d.initialStates.toString()].pulse === true)
+        // .classed("trigger", (d: any) => commonStateData[d.initialStates.toString()].trigger === true)
         .attr('cx', (d: any) => scale(x, d.x))
         .attr('cy', (d: any) => scale(y, d.y))
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
-    // .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
 
     const lineHeight = 40; // FIXME: hardcoded
     const linesDict: any = {}
@@ -301,7 +304,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("text-anchor", "middle")
         .attr("font-size", `${lineHeight}px`)
         .style('fill', (d: any) => (d.color == null) ? "white" : theme.stateText.default.fill)
-        // .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
         .attr(
             "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
         .selectAll("tspan")
@@ -311,6 +314,14 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr("x", 0)
         .attr("y", (d: any, i: number, lines: any[]) => (i - lines.length / 2 + 0.8) * lineHeight)
         .text((d: any) => d.text);
+
+    enterTmp
+        .append('text')
+        .attr('x', (d: any) => scale(x, d.x) + scale(r, d.r) * 0.3)
+        .attr('y', (d: any) => scale(y, d.y) - scale(r, d.r) * 0.3)
+        .attr("font-size", (d: any) => `${0.25 * scale(r, d.r)}px`)
+        .style('filter', 'drop-shadow(0 0 0.75rem gold)')
+        .text('🏷️')
 
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))

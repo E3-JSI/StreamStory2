@@ -20,7 +20,7 @@ const useStyles = makeStyles((theme: Theme) => {
             '100%': {
                 filter: 'drop-shadow(0 0 3em rgba(0,0,0, 0))',
             }
-        }
+        },
     });
 });
 
