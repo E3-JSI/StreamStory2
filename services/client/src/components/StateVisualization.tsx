@@ -5,15 +5,14 @@ import Box, { BoxProps } from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Tabs from '@material-ui/core/Tabs';
 
-import { Model } from '../api/models';
-import Tab from './Tab';
-import TabPanel, { getTabA11yProps } from './TabPanel';
-
 import useStyles from './StateVisualization.styles';
-import Histogram from './Histogram';
-import StateHistory from './StateHistory';
+import { Model } from '../api/models';
 import { createCommonStateData } from '../utils/markovChainUtils';
 import DecisionTree from './DecisionTree';
+import StateHistory from './StateHistory';
+import StateTime from './StateTime';
+import Tab from './Tab';
+import TabPanel, { getTabA11yProps } from './TabPanel';
 
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
@@ -25,8 +24,6 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
     const classes = useStyles();
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
-    const [histogram, setHistogram] = useState<any>();
-    const [totalHistogram, setTotalHistogram] = useState<any>();
     const [commStateData, setCommStateData] = useState<any>();
     const [tabs, setTabs] = useState<any>({
         stateHistory: {visible: true, index: 0},
@@ -40,22 +37,9 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
 
     useEffect(() => {
         if(selectedState != null && model && model.model && model.model.scales) {
-            const commonStateData = createCommonStateData(model.model.scales)
-
-            setCommStateData(commonStateData);
-
-            const key = selectedState.initialStates.toString();
-
-            const histIx = commonStateData[key].histograms.findIndex((hist:any)=> !Object.prototype.hasOwnProperty.call(hist, 'bounds'));
-            const currHist = commonStateData[key].histograms[histIx];
-            const totalHist = model.model.totalHistograms[histIx];
-            setTotalHistogram(totalHist);
-                
-            if(currHist) {
-                setHistogram(currHist);
-            }
+            const data = createCommonStateData(model.model.scales)
+            setCommStateData(data);
         }
-       
     }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -156,7 +140,7 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                         </Tabs>
                     </Paper>
                     <TabPanel value={tabValue} index={tabs.stateHistory.index} prefix={stateTabPrefix}>
-                        <StateHistory model={model} selectedState={selectedState} onStateSelected={(stateCurr:any)=> {
+                        <StateHistory model={model} selectedState={selectedState} commonStateData={commStateData} onStateSelected={(stateCurr:any)=> {
                             onStateSelected(stateCurr)
                         }
 
@@ -166,44 +150,10 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                         {t('coordinates')}
                     </TabPanel>
                     <TabPanel value={tabValue} index={tabs.time.index} prefix={stateTabPrefix}>
-
-                        {selectedState &&  (
-                            <>
-                                <h4>{t('hour_of_day')}</h4>
-
-                                <Histogram
-                                histogram={histogram}
-                                totalHistogram={totalHistogram}
-                                timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
-                                key={selectedState?.stateNo + Math.random()}
-                                />
-
-                                <h4>{t('day_of_week')}</h4>
-
-                                <Histogram
-                                    histogram={histogram}
-                                    totalHistogram={totalHistogram}
-                                    timeType={"dayOfWeek"}  // eslint-disable-line react/jsx-curly-brace-presence
-                                    key={selectedState?.stateNo + Math.random()}
-                                    />
-
-                                <h4>{t('month')}</h4>
-
-                                <Histogram
-                                    histogram={histogram}
-                                    totalHistogram={totalHistogram}
-                                    timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
-                                    key={selectedState?.stateNo + Math.random()}
-                                    />
-                            </>
-                        )}
-
+                        <StateTime model={model} selectedState={selectedState} commonStateData={commStateData} />
                     </TabPanel>
                     <TabPanel value={tabValue} index={tabs.explanationTree.index} prefix={stateTabPrefix}>
-                        {t('explanation_tree')}
-
                         <DecisionTree selectedState={selectedState} commonStateData={commStateData}/>
-
                     </TabPanel>
             </Box>
           )}

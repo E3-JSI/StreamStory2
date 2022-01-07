@@ -31,10 +31,12 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
 
     const [label, setLabel] = useState<any>();
     const [isEvent, setIsEvent] = useState(true);
+    const [commStateData, setCommStateData] = useState<any>();
 
     useEffect(()=> {
         if(selectedState && model && model.model && model.model.scales) {
             const commonStateData = createCommonStateData(model.model.scales);
+            setCommStateData(commonStateData)
             const key = selectedState.initialStates.toString();
             setLabel(commonStateData[key].suggestedLabel.label);
         }  
@@ -133,7 +135,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                         </Grid>
                     </form>
 
-                    <StateAttributes model={model} selectedState={selectedState} />
+                    <StateAttributes model={model} selectedState={selectedState} commonStateData={commStateData} />
 
                 </Box>
             )}

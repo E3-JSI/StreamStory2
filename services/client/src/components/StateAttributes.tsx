@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';  
 import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
-import useStyles from './StateDetails.styles';
+import Divider from '@material-ui/core/Divider';
+import useStyles from './StateAttributes.styles';
 import {createCommonStateData} from '../utils/markovChainUtils';
 import { StateDetailsProps } from './StateDetails';
 import Histogram from './Histogram';
 
-const StateAttributes = ({ model, selectedState, ...other }: StateDetailsProps) => {
+const StateAttributes = ({ model, selectedState, commonStateData }: any) => {
     const { t } = useTranslation();
     const classes = useStyles();
 
@@ -19,18 +18,18 @@ const StateAttributes = ({ model, selectedState, ...other }: StateDetailsProps) 
     const [totalHistograms, setTotalHistograms] = useState<any>([]);
 
     useEffect(() => {   
-        if(selectedState && model && model.model && model.model.scales) {
+        if(commonStateData != null && selectedState && model && model.model && model.model.scales) {
+            console.log("commonStateData=", commonStateData)
             const {hists, totalHists} = createHistogramsAndTotalHistograms();
             setHistograms(hists);
             setTotalHistograms(totalHists)
         }
-    }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [selectedState, commonStateData]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function createHistogramsAndTotalHistograms() {
         const rez:any = {hists: null, totalHists:null};
 
         if(selectedState && model && model.model && model.model.scales) {
-            const commonStateData = createCommonStateData(model.model.scales);
             const key = selectedState.initialStates.toString();
             const histIndices = commonStateData[key].histograms
             .map((hist:any, ix:any) => ((hist.attrName.toLowerCase() !== 'time') && (hist.attrName.toLowerCase() !== 'timestamp')) ? ix: null)
@@ -56,13 +55,6 @@ const StateAttributes = ({ model, selectedState, ...other }: StateDetailsProps) 
         return rez;
     }
 
-    const Item = styled(Paper)(({ theme }) => ({
-        ...theme.typography.body2,
-        padding: theme.spacing(1),
-        textAlign: 'center',
-        color: theme.palette.text.secondary,
-    }));
-    
     return (
         <>
           {(histograms && totalHistograms && histograms.length && totalHistograms.length) ? (
@@ -74,15 +66,14 @@ const StateAttributes = ({ model, selectedState, ...other }: StateDetailsProps) 
                         {histograms.map((hist: any, i: number) => (
                             <Grid key={hist.attrName} item xs={6}>
                                 
-                                <Item>
+                                <div className={classes.histogramBox}>
                                         <Histogram
                                             histogram={hist}
                                             totalHistogram={totalHistograms[i]}
                                             key={selectedState.stateNo + Math.random()}
                                             />
                                             <h4>{hist.attrName}</h4>
-                                </Item>
-
+                                </div>
                             </Grid>
                         ))}
                     </Grid>

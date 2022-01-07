@@ -11,19 +11,18 @@ import {
 } from '../utils/markovChainUtils';
 import { StateVisualizationProps } from './StateVisualization';
 
-const StateHistory = ({ model, selectedState, onStateSelected }: StateVisualizationProps) => {
+const StateHistory = ({ model, selectedState, onStateSelected, commonStateData }: any) => {
     const containerStateHistoryRef = useRef<HTMLDivElement>(null);
     const [initializedStateHistory, setInitializedStateHistory] = useState<boolean>(false);
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
 
     useEffect(() => {
-        if (model && model.model && model.model.scales && model.model.scales.length) {
-            const commonStateData = createCommonStateData(model.model.scales);
+        if (commonStateData != null && model && model.model && model.model.scales && model.model.scales.length) {
             addColorsToScaleStates(model.model.scales, commonStateData);
             createStateHistory();
             console.log("\n")
         }
-    }, [model.model.scales]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [model.model.scales, commonStateData]); // eslint-disable-line react-hooks/exhaustive-deps
     
     
     useEffect(()=> {
