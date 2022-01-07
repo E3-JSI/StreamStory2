@@ -8,14 +8,18 @@ import Paper, { PaperProps } from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Checkbox from '@material-ui/core/Checkbox';
+import Button from '@material-ui/core/Button';
+import CancelIcon from '@material-ui/icons/Cancel';
 import SaveIcon from '@material-ui/icons/Save';
 
-import { Model } from '../api/models';
 import LoadingButton from './LoadingButton';
 
+import { Model, updateModel } from '../api/models';
 import useStyles from './StateDetails.styles';
-import Histogram from './Histogram';
 import { createCommonStateData } from '../utils/markovChainUtils';
+import StateAttributes from './StateAttributes';
 
 export interface StateDetailsProps extends PaperProps {
     model?: Model;
@@ -26,48 +30,25 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
     const classes = useStyles();
     const { t } = useTranslation();
 
-    const [histograms, setHistograms] = useState<any>([]);
-    const [totalHistograms, setTotalHistograms] = useState<any>([]);
     const [label, setLabel] = useState<any>();
+    const [isEvent, setIsEvent] = useState(true);
 
     useEffect(()=> {
         if(selectedState && model && model.model && model.model.scales) {
             const commonStateData = createCommonStateData(model.model.scales);
             const key = selectedState.initialStates.toString();
             setLabel(commonStateData[key].suggestedLabel.label);
-            
-            const histIndices = commonStateData[key].histograms
-            .map((hist:any, ix:any) => ((hist.attrName.toLowerCase() !== 'time') && (hist.attrName.toLowerCase() !== 'timestamp')) ? ix: null)
-            .filter((el:any)=> el!= null);
-
-            const hists:any[] =[]
-            const totalHists:any[] =[]
-
-            for(let i = 0; i<  histIndices.length; i++) {
-
-                if(model && model.model && model.model.totalHistograms) {
-                    const index = histIndices[i];
-                    const hist = commonStateData[key].histograms[index];
-
-                    if(Object.prototype.hasOwnProperty.call(hist, 'bounds')) { // if not time hists
-                        hists.push(commonStateData[key].histograms[index]);
-                        totalHists.push(model.model.totalHistograms[index]);
-                    }
-               }
-            }
-            setHistograms(hists);
-            setTotalHistograms(totalHists)
-        }
-    
+        }  
     }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    function handleChange(event:any, value:any) {
+        setIsEvent(value);
+    }
 
-    const Item = styled(Paper)(({ theme }) => ({
-        ...theme.typography.body2,
-        padding: theme.spacing(1),
-        textAlign: 'center',
-        color: theme.palette.text.secondary,
-    }));
+    function updateModelForm() {
+        console.log("start: updateModelForm");
+        console.log("end: updateModelForm");
+    }
 
     return (
         <Paper key={label} {...other}>
@@ -77,6 +58,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                 </Typography>
             </Toolbar>
             <Divider />
+
             {selectedState && (
                 <Box p={2}>
                     <form>
@@ -100,8 +82,31 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                             multiline
                             fullWidth
                         />
+
+                        <FormControlLabel
+                            label={t('is_event')}
+                            control={
+                                <Checkbox
+                                checked={isEvent}
+                                onChange={handleChange}
+                                name="isEvent"
+                                color="primary"
+                                />
+                            }
+                        />
+
+                        {isEvent && (
+                            <TextField
+                                name="eventId"
+                                label={t('event_id')}
+                                variant="standard"
+                                margin="normal"
+                                fullWidth
+                            />
+                        )}
+
                         <Grid className={classes.formButtons} spacing={1} container>
-                            {/* <Grid item>
+                            {<Grid item>
                                 <Button
                                     variant="contained"
                                     size="small"
@@ -111,8 +116,8 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                                 >
                                     {t('cancel')}
                                 </Button>
-                            </Grid> */}
-                            {/* <Grid item>
+                            </Grid> }
+                            {<Grid item>
                                 <LoadingButton
                                     type="submit"
                                     variant="contained"
@@ -125,32 +130,12 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                                 >
                                     {t('save')}
                                 </LoadingButton>
-                            </Grid> */}
+                            </Grid>}
                         </Grid>
                     </form>
-                    {(histograms.length && totalHistograms.length) ? (
-                        <Box>
-                            <Typography className={classes.attributesTitle} component="h3">
-                                {t('attributes')}
-                            </Typography>
-                            <Grid container spacing={1}>
-                                {histograms.map((hist: any, i: number) => (
-                                    <Grid key={hist.attrName} item xs={6}>
-                                       
-                                       <Item>
-                                                <Histogram
-                                                    histogram={hist}
-                                                    totalHistogram={totalHistograms[i]}
-                                                    key={selectedState.stateNo + Math.random()}
-                                                    />
-                                                    <h4>{hist.attrName}</h4>
-                                        </Item>
 
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        </Box>
-                    ): <></>}
+                    <StateAttributes model={model} selectedState={selectedState} />
+
                 </Box>
             )}
         </Paper>
