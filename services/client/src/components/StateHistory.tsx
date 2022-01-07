@@ -4,12 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     createSVG,
     getSVG,
-    addColorsToScaleStates,
     createGraphContainer,
     getGraphContainer,
-    createCommonStateData,
 } from '../utils/markovChainUtils';
-import { StateVisualizationProps } from './StateVisualization';
 
 const StateHistory = ({ model, selectedState, onStateSelected, commonStateData }: any) => {
     const containerStateHistoryRef = useRef<HTMLDivElement>(null);
@@ -18,7 +15,6 @@ const StateHistory = ({ model, selectedState, onStateSelected, commonStateData }
 
     useEffect(() => {
         if (commonStateData != null && model && model.model && model.model.scales && model.model.scales.length) {
-            addColorsToScaleStates(model.model.scales, commonStateData);
             createStateHistory();
             console.log("\n")
         }

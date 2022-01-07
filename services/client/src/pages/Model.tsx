@@ -18,7 +18,7 @@ import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
 
 import useStyles from './Model.styles';
-import { createCommonStateData } from '../utils/markovChainUtils';
+import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
 
 export interface ModelUrlParams {
     id: string;
@@ -48,6 +48,8 @@ function Model(): JSX.Element {
                         id: Number(id),
                         commonStateData: createCommonStateData(modelNew.model.scales),
                     };
+                    addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
+
                     setSession({
                         currentModel: [modelNew, ...currentModel],
                         commonStateDataArr: [commStateDataNew, ...commonStateDataArr],

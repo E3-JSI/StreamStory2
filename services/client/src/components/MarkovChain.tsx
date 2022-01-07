@@ -13,7 +13,6 @@ import {
     getGraphContainer,
     findMinMaxValues,
     createGraphData,
-    addColorsToScaleStates,
     colorBlueNodeAndLinks,
     stateId,
 } from '../utils/markovChainUtils';
@@ -118,7 +117,6 @@ const MarkovChain = ({
                 });
             });
             setCurrentScaleIx(model.model.scales.length - 1);
-            addColorsToScaleStates(model.model.scales, commonStateData);
             const graphData = createGraphData(model.model.scales, pThreshold);
             setData(graphData);
             renderMarkovChain(graphData);

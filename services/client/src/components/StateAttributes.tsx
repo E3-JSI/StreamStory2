@@ -16,7 +16,6 @@ const StateAttributes = ({ model, selectedState, commonStateData }: any) => {
 
     useEffect(() => {   
         if(commonStateData != null && selectedState && model && model.model && model.model.scales) {
-            console.log("commonStateData=", commonStateData)
             const {hists, totalHists} = createHistogramsAndTotalHistograms();
             setHistograms(hists);
             setTotalHistograms(totalHists)
