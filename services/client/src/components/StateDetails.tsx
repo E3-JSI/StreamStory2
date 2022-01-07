@@ -17,26 +17,23 @@ import LoadingButton from './LoadingButton';
 
 import { Model, updateModel } from '../api/models';
 import useStyles from './StateDetails.styles';
-import { createCommonStateData } from '../utils/markovChainUtils';
 import StateAttributes from './StateAttributes';
 
 export interface StateDetailsProps extends PaperProps {
     model?: Model;
+    commonStateData:any;
     selectedState?: any;
 }
 
-function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JSX.Element {
+function StateDetails({ model, selectedState, commonStateData, ...other }: StateDetailsProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
 
     const [label, setLabel] = useState<any>();
     const [isEvent, setIsEvent] = useState(true);
-    const [commStateData, setCommStateData] = useState<any>();
 
     useEffect(()=> {
         if(selectedState && model && model.model && model.model.scales) {
-            const commonStateData = createCommonStateData(model.model.scales);
-            setCommStateData(commonStateData)
             const key = selectedState.initialStates.toString();
             setLabel(commonStateData[key].suggestedLabel.label);
         }  
@@ -60,7 +57,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
             </Toolbar>
             <Divider />
 
-            {selectedState && (
+            {selectedState && commonStateData && (
                 <Box p={2}>
                     <form>
                         <TextField
@@ -135,7 +132,7 @@ function StateDetails({ model, selectedState, ...other }: StateDetailsProps): JS
                         </Grid>
                     </form>
 
-                    <StateAttributes model={model} selectedState={selectedState} commonStateData={commStateData} />
+                    <StateAttributes model={model} selectedState={selectedState} commonStateData={commonStateData} />
 
                 </Box>
             )}

@@ -3,10 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';  
 import Typography from '@material-ui/core/Typography';
-import Divider from '@material-ui/core/Divider';
 import useStyles from './StateAttributes.styles';
-import {createCommonStateData} from '../utils/markovChainUtils';
-import { StateDetailsProps } from './StateDetails';
 import Histogram from './Histogram';
 
 const StateAttributes = ({ model, selectedState, commonStateData }: any) => {

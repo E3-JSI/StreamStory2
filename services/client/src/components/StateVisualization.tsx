@@ -7,7 +7,6 @@ import Tabs from '@material-ui/core/Tabs';
 
 import useStyles from './StateVisualization.styles';
 import { Model } from '../api/models';
-import { createCommonStateData } from '../utils/markovChainUtils';
 import DecisionTree from './DecisionTree';
 import StateHistory from './StateHistory';
 import StateTime from './StateTime';
@@ -17,14 +16,14 @@ import TabPanel, { getTabA11yProps } from './TabPanel';
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
     selectedState?:any;
+    commonStateData:any;
     onStateSelected?:any;
 }
 
-function StateVisualization({ model, onStateSelected, selectedState, ...other }: StateVisualizationProps): JSX.Element {
+function StateVisualization({ model, onStateSelected, selectedState, commonStateData, ...other }: StateVisualizationProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
-    const [commStateData, setCommStateData] = useState<any>();
     const [tabs, setTabs] = useState<any>({
         stateHistory: {visible: true, index: 0},
         coordinates: {visible: true, index: 1},
@@ -34,13 +33,6 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
     const [tabsVisible, setTabsVisible] = useState(true);
     
     const stateTabPrefix = 'model-state';
-
-    useEffect(() => {
-        if(selectedState != null && model && model.model && model.model.scales) {
-            const data = createCommonStateData(model.model.scales)
-            setCommStateData(data);
-        }
-    }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -92,7 +84,7 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
     return (
       
         <>
-            {tabsVisible && (
+            {tabsVisible && commonStateData && (
                 <Box {...other}>
                     <Paper className={classes.tabsPaper} square>
                         <Tabs
@@ -140,7 +132,7 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                         </Tabs>
                     </Paper>
                     <TabPanel value={tabValue} index={tabs.stateHistory.index} prefix={stateTabPrefix}>
-                        <StateHistory model={model} selectedState={selectedState} commonStateData={commStateData} onStateSelected={(stateCurr:any)=> {
+                        <StateHistory model={model} selectedState={selectedState} commonStateData={commonStateData} onStateSelected={(stateCurr:any)=> {
                             onStateSelected(stateCurr)
                         }
 
@@ -150,10 +142,10 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                         {t('coordinates')}
                     </TabPanel>
                     <TabPanel value={tabValue} index={tabs.time.index} prefix={stateTabPrefix}>
-                        <StateTime model={model} selectedState={selectedState} commonStateData={commStateData} />
+                        <StateTime model={model} selectedState={selectedState} commonStateData={commonStateData} />
                     </TabPanel>
                     <TabPanel value={tabValue} index={tabs.explanationTree.index} prefix={stateTabPrefix}>
-                        <DecisionTree selectedState={selectedState} commonStateData={commStateData}/>
+                        <DecisionTree selectedState={selectedState} commonStateData={commonStateData}/>
                     </TabPanel>
             </Box>
           )}

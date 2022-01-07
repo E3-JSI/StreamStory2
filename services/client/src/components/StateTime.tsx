@@ -7,7 +7,6 @@ import { Model } from '../api/models';
 
 import useStyles from './StateVisualization.styles';
 import Histogram from './Histogram';
-import { createCommonStateData } from '../utils/markovChainUtils';
 
 export interface StateVisualizationProps extends BoxProps {
     model: Model;

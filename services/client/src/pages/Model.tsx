@@ -18,6 +18,7 @@ import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
 
 import useStyles from './Model.styles';
+import { createCommonStateData } from '../utils/markovChainUtils';
 
 export interface ModelUrlParams {
     id: string;
@@ -29,8 +30,9 @@ function Model(): JSX.Element {
     const { t } = useTranslation();
     const { id } = useParams<ModelUrlParams>();
     const history = useHistory();
-    const [{ currentModel }, setSession] = useSession();
+    const [{ currentModel, commonStateDataArr }, setSession] = useSession();
     const model = currentModel.find((m) => m.id === Number(id));
+    const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
     const [isLoading, setIsLoading] = useState(!model);
     const [selectedState, setSelectedState] = useState<any>();
     const [stateDetailsVisible, setStateDetailsVisible] = useState(true);
@@ -41,8 +43,14 @@ function Model(): JSX.Element {
                 const response = await getModel(Number(id));
 
                 if (response.data.model) {
+                    const modelNew = response.data.model as ModelType;
+                    const commStateDataNew = {
+                        id: Number(id),
+                        commonStateData: createCommonStateData(modelNew.model.scales),
+                    };
                     setSession({
-                        currentModel: [response.data.model as ModelType, ...currentModel],
+                        currentModel: [modelNew, ...currentModel],
+                        commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
                     });
                 }
 
@@ -95,7 +103,7 @@ function Model(): JSX.Element {
                     </IconButton>
                 </Tooltip>
             </Box>
-            {model && (
+            {model && commonStateData && (
                 <Grid container spacing={2}>
                     <Grid item xs={12} lg={8}>
                         <Grid item container direction="column" spacing={2}>
@@ -103,6 +111,7 @@ function Model(): JSX.Element {
                                 <ModelVisualization
                                     model={model}
                                     selectedState={selectedState}
+                                    commonStateData={commonStateData}
                                     onStateSelected={setSelectedState}
                                 />
                             </Grid>
@@ -110,6 +119,7 @@ function Model(): JSX.Element {
                                 <StateVisualization
                                     model={model}
                                     selectedState={selectedState}
+                                    commonStateData={commonStateData}
                                     onStateSelected={setSelectedState}
                                 />
                             </Grid>
@@ -124,6 +134,7 @@ function Model(): JSX.Element {
                         <StateDetails
                             className={classes.details}
                             model={model}
+                            commonStateData={commonStateData}
                             selectedState={selectedState}
                         />
                     </Grid>
