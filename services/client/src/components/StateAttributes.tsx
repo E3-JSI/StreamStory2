@@ -18,7 +18,7 @@ const StateAttributes = ({ model, selectedState, ...other }: StateDetailsProps) 
     const [histograms, setHistograms] = useState<any>([]);
     const [totalHistograms, setTotalHistograms] = useState<any>([]);
 
-    useEffect(() => {
+    useEffect(() => {   
         if(selectedState && model && model.model && model.model.scales) {
             const {hists, totalHists} = createHistogramsAndTotalHistograms();
             setHistograms(hists);

@@ -167,36 +167,36 @@ function StateVisualization({ model, onStateSelected, selectedState, ...other }:
                     </TabPanel>
                     <TabPanel value={tabValue} index={tabs.time.index} prefix={stateTabPrefix}>
 
-                        {selectedState &&  <>
-                            <Histogram
-                            histogram={histogram}
-                            totalHistogram={totalHistogram}
-                            timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
-                            key={selectedState?.stateNo + Math.random()}
-                            />
+                        {selectedState &&  (
+                            <>
+                                <h4>{t('hour_of_day')}</h4>
 
-                            <h4>Hour of Day</h4>
-
-                            <Histogram
+                                <Histogram
                                 histogram={histogram}
                                 totalHistogram={totalHistogram}
-                                timeType={"dayOfWeek"}  // eslint-disable-line react/jsx-curly-brace-presence
+                                timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
                                 key={selectedState?.stateNo + Math.random()}
                                 />
 
-                            <h4>Day of Week</h4>
+                                <h4>{t('day_of_week')}</h4>
 
-                            <Histogram
-                                histogram={histogram}
-                                totalHistogram={totalHistogram}
-                                timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
-                                key={selectedState?.stateNo + Math.random()}
-                                />
+                                <Histogram
+                                    histogram={histogram}
+                                    totalHistogram={totalHistogram}
+                                    timeType={"dayOfWeek"}  // eslint-disable-line react/jsx-curly-brace-presence
+                                    key={selectedState?.stateNo + Math.random()}
+                                    />
 
-                            <h4>Month</h4>
+                                <h4>{t('month')}</h4>
 
+                                <Histogram
+                                    histogram={histogram}
+                                    totalHistogram={totalHistogram}
+                                    timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
+                                    key={selectedState?.stateNo + Math.random()}
+                                    />
                             </>
-                        }
+                        )}
 
                     </TabPanel>
                     <TabPanel value={tabValue} index={tabs.explanationTree.index} prefix={stateTabPrefix}>

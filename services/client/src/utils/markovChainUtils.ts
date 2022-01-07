@@ -793,7 +793,7 @@ function findChildStates(state: any, prevScale: any) {
     });
 }
 
-export function createCommonStateData(scales: any) {
+export function createCommonStateData(scales: any) { // TODO: calculate once, save result globally
     const commonStateData: any = {};
 
     scales.forEach((sc: any) => {

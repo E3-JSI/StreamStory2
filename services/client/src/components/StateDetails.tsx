@@ -1,6 +1,5 @@
 import React, {useState, useEffect} from 'react';
 import { useTranslation } from 'react-i18next';
-import { styled } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
