@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import React, { useRef, useEffect, useState } from 'react';
 
-const DecisionTree = ({ selectedState, commonStateData }: any) => {
+function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
     const containerRef = useRef<HTMLDivElement>(null);
     const [windowSize] = useState<any>({
         width: undefined,
@@ -14,13 +14,16 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
             
             const key = selectedState.initialStates.toString();
             const data = commonStateData[key];
-    
-            plotDecisionTree(selectedState, data);
+
+            if(data && data.decisionTree) {
+              plotDecisionTree(selectedState, data.decisionTree);
+            }
+  
         }
     }, [selectedState, commonStateData, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    function  plotDecisionTree(state:any, data:any) {
-
+    function  plotDecisionTree(state:any, decisionTreeData:any) {
+      console.log("start: plotDecisionTree, state=", state, ", decisionTreeData=", decisionTreeData)
         
         const opt = {
             margin: {
@@ -53,9 +56,6 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
 
         const width = opt.width + opt.margin.right + opt.margin.left;
         const height = opt.height + opt.margin.top + opt.margin.bottom;
-
-        let root:any = null;
-
         let container = null;
         let graph = null;
         let gLinks = null;
@@ -84,54 +84,43 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
             gNodes = graph.select("g.nodes")
         }
 
-        if(state && data.decisionTree) {
-         
-            const treemap = d3.tree().size([opt.width, opt.height]);
-
-            root = d3.hierarchy( data.decisionTree, (d:any) => d.children );
-            root.x0 = height / 2;
-            root.y0 = 0;
-
-
-            updateChart(gNodes, gLinks, root, opt, colorMap, treemap, selectedState);
-        } else {
-            console.log("Decision tree data not found");
+        if(decisionTreeData) {
+            updateChart(gNodes, gLinks, opt, colorMap, decisionTreeData, selectedState, height);
         }
     }
 
-    function updateChart(gNodes:any, gLinks:any, source:any, opt:any, colorMap:any, treemap:any, state:any) {
+    function updateChart(gNodes:any, gLinks:any, opt:any, colorMap:any, data:any, state:any, height:any) { 
 
-        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-        console.log("stateNo=", state.stateNo, ", initialSt=", state.initialStates)
-        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        console.log("start: updateChart, data=", data)
 
-        console.log("source=", source)
-
-      
         const duration = 500;
+        const treemap = d3.tree().size([opt.width, opt.height]);
 
-        const nSamples = source.data.nPos + source.data.nNeg;
-    
-        console.log("nSamples=", nSamples);
-    
-        const linkStrokeScale = d3
-          .scaleSqrt()
-          .domain([0, nSamples])
-          .range([opt.link.minWidth, opt.link.maxWidth]);
+        const source:any = d3.hierarchy(data, (d:any) => d.children);
+        source.x0 = height / 2;
+        source.y0 = 0;
     
         const treeData = treemap(source);
         const nodes = treeData.descendants();
         const links = treeData.links();
+
+        const nSamples = source.data.nPos + source.data.nNeg;
+        
+        const linkStrokeScale = d3
+          .scaleSqrt()
+          .domain([0, nSamples])
+          .range([opt.link.minWidth, opt.link.maxWidth]);
     
         nodes.forEach((d:any) => {
           d.y = d.depth * opt.depth; // eslint-disable-line
         });
     
         // Update the nodes…
+
         const node = gNodes.selectAll("g.node").data(nodes, (d:any) => {
-            const id = `init_st_${state.initialStates}_l_${nodeLabel(d)}`;
-            console.log("nodeId=", id)
-            return id;
+          const posNeg = `${d.data.nPos}_${d.data.nNeg}`;
+          const id = `stateNo_${state.stateNo}_posNeg_${posNeg}_init_st_${state.initialStates}_l_${nodeLabel(d)}`;
+          return id;
         });
     
         node.join(
@@ -151,8 +140,7 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
               .attr("width", 133 + 8)
               .attr("height", 70)
               .attr("x", (d:any) => {
-                const label = nodeLabel(d);
-    
+                const label = nodeLabel(d);    
                 const textLen = label.length * opt.char_to_pxl;
                 const width = d3.max([opt.node.width, textLen]);
                 return -width / 2;
@@ -194,7 +182,22 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
     
             return nodeEnter;
           },
-          (update:any) => update,
+          (update:any) => {
+            const updateTmp = update;
+
+            updateTmp
+            .select("rect")
+            .attr("width", (d:any) => {
+              const label = nodeLabel(d);
+              const textLen = label.length * opt.char_to_pxl;
+              const width = d3.max([opt.node.width, textLen]);
+              return width;
+            })
+            .attr("height", opt.node.height);
+
+            return updateTmp
+
+          },
           (exit:any) => {
             const exitTmp = exit;
     
@@ -218,8 +221,9 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
           .data(
             links,
             (d:any) => {
-                const id = `init_st_${state.initialStates}_s_${nodeLabel(d.source)}_t_${nodeLabel(d.target)}`;
-                console.log("linkId=", id)
+                const sourcePosNeg = `${d.source.data.nPos}_${d.source.data.nNeg}`;
+                const targetPosNeg = `${d.target.data.nPos}_${d.target.data.nNeg}`;
+                const id = `stateNo_${state.stateNo}_init_st_${state.initialStates}_sourcePosNeg_${sourcePosNeg}_targetPosNeg=${targetPosNeg}_s_${nodeLabel(d.source)}_t_${nodeLabel(d.target)}`;
                 return id
             }
           );
@@ -259,25 +263,21 @@ const DecisionTree = ({ selectedState, commonStateData }: any) => {
     
             return linkRez;
           },
-          (update:any) => update.attr("d", () => {
-              const o = { x: source.x0, y: source.y0 };
-              return diagonal({ source: o, target: o });
-            }),
+          (update:any) => {
+            const updateTmp = update;
+
+            updateTmp
+              .select(".link")
+              .attr("d", (d:any) => diagonal(d));
+
+            return updateTmp;
+
+          },
           (exit:any) => exit
               .transition()
               .duration(duration)
-              .attr("d", () => {
-                const o = { x: source.x, y: source.y };
-                return diagonal({ source: o, target: o });
-              })
               .remove()
         );
-    
-        // Stash the old positions for transition.
-        nodes.forEach((d:any) => {
-          d.x0 = d.x; // eslint-disable-line
-          d.y0 = d.y; // eslint-disable-line
-        });
     }    
 
     function diagonal(data:any) {

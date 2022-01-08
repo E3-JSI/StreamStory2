@@ -25,10 +25,10 @@ function StateVisualization({ model, onStateSelected, selectedState, commonState
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
     const [tabs, setTabs] = useState<any>({
-        stateHistory: {visible: true, index: 0},
+        stateHistory: {visible: true, index: 3},
         coordinates: {visible: true, index: 1},
         time: {visible: true, index: 2},
-        explanationTree: {visible: true, index: 3},
+        explanationTree: {visible: true, index: 0},
     });
     const [tabsVisible, setTabsVisible] = useState(true);
     
