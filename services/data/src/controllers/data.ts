@@ -4,6 +4,7 @@ import { once } from 'events';
 import readline from 'readline';
 
 import { NextFunction, Request, Response } from 'express';
+import { Parser } from 'json2csv';
 import csvParse from 'csv-parse/lib/sync';
 
 import { isNumeric } from '../utils/misc';
@@ -16,9 +17,8 @@ function getDataFilePath(): string {
     return path.resolve('files', 'data.csv');
 }
 
-export async function readData(filePath: string, from?: Date, to?: Date): Promise<DataPoint[]> {
+export async function readSeries(filePath: string, from?: Date, to?: Date): Promise<DataPoint[]> {
     const data: DataPoint[] = [];
-    console.log(from, to);
 
     try {
         const lines: string[][] = [];
@@ -93,16 +93,26 @@ export async function readLastDataPoint(filePath: string): Promise<DataPoint | n
     return dataPoint;
 }
 
-export async function getData(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getSeries(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const filePath = getDataFilePath();
-        const data = await readData(
+        const series = await readSeries(
             filePath,
             req.query.from ? new Date(`${req.query.from}`) : undefined,
             req.query.to ? new Date(`${req.query.to}`) : undefined
         );
+
+        if (req.query.format === 'csv') {
+            const json2csv = new Parser({ fields: series.length ? Object.keys(series[0]) : [] });
+            const csv = json2csv.parse(series);
+            res.header('Content-Type', 'text/csv');
+            res.attachment('data.csv');
+            res.status(200).send(csv);
+            return;
+        }
+
         res.status(200).json({
-            data,
+            series,
         });
     } catch (error) {
         next(error);
@@ -118,11 +128,9 @@ export async function getLastDataPoint(
         const filePath = getDataFilePath();
         const lastDataPoint = await readLastDataPoint(filePath);
         res.status(200).json({
-            data: lastDataPoint,
+            series: [lastDataPoint],
         });
     } catch (error) {
-        console.log(error);
-
         next(error);
     }
 }

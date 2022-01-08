@@ -4,8 +4,8 @@ import * as data from '../controllers/data';
 
 const router = Router();
 
-const tsPath = '/data';
-router.get(`${tsPath}`, data.getData);
-router.get(`${tsPath}/last`, data.getLastDataPoint);
+const seriesPath = '/series';
+router.get(`${seriesPath}`, data.getSeries);
+router.get(`${seriesPath}/last`, data.getLastDataPoint);
 
 export default router;

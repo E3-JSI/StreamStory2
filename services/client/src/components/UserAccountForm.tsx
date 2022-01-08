@@ -210,10 +210,6 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
     }
 
     const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
-        // if (isSubmitting) {
-        //     return;
-        // }
-
         try {
             const response = await action(data);
 

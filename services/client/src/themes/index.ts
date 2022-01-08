@@ -1,4 +1,5 @@
 import { ThemeOptions } from '@material-ui/core';
+import type {} from '@material-ui/lab/themeAugmentation';
 
 import lightTheme from './light';
 import darkTheme from './dark';

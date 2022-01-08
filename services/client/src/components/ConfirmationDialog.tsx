@@ -33,8 +33,10 @@ function ConfirmationDialog({
     return (
         <Dialog aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} {...other}>
             <DialogTitle id={`${id}-title`}>{title}</DialogTitle>
-            <DialogContent>
-                <DialogContentText id={`${id}-description`}>{content}</DialogContentText>
+            <DialogContent dividers>
+                <DialogContentText id={`${id}-description`} style={{ marginBottom: 0 }}>
+                    {content}
+                </DialogContentText>
             </DialogContent>
             {(onDecline || onAccept) && (
                 <DialogActions>

@@ -13,7 +13,7 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-import TableCell, { SortDirection } from '@material-ui/core/TableCell';
+import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TablePagination from '@material-ui/core/TablePagination';
@@ -31,6 +31,7 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import { createModel, Model, ModelConfiguration } from '../api/models';
 import { DialogOnCloseEvent, DialogOnCloseReasonExt } from '../types/dialog';
 import { Errors, getResponseErrors } from '../utils/errors';
+import { getComparator, sortStable, Order } from '../lib/table';
 import useSession from '../hooks/useSession';
 import useSnackbar from '../hooks/useSnackbar';
 import AddModelDialog from './AddModelDialog';
@@ -38,8 +39,6 @@ import ModelListItem from './ModelListItem';
 import AlertPopup from './AlertPopup';
 
 import useStyles from './ModelList.styles';
-
-export type Order = Exclude<SortDirection, false>;
 
 export type SortableKey = keyof Omit<Model, 'online' | 'active' | 'public' | 'model'>;
 
@@ -63,40 +62,6 @@ export interface ModelListProps {
     showUserColumn?: boolean;
     showDateColumn?: boolean;
     onModelUpdate: (model: Model, remove?: boolean) => void;
-}
-
-function compareDescending<T>(a: T, b: T, orderBy: keyof T) {
-    if (b[orderBy] < a[orderBy]) {
-        return -1;
-    }
-
-    if (b[orderBy] > a[orderBy]) {
-        return 1;
-    }
-
-    return 0;
-}
-
-function getComparator<Key extends SortableKey>(
-    order: Order,
-    orderBy: Key,
-): (a: { [key in Key]: number | string }, b: { [key in Key]: number | string }) => number {
-    return order === 'desc'
-        ? (a, b) => compareDescending(a, b, orderBy)
-        : (a, b) => -compareDescending(a, b, orderBy);
-}
-
-function sortStable<T>(array: T[], comparator: (a: T, b: T) => number) {
-    const stabilizedThis = array.map((el, index) => [el, index] as [T, number]);
-    stabilizedThis.sort((a, b) => {
-        const order = comparator(a[0], b[0]);
-        if (order !== 0) {
-            return order;
-        }
-
-        return a[1] - b[1];
-    });
-    return stabilizedThis.map((el) => el[0]);
 }
 
 function ModelList({
@@ -175,10 +140,10 @@ function ModelList({
                 return true;
         }
     });
-    const pageModels = sortStable<Model>(filteredModels, getComparator(order, orderBy)).slice(
-        page * rowsPerPage,
-        (page + 1) * rowsPerPage,
-    );
+    const pageModels = sortStable<Model>(
+        filteredModels,
+        getComparator<SortableKey>(order, orderBy),
+    ).slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
     function createSortHandler(property: SortableKey) {
         return () => {
@@ -360,6 +325,7 @@ function ModelList({
                                         key={addModelDialogState}
                                         open={addModelDialogState % 2 === 1}
                                         title={addModelDialogTitle}
+                                        online={isOnline}
                                         onClose={handleAddModelDialogClose}
                                         // keepMounted={false}
                                     />

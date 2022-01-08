@@ -3,11 +3,12 @@ import { NextFunction, Request, Response } from 'express';
 
 import { rememberMeCookie } from '../config/const';
 import * as users from '../db/users';
-import { User, UserSettings } from '../db/users';
+import { User, UserGroup, UserSettings } from '../db/users';
 import { minPasswordLength } from './auth';
 
 export interface UserResponse {
     id: number;
+    groupId: number;
     name: string;
     email: string;
     active: boolean;
@@ -24,6 +25,7 @@ export interface UserResponse {
 export function getUserResponse(user: User): UserResponse {
     return {
         id: user.id,
+        groupId: user.groupId,
         name: user.name,
         email: user.email,
         active: user.active,
@@ -31,6 +33,26 @@ export function getUserResponse(user: User): UserResponse {
         createdAt: user.createdAt,
         lastLogin: user.lastLogin,
     };
+}
+
+export async function getUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const user = req.user as User;
+
+    try {
+        if (user.groupId !== UserGroup.Admin) {
+            res.status(401).json({
+                error: ['unauthorized'],
+            });
+            return;
+        }
+
+        const userList = await users.get();
+        res.status(200).json({
+            users: userList.map((u) => getUserResponse(u)),
+        });
+    } catch (error) {
+        next(error);
+    }
 }
 
 export async function updateCurrentUser(

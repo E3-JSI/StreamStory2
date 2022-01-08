@@ -15,6 +15,57 @@ const useStyles = makeStyles((theme: Theme) =>
                 },
             },
         },
+        dataSourceSelectWrapper: {
+            flexGrow: 1,
+        },
+        addButton: {
+            padding: 8,
+        },
+        dataSourceInfoWrapper: {
+            marginTop: theme.spacing(1.5),
+        },
+        dataSourceInfo: {
+            maxWidth: theme.breakpoints.values.md,
+            marginTop: 0,
+            marginBottom: 0,
+            [theme.breakpoints.up('sm')]: {
+                display: 'table',
+            },
+            '& > div': {
+                [theme.breakpoints.up('sm')]: {
+                    display: 'table-row',
+                },
+            },
+            '& dt': {
+                position: 'relative',
+                fontWeight: theme.typography.fontWeightMedium,
+                [theme.breakpoints.up('sm')]: {
+                    display: 'table-cell',
+                    width: 1,
+                    paddingRight: theme.spacing(2),
+                    whiteSpace: 'nowrap',
+                },
+                '& > svg': {
+                    marginRight: theme.spacing(1),
+                    fontSize: theme.typography.body1.fontSize,
+                    verticalAlign: 'middle',
+                },
+            },
+            '& dd': {
+                marginLeft: 0,
+                paddingBottom: theme.spacing(1),
+                paddingLeft: theme.spacing(3),
+                [theme.breakpoints.up('sm')]: {
+                    display: 'table-cell',
+                    width: '100%',
+                    paddingLeft: theme.spacing(4),
+                },
+            },
+        },
+        buttons: {
+            marginTop: theme.spacing(1),
+            marginBottom: theme.spacing(1),
+        },
         dropzone: {
             paddingTop: theme.spacing(3),
             paddingRight: theme.spacing(2),

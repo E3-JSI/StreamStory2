@@ -19,6 +19,7 @@ services:
         ports:
             - ${API_PORT:-3001}:8080
         links:
+            - data
             - db
             - email
             - modelling
@@ -72,6 +73,7 @@ services:
         volumes:
             - ./services/db/data:/var/lib/postgresql/data
             - ./services/db/schema:/docker-entrypoint-initdb.d
+            - ./services/db/upgrade:/upgrade
         ports:
             - ${DB_PORT:-5432}:5432
         environment:
