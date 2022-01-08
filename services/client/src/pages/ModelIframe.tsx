@@ -17,14 +17,17 @@ import StateDetails from '../components/StateDetails';
 import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
 
-import useStyles from './Model.styles';
+import useStyles from './ModelIframe.styles';
 import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
 
 export interface ModelUrlParams {
     id: string;
 }
 
-function Model(): JSX.Element {
+function ModelIframe(): JSX.Element {
+
+    console.log("start: ModelIframe")
+
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t } = useTranslation();
@@ -35,6 +38,7 @@ function Model(): JSX.Element {
     const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
     const [isLoading, setIsLoading] = useState(!model);
     const [selectedState, setSelectedState] = useState<any>();
+    const [stateDetailsVisible, setStateDetailsVisible] = useState(true);
 
     useMountEffect(() => {
         async function loadModel() {
@@ -66,16 +70,15 @@ function Model(): JSX.Element {
         }
     });
 
-    function handleCloseClick() {
-        const nextModels = currentModel.filter((m) => m.id !== Number(id));
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const hide = params.get('hide');
+        console.log('hide=', hide);
 
-        history.push(
-            nextModels.length
-                ? `/model/${nextModels[0].id}`
-                : `/dashboard/${model?.online ? 'online-models' : 'offline-models'}`,
-        );
-        setSession({ currentModel: nextModels });
-    }
+        if (hide != null) {
+            setStateDetailsVisible(hide.indexOf('state_details') === -1);
+        }
+    }, []);
 
     return (
         <>
@@ -83,16 +86,7 @@ function Model(): JSX.Element {
                 <PageTitle gutterBottom>
                     {isLoading ? t('loading_model') : model?.name || t('model_not_found')}
                 </PageTitle>
-                <Tooltip title={t('close_model')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
-                    <IconButton
-                        className={classes.closeButton}
-                        aria-label={t('close_model')}
-                        edge="end"
-                        onClick={handleCloseClick}
-                    >
-                        <CloseIcon />
-                    </IconButton>
-                </Tooltip>
+
             </Box>
             {model && commonStateData && (
                 <Grid container spacing={2}>
@@ -116,7 +110,12 @@ function Model(): JSX.Element {
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12} lg={4}>
+                    <Grid
+                        item
+                        xs={12}
+                        lg={4}
+                        style={stateDetailsVisible ? {} : { display: 'none' }}
+                    >
                         <StateDetails
                             className={classes.details}
                             model={model}
@@ -130,4 +129,4 @@ function Model(): JSX.Element {
     );
 }
 
-export default Model;
+export default ModelIframe;

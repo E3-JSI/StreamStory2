@@ -16,10 +16,12 @@ import { getAuthStatus } from './api/auth';
 import useMountEffect from './hooks/useMountEffect';
 import useSession from './hooks/useSession';
 import PageRoute from './components/PageRoute';
+import PageIframeRoute from './components/PageIframeRoute';
 import PageProgress from './components/PageProgress';
 import SnackbarProvider from './components/SnackbarProvider';
 import themes from './themes';
 import './i18n/config';
+import ModelIframe from './pages/ModelIframe';
 
 function App(): JSX.Element {
     const [session, setSession] = useSession();
@@ -61,6 +63,7 @@ function App(): JSX.Element {
                 <SnackbarProvider>
                     <Router>
                         <Switch>
+                            <PageIframeRoute path="/iframe/model/:id?" type="public" component={ModelIframe} />
                             {/* Private routes */}
                             <PageRoute
                                 path="/profile/:tab?"

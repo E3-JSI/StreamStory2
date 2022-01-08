@@ -69,15 +69,10 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
             return (
                 <Box className={classes.root}>
 
-                    {topNavVisible && (
-                        <Header variant="application"/>
-                    )}
-
-                    {sideNavVisible && (
-                        <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'}/>
-                    )}
-
-                    <main className={clsx((topNavVisible ? classes.main: classes.mainNoMargin) , classes.mainApplication)}>
+                    <Header variant="application"/>
+                    <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'}/>
+                    
+                    <main className={clsx((classes.main) , classes.mainApplication)}>
                         <div className={classes.mainContent}>{children}</div>
                     </main>
                 </Box>
