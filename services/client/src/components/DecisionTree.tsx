@@ -179,7 +179,30 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
               .attr("height", opt.node.height);
     
             nodeUpdate.select("text").style("fill-opacity", 1);
-    
+
+          // set the color scale
+          const color = d3.scaleOrdinal()
+            .range(d3.schemeSet2);
+
+          // Compute the position of each group on the pie:
+          const pie = d3.pie()
+            .value((d:any) => d[1])
+
+          // shape helper to build arcs:
+          const arcGenerator = d3.arc()
+            .innerRadius(0)
+            .outerRadius(20)
+
+          // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
+          nodeEnter
+            .selectAll('mySlices')
+            .data((d:any) => pie(Object.entries({pos: d.data.nPos, neg: d.data.nNeg}) as any))
+            .join('path')
+              .attr('d', arcGenerator)
+              .attr('fill', (d:any) => color(d.data[0]))
+              .attr("stroke", "black")
+              .style("stroke-width", "2px")
+              .style("opacity", 0.7)
             return nodeEnter;
           },
           (update:any) => {
