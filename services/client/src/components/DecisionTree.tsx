@@ -157,7 +157,7 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
     
             nodeEnter
               .append("text")
-              .attr("dy", "18px")
+              .attr("dy", "32px")
               .attr("text-anchor", "middle")
               .text((d:any) => nodeLabel(d))
               .style("fill-opacity", 1e-6)
