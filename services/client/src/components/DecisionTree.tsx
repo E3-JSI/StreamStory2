@@ -148,8 +148,10 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
               .attr("rx", 6)
               .attr("ry", 6)
               .style("fill", (d:any) => {
-                d.color = colorMap( d.data.hasOwnProperty("splitLabel") ? d.parent.data.splitAttr : d.data.splitAttr ); // eslint-disable-line
-                return d.color;
+                // d.color = colorMap( d.data.hasOwnProperty("splitLabel") ? d.parent.data.splitAttr : d.data.splitAttr ); // eslint-disable-line
+                // return d.color;
+                const a = 5;
+                return "rgb(216,216,216)"
               })
               .style("filter", "drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))");
     
@@ -267,7 +269,7 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
               .duration(duration)
               .attr("d", diagonal)
               .attr("fill", "none")
-              .attr("stroke", "#ccc")
+              .attr("stroke", "rgb(128,128,128)")
               .attr("transition", "0.2s ease-in-out")
               .style("stroke-width", (d:any) => {
                 const n = d.target.data.nPos + d.target.data.nNeg;
