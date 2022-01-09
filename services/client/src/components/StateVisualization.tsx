@@ -25,10 +25,10 @@ function StateVisualization({ model, onStateSelected, selectedState, commonState
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
     const [tabs, setTabs] = useState<any>({
-        stateHistory: {visible: true, index: 3},
+        stateHistory: {visible: true, index: 0},
         coordinates: {visible: true, index: 1},
         time: {visible: true, index: 2},
-        explanationTree: {visible: true, index: 0},
+        explanationTree: {visible: true, index: 3},
     });
     const [tabsVisible, setTabsVisible] = useState(true);
     
@@ -37,7 +37,7 @@ function StateVisualization({ model, onStateSelected, selectedState, commonState
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const hide = params.get('hide');
-        console.log("hide=", hide);
+        // console.log("hide=", hide);
 
         if(hide != null) {
             const stateHistoryVisible = hide.indexOf("state_history") === -1;

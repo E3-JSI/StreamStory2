@@ -52,8 +52,6 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
             predictionPanel: "prediction-panel",
         };
 
-        const colorMap = d3.scaleOrdinal(d3.schemeCategory10);
-
         const width = opt.width + opt.margin.right + opt.margin.left;
         const height = opt.height + opt.margin.top + opt.margin.bottom;
         let container = null;
@@ -85,11 +83,11 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
         }
 
         if(decisionTreeData) {
-            updateChart(gNodes, gLinks, opt, colorMap, decisionTreeData, selectedState, height);
+            updateChart(gNodes, gLinks, opt, decisionTreeData, selectedState, height);
         }
     }
 
-    function updateChart(gNodes:any, gLinks:any, opt:any, colorMap:any, data:any, state:any, height:any) { 
+    function updateChart(gNodes:any, gLinks:any, opt:any, data:any, state:any, height:any) { 
 
         console.log("start: updateChart, data=", data)
 
@@ -102,7 +100,7 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
     
         const treeData = treemap(source);
         const nodes = treeData.descendants();
-        const links = treeData.links();
+        const links = treeData.links(); 
 
         const nSamples = source.data.nPos + source.data.nNeg;
         
@@ -140,7 +138,10 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
               .attr("width", 133 + 8)
               .attr("height", 70)
               .attr("x", (d:any) => {
-                const label = nodeLabel(d);    
+                const label = nodeLabel(d);  
+                
+                console.log("label=", label, "d=", d)
+                
                 const textLen = label.length * opt.char_to_pxl;
                 const width = d3.max([opt.node.width, textLen]);
                 return -width / 2;

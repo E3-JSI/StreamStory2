@@ -39,7 +39,7 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const hide = params.get('hide');
-        console.log("hide=", hide);
+        // console.log("hide=", hide);
 
         if(hide != null) {
             setTopNavVisible(hide.indexOf("top_nav") === -1);
