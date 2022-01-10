@@ -42,7 +42,7 @@ function StateDetails({ model, selectedState, commonStateData, ...other }: State
 
             {selectedState && commonStateData && (
                 <Box p={2}>
-                    <StateDetailsForm />
+                    <StateDetailsForm model={model} selectedState={selectedState} commonStateData={commonStateData} />
                     <StateAttributes model={model} selectedState={selectedState} commonStateData={commonStateData} />
 
                 </Box>

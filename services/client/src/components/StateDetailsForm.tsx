@@ -1,35 +1,43 @@
 import React, { useRef, useState } from 'react';
 
-import Box from '@material-ui/core/Box';
+import { useTranslation } from 'react-i18next';
 import Grid from '@material-ui/core/Grid';
-import Divider from '@material-ui/core/Divider';
-import Paper, { PaperProps } from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 import CancelIcon from '@material-ui/icons/Cancel';
 import SaveIcon from '@material-ui/icons/Save';
 
-import { useForm } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-
 import LoadingButton from './LoadingButton';
 
-function StateDetailsForm(): JSX.Element {
+function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.Element {
     const { t } = useTranslation();
 
-    const [label, setLabel] = useState("random label")
-    const [isEvent, setIsEvent] = useState(true)
+    const [label] = useState(commonStateData[selectedState.initialStates.toString()].suggestedLabel.label);
+    const [isEvent, setIsEvent] = useState(true);
+
+    function handleSubmit(event:any) {
+        event.preventDefault(); // prevent refresh after submit
+        
+        console.log("start: handleSubmit, modelId=", model.id);
+
+        const payload = {
+            initialStates: selectedState.initialStates.toString(),
+            stateName: event.target.stateName.value,
+            stateDescription: event.target.stateDescription.value,
+            eventId: (isEvent && event.target.eventId.value ? event.target.eventId.value: null),
+        }
+
+        console.log("payload=", payload);
+    }
 
     function handleChange(event:any, value:any) {
         setIsEvent(value);
     }
 
     return (
-        <form>
+        <form onSubmit={handleSubmit}>
         <TextField
             name="stateName"
             label={t('state_name')}
@@ -96,7 +104,7 @@ function StateDetailsForm(): JSX.Element {
                     color="primary"
                     // loading={isSubmitting}s
                     // disabled={!isDirty}
-                    disabled
+                    // disabled
                     startIcon={<SaveIcon />}
                 >
                     {t('save')}
