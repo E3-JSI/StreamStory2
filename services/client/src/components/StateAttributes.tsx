@@ -58,7 +58,7 @@ const StateAttributes = ({ model, selectedState, commonStateData }: any) => {
                     </Typography>
                     <Grid container spacing={1}>
                         {histograms.map((hist: any, i: number) => (
-                            <Grid key={hist.attrName} item xs={4}>
+                            <Grid key={hist.attrName} item xs={6} md={4}>
                                 
                                 <div className={classes.histogramBox}>
                                         <Histogram
