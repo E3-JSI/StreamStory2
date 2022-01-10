@@ -317,6 +317,12 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
 
     enterTmp
         .append('text')
+        .attr("opacity", (d: any) => {
+            const key = d.initialStates.toString();
+            const { ui: { eventId } } = commonStateData[key];
+            console.log("d.stateNo=", d.stateNo, ", eventId=", eventId)
+            return (eventId && eventId !== "") ? 1 : 0;
+        })
         .attr('x', (d: any) => scale(x, d.x) + scale(r, d.r) * 0.3)
         .attr('y', (d: any) => scale(y, d.y) - scale(r, d.r) * 0.3)
         .attr("font-size", (d: any) => `${0.25 * scale(r, d.r)}px`)
