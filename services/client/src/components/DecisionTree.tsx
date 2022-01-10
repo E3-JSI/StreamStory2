@@ -301,7 +301,7 @@ function DecisionTree ({ selectedState, commonStateData }: any): JSX.Element {
           },
           (exit:any) => exit
               .transition()
-              .duration(duration)
+              // .duration(duration)
               .remove()
         );
     }    

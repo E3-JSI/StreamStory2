@@ -213,10 +213,38 @@ export function createNodes(
     const divTooltip = d3.select(tooltipRef.current);
 
     selectAllNodeGroups(gNodes)
-        .data(data.states, (d: any) => `node_${uniqueId(d)}`)
+        .data(data.states, (d: any) => {
+            const key = d.initialStates.toString();
+            const stateData = commonStateData[key];
+            const eventId = stateData.ui ? stateData.ui.eventId : "";
+            const description = stateData.ui ? stateData.ui.description : "";
+            const label = stateData.ui ? stateData.ui.label : "";
+
+            console.log("stateData.ui=", stateData.ui)
+
+            const rez = `node_${uniqueId(d)}_eventId_${eventId}_description_${description}_label_${label}`
+
+            console.log("rez=", rez)
+
+            return rez;
+        })
         .join(
             (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter, commonStateData, classes),
-            (update: any) => update,
+            (update: any) => {
+                const updateTmp = update
+
+                updateTmp
+                    .select(".isEventLabel")
+                    .attr('x', (d: any) => scale(x, d.x) + scale(r, d.r) * 0.3)
+                    .attr('y', (d: any) => scale(y, d.y) - scale(r, d.r) * 0.3)
+                    .attr("opacity", (d: any) => {
+                        const key = d.initialStates.toString();
+                        const stateData = commonStateData[key];
+                        return (stateData.ui && stateData.ui.eventId && stateData.ui.eventId !== "") ? 1 : 0;
+                    });
+
+                return updateTmp;
+            },
             (exit: any) => {
                 exit.remove();
                 return exit;
@@ -247,7 +275,7 @@ export function createNodes(
                 .style("word-wrap", "break-word")
                 .style("opacity", 0)
                 .html(`<div style="color:black">
-                <h3><span>${commonStateData[d.initialStates.toString()].suggestedLabel.label}</span> <span>(stateNo${d.stateNo})</span></h3>
+                <h3><span>${getStateLabel(d, commonStateData)}</span> <span>(stateNo${d.stateNo})</span></h3>
                 </div>
                 `)
                 .transition()
@@ -294,7 +322,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .each(function (this: any) {
             const d: any = d3.select(this).data()[0];
             const key = d.initialStates.toString();
-            const lines = createLines(commonStateData[key].suggestedLabel.label, lineHeight);
+            const lines = createLines(getStateLabel(d, commonStateData), lineHeight);
             linesDict[uniqueId(d)] = lines;
         });
 
@@ -317,6 +345,7 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
 
     enterTmp
         .append('text')
+        .attr('class', 'isEventLabel')
         .attr("opacity", (d: any) => {
             const key = d.initialStates.toString();
             const stateData = commonStateData[key];
@@ -331,6 +360,21 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
     enterTmp
         .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
     return enterTmp;
+}
+
+function getStateLabel(d: any, commonStateData: any) {
+    const key = d.initialStates.toString();
+    let label = ""
+
+
+    if (commonStateData && commonStateData[key]) {
+        if (commonStateData[key].ui && commonStateData[key].ui.label && commonStateData[key].ui.label !== "") {
+            label = commonStateData[key].ui.label;
+        } else {
+            label = commonStateData[key].suggestedLabel.label
+        }
+    }
+    return label;
 }
 
 function textRadius(lines: any[], lineHeight: number) {

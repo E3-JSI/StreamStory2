@@ -31,10 +31,10 @@ function Model(): JSX.Element {
     const { id } = useParams<ModelUrlParams>();
     const history = useHistory();
     const [{ currentModel, commonStateDataArr }, setSession] = useSession();
-    const model = currentModel.find((m) => m.id === Number(id));
-    const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
-    const [isLoading, setIsLoading] = useState(!model);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedState, setSelectedState] = useState<any>();
+    const [model, setModel] = useState<any>();
+    const [commonStateData, setCommonStateData] = useState<any>();
 
     useMountEffect(() => {
         async function loadModel() {
@@ -65,6 +65,44 @@ function Model(): JSX.Element {
             loadModel();
         }
     });
+
+    useEffect(() => {
+        if (id && currentModel && commonStateDataArr && commonStateDataArr.length > 0) {
+            const modelFound = currentModel.find((m) => m.id === Number(id));
+            const commonDataFound = commonStateDataArr.find((m) => m.id === Number(id));
+
+            if (commonDataFound) {
+                // prevent running before commonStateDataArr is updated inside mountEffect hook
+                setModel(modelFound);
+                setCommonStateData(commonDataFound.commonStateData);
+            }
+        }
+    }, [id, currentModel, commonStateDataArr]);
+
+    function handleModelChange(modelNew: any) {
+        console.log('start: handleModelChange, modelNew=', modelNew);
+
+        if (modelNew) {
+            const modelIx = currentModel.findIndex((m) => m.id === Number(id));
+            const commStateDataIx = commonStateDataArr.findIndex((m) => m.id === Number(id));
+
+            if (modelIx > -1 && commStateDataIx > -1) {
+                const commStateDataNew = {
+                    id: Number(id),
+                    commonStateData: createCommonStateData(modelNew.model.scales),
+                };
+                addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
+
+                currentModel[modelIx] = modelNew;
+                commonStateDataArr[commStateDataIx] = commStateDataNew;
+
+                setSession({
+                    currentModel: [...currentModel],
+                    commonStateDataArr: [...commonStateDataArr],
+                });
+            }
+        }
+    }
 
     function handleCloseClick() {
         const nextModels = currentModel.filter((m) => m.id !== Number(id));
@@ -122,6 +160,7 @@ function Model(): JSX.Element {
                             model={model}
                             commonStateData={commonStateData}
                             selectedState={selectedState}
+                            onFormChange={handleModelChange} // eslint-disable-line
                         />
                     </Grid>
                 </Grid>

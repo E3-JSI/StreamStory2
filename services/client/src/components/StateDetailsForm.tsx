@@ -12,17 +12,17 @@ import useSession from '../hooks/useSession';
 
 import LoadingButton from './LoadingButton';
 import { updateModelState, Model as ModelType } from '../api/models';
-import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
+import useSnackbar from '../hooks/useSnackbar';
 
-function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.Element {
+function StateDetailsForm({ model, selectedState, commonStateData, onFormChange }: any): JSX.Element {
     const { t } = useTranslation();
-
-    const [{ currentModel, commonStateDataArr }, setSession] = useSession();
 
     const [label, setLabel] = useState<string>();
     const [description, setDescription] = useState<string>();
     const [isEvent, setIsEvent] = useState(false);
     const [eventId, setEventId] = useState<string>();
+    const [showSnackbar] = useSnackbar();
+
 
     useEffect(() => {
         if(selectedState && commonStateData) {
@@ -39,36 +39,24 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
 
     async function handleSubmit(event:any) {
         event.preventDefault(); // prevent refresh after submit
-        console.log("start: handleSubmit, modelId=", model.id);
-
         const payload:any = {
             initialStates: selectedState.initialStates.toString(),
             label: event.target.stateName.value,
             description: event.target.stateDescription.value,
         }
-
         if(isEvent && event.target.eventId.value) { // TODO: only if model is online
             payload.eventId = event.target.eventId.value; // eslint-disable-line
         }
         const response = await updateModelState(model.id, payload);
         const modelNew = response.data.model as ModelType;
-        console.log("modelNew=", modelNew)
 
-        // TODO: not optimal to calculate everything once again, refactor it.
-        const ixModelInSession = currentModel.findIndex((m) => m.id === Number(model.id));
-        const ixCommStateDataArr = commonStateDataArr.findIndex((m) => m.id === Number(model.id));
-        console.log("ixModelInSession=", ixModelInSession, ", ixCommStateDataArr=", ixCommStateDataArr)
-
-        const commStateDataNew = {
-            id: Number(model.id),
-            commonStateData: createCommonStateData(modelNew.model.scales),
-        };
-        addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
-        currentModel[ixModelInSession] = modelNew;
-        commonStateDataArr[ixCommStateDataArr] = commStateDataNew;
-        setSession({currentModel, commonStateDataArr});
-
-        console.log("end: updateModelState")
+        if(modelNew) {
+            showSnackbar({
+                message: t('state_successfully_saved'),
+                severity: 'success',
+            });
+            onFormChange(modelNew);
+        }
     }
 
     function handleIsEvent(event:any, value:any) {
@@ -76,10 +64,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
     }
 
     function handleResetDefaultButtonClick(event:any) {
-        console.log("start: handleResetDefaultButtonClick")
-
         const key = selectedState.initialStates.toString();
-
         setLabel(commonStateData[key].suggestedLabel.label);
         setDescription("");
     }

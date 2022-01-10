@@ -93,7 +93,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
         const xWidth = width - margin.left - margin.right - chart.left - chart.right;
         const yWidth = height - margin.top - margin.bottom - chart.top - chart.bottom;
 
-        const color = scaleOrdinal(subgroups, ['#5bc0de', 'rgb(112,112,112)']); // 1st-blue, 2nd-grey
+        const color = scaleOrdinal(subgroups, ['#5bc0de', '#6c6c6c']); // 1st-blue, 2nd-grey
 
         const x = d3.scaleBand().domain(domain).range([0, xWidth]).padding(0.2);
         const y = d3
@@ -139,8 +139,6 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
         y: any,
         color: any,
     ) {
-        console.log('start: renderStackedHistograms');
-
         const gGroups = gStackedBars
             .selectAll('.subgroup_g')
             .data(stackedData, (d: any) => `${d.key}`)
@@ -178,7 +176,6 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
 
         rects
             .on('mouseover', function (this: any, event: any, d: any) {
-                console.log('start: mouseover');
                 const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
                 const id = d3.select(parentNode).attr('id');
 

@@ -17,12 +17,11 @@ export interface StateDetailsProps extends PaperProps {
     selectedState?: any;
 }
 
-function StateDetails({ model, selectedState, commonStateData, ...other }: StateDetailsProps): JSX.Element {
+function StateDetails({ model, selectedState, commonStateData, onFormChange, ...other }: any): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
 
     const [label, setLabel] = useState<any>();
-    const [isEvent, setIsEvent] = useState(true);
 
     useEffect(()=> {
         if(selectedState && model && model.model && model.model.scales) {
@@ -30,6 +29,10 @@ function StateDetails({ model, selectedState, commonStateData, ...other }: State
             setLabel(commonStateData[key].suggestedLabel.label);
         }  
     }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    function handleOnFormChange(modelNew:any) {
+        onFormChange(modelNew);
+    }
 
     return (
         <Paper key={label} {...other}>
@@ -42,7 +45,7 @@ function StateDetails({ model, selectedState, commonStateData, ...other }: State
 
             {selectedState && commonStateData && (
                 <Box p={2}>
-                    <StateDetailsForm model={model} selectedState={selectedState} commonStateData={commonStateData} />
+                    <StateDetailsForm model={model} selectedState={selectedState} commonStateData={commonStateData} onFormChange={handleOnFormChange} />
                     <StateAttributes model={model} selectedState={selectedState} commonStateData={commonStateData} />
 
                 </Box>
