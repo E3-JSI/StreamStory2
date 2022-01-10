@@ -22,20 +22,17 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
     const [label, setLabel] = useState<string>();
     const [description, setDescription] = useState<string>();
     const [isEvent, setIsEvent] = useState(true);
+    const [eventId, setEventId] = useState<string>();
 
     useEffect(() => {
         if(selectedState && commonStateData) {
             const key = selectedState.initialStates.toString();
-
-            console.log("key=", key)
-
             const labelCurr = commonStateData[key].ui ? commonStateData[key].ui.label : commonStateData[key].suggestedLabel.label;
-            console.log("labelCurr=", labelCurr)
-            setLabel(labelCurr)
-
             const descriptionCurr = commonStateData[key].ui ? commonStateData[key].ui.description : null;
-
+            const eventIdCurr = commonStateData[key].ui ? commonStateData[key].ui.eventId : null;
+            setLabel(labelCurr)
             setDescription(descriptionCurr);
+            setEventId(eventIdCurr);
         }
     }, [selectedState, commonStateData])
 
@@ -73,8 +70,17 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
         console.log("end: updateModelState")
     }
 
-    function handleChange(event:any, value:any) {
+    function handleIsEvent(event:any, value:any) {
         setIsEvent(value);
+    }
+
+    function handleResetDefaultButtonClick(event:any) {
+        console.log("start: handleResetDefaultButtonClick")
+
+        const key = selectedState.initialStates.toString();
+
+        setLabel(commonStateData[key].suggestedLabel.label);
+        setDescription("");
     }
 
     return (
@@ -83,6 +89,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             name="stateName"
             label={t('state_name')}
             value={label || ''}
+            onChange={(e) => setLabel(e.target.value)}
             variant="standard"
             margin="none"
             InputLabelProps={{
@@ -94,6 +101,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             name="stateDescription"
             label={t('description')}
             value={description || ''}
+            onChange={(e) => setDescription(e.target.value)}
             variant="standard"
             margin="normal"
             // rows={3}
@@ -106,7 +114,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             control={
                 <Checkbox
                 checked={isEvent}
-                onChange={handleChange}
+                onChange={handleIsEvent} // eslint-disable-line
                 name="isEvent"
                 color="primary"
                 />
@@ -117,6 +125,8 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             <TextField
                 name="eventId"
                 label={t('event_id')}
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
                 variant="standard"
                 margin="normal"
                 fullWidth
@@ -127,6 +137,17 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             // className={classes.formButtons}
             spacing={1} 
             container>
+            {<Grid item>
+                <Button
+                    variant="contained"
+                    size="small"
+                    color="default"
+                    startIcon={<CancelIcon />}
+                    onClick={handleResetDefaultButtonClick} // eslint-disable-line
+                >
+                {t('default_values')}
+                </Button>
+            </Grid> }
             {<Grid item>
                 <Button
                     variant="contained"
