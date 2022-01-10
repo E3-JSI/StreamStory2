@@ -55,7 +55,8 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
             }
             if (histogram != null && freqFn(histogram) != null && freqFn(histogram).length > 0) {
                 const subgroups = timeType == null ? ['bluePart', 'greyPart'] : ['bluePart'];
-                renderHistogram(domain, subgroups, freqFn, totalFreqFn);
+                const parentId = subgroups[0]; // bluePart
+                renderHistogram(domain, subgroups, parentId, freqFn, totalFreqFn);
             }
         }
     }, [histogram, totalHistogram, timeType, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -77,17 +78,22 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
         return value.toString().split('.')[1].length || 0;
     }
 
-    function renderHistogram(domain: any, subgroups: any, freqFn: any, totalFreqFn: any) {
+    function renderHistogram(
+        domain: any,
+        subgroups: any,
+        parentId: any,
+        freqFn: any,
+        totalFreqFn: any,
+    ) {
         const width = containerRef?.current?.offsetWidth || 150;
-        const height = 360;
-        const margin = { top: 5, left: 5, right: 5, bottom: 70 };
+        const height = 220;
+        const margin = { top: 5, left: 5, right: 5, bottom: 5 };
         const chart = { top: 10, bottom: 10, left: 5, right: 0 };
 
         const xWidth = width - margin.left - margin.right - chart.left - chart.right;
         const yWidth = height - margin.top - margin.bottom - chart.top - chart.bottom;
 
         const color = scaleOrdinal(subgroups, ['#5bc0de', 'rgb(112,112,112)']); // 1st-blue, 2nd-grey
-        const divTooltip = d3.select(tooltipRef.current);
 
         const x = d3.scaleBand().domain(domain).range([0, xWidth]).padding(0.2);
         const y = d3
@@ -115,16 +121,20 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
 
         axisBottom.attr('transform', `translate(0, ${yWidth})`).call(createAxisBottom(x));
 
+        const divTooltip = d3.select(tooltipRef.current);
+
         const stackedData = d3.stack().keys(subgroups)(
             createGroupedData(freqFn, totalFreqFn, domain),
         );
 
-        renderStackedHistograms(stackedData, gStackedBars, x, y, color);
+        renderStackedHistograms(stackedData, gStackedBars, divTooltip, parentId, x, y, color);
     }
 
     function renderStackedHistograms(
         stackedData: any,
         gStackedBars: any,
+        divTooltip: any,
+        parentId: any,
         x: any,
         y: any,
         color: any,
@@ -133,13 +143,13 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
 
         const gGroups = gStackedBars
             .selectAll('.subgroup_g')
-            .data(stackedData, (d: any) => `c_${d.key}`)
+            .data(stackedData, (d: any) => `${d.key}`)
             .join(
                 (enter: any) =>
                     enter
                         .append('g')
                         .attr('class', 'subgroup_g')
-                        .attr('id', (d: any) => `c_${d.key}`)
+                        .attr('id', (d: any) => `${d.key}`)
                         .attr('fill', (d: any) => color(d.key)),
                 (update: any) => update,
                 (exit: any) => exit.remove(),
@@ -165,6 +175,55 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                         .attr('width', x.bandwidth()),
                 (exit: any) => exit.remove(),
             );
+
+        rects
+            .on('mouseover', function (this: any, event: any, d: any) {
+                console.log('start: mouseover');
+                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
+                const id = d3.select(parentNode).attr('id');
+
+                if (id === parentId) {
+                    d3.select(this).style('cursor', 'pointer');
+                    // d3.select(this).attr('filter', ' brightness(0.7)');
+                    d3.select(this).style(
+                        'filter',
+                        ' brightness(0.7) drop-shadow(0px 0px 0.5px rgba(0, 0, 0, .5))',
+                    );
+                }
+            })
+            .on('mousemove', function (this: any, event: any, d: any) {
+                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
+                const id = d3.select(parentNode).attr('id');
+                if (id === parentId) {
+                    divTooltip
+                        .style('position', 'absolute')
+                        .style('background-color', 'black')
+                        .style('color', 'white')
+                        .style('border-radius', '5px')
+                        .style('padding', '10px')
+                        .style('top', `${event.pageY}px`)
+                        .style('left', `${event.pageX + 20}px`)
+                        .html(() => createTooltipHtml(d))
+                        .style('opacity', 0)
+                        .transition()
+                        .duration(200)
+                        .style('opacity', '0.9');
+                }
+            })
+            .on('mouseout', function (this: any) {
+                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
+                const id = d3.select(parentNode).attr('id');
+                if (id === parentId) {
+                    divTooltip.interrupt();
+                    divTooltip.transition().ease(easeQuadIn).duration(200).style('opacity', 0);
+                    d3.select(this).style('cursor', 'default');
+                    // d3.select(this).attr('filter', ' brightness(1)');
+                    d3.select(this).style(
+                        'filter',
+                        'brightness(1) drop-shadow(0px 0px 0px rgba(0, 0, 0, 0))',
+                    );
+                }
+            });
     }
 
     function createGraphContainer(g: any, xWidth: number, yWidth: number, chart: any) {
