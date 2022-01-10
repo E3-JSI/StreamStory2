@@ -1,11 +1,13 @@
 import * as d3 from 'd3';
 import { scaleOrdinal, easeQuadIn } from 'd3';
 import React, { useRef, useEffect, useState } from 'react';
+import { createSVG, getSVG } from '../utils/markovChainUtils';
 
 const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
-    const [windowSize] = useState<any>({
+    const [initiliazed, setInitiliazed] = useState(false);
+    const [windowSize, setWindowSize] = useState<any>({
         width: undefined,
         height: undefined,
     });
@@ -52,74 +54,68 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 totalFreqFn = () => totalHistogram.freqs;
             }
             if (histogram != null && freqFn(histogram) != null && freqFn(histogram).length > 0) {
-                renderHistogram(domain, freqFn, totalFreqFn);
+                const subgroups = timeType == null ? ['bluePart', 'greyPart'] : ['bluePart'];
+                renderHistogram(domain, subgroups, freqFn, totalFreqFn);
             }
         }
-    }, [histogram, totalHistogram, timeType, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [histogram, totalHistogram, timeType]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        function handleResize() {
+            setWindowSize({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        }
+        window.addEventListener('resize', handleResize);
+        handleResize();
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     function countDecimals(value: number) {
         if (Math.floor(value) === value) return 0;
         return value.toString().split('.')[1].length || 0;
     }
 
-    function renderHistogram(domain: any, freqFn: any, totalFreqFn: any) {
-        const margin = { top: 10, right: 30, bottom: 20, left: 50 };
-        const width = (containerRef?.current?.offsetWidth || 150) - margin.left - margin.right;
-        const height = 200 - margin.top - margin.bottom;
-        const svg = d3
-            .select(containerRef.current)
-            .append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-            .append('g')
-            .attr('transform', `translate(${margin.left},${margin.top})`);
+    function renderHistogram(domain: any, subgroups: any, freqFn: any, totalFreqFn: any) {
+        const width = containerRef?.current?.offsetWidth || 150;
+        const height = 360;
+        const margin = { top: 5, left: 5, right: 5, bottom: 70 };
+        const chart = { top: 10, bottom: 50, left: 5, right: 0 };
 
-        const subgroups = timeType == null ? ['bluePart', 'greyPart'] : ['bluePart'];
+        const xWidth = width - margin.left - margin.right - chart.left - chart.right;
+        const yWidth = height - margin.top - margin.bottom - chart.top - chart.bottom;
+
         const color = scaleOrdinal(subgroups, ['#5bc0de', 'rgb(112,112,112)']); // 1st-blue, 2nd-grey
-        const groupedData: any[] = freqFn(histogram).map((_: any, ix: number) => {
-            const rez: any = {};
-            rez.group = domain[ix];
-            rez.bluePart = freqFn(histogram)[ix];
-
-            if (timeType == null) {
-                rez.greyPart = totalFreqFn()[ix] - freqFn(histogram)[ix];
-            }
-            return rez;
-        });
-        const stackedData: any[] = d3.stack().keys(subgroups)(groupedData);
         const divTooltip = d3.select(tooltipRef.current);
 
-        const x = d3.scaleBand().domain(domain).range([0, width]).padding(0.2);
-        svg.append('g')
-            .attr('transform', `translate(0, ${height})`)
-            .call(
-                d3
-                    .axisBottom(x)
-                    .tickValues(
-                        x.domain().filter((d: any, i: number) => {
-                            if (timeType == null) {
-                                return !(i % 3);
-                            }
-                            return true;
-                        }),
-                    )
-                    .tickFormat((d: any) => {
-                        if (typeof d === 'number') {
-                            const nDecimals = countDecimals(d);
-                            return nDecimals === 0 ? d : d.toFixed(Math.min(2, nDecimals));
-                        }
-                        return d;
-                    })
-                    .tickSizeOuter(0),
-            );
+        const x = d3.scaleBand().domain(domain).range([0, xWidth]).padding(0.2);
+        const y = d3
+            .scaleLinear()
+            .domain([0, d3.max((totalFreqFn().length ? totalFreqFn() : []) as any[])])
+            .range([yWidth, 0]);
 
-        const totalArr: any[] = totalFreqFn().length ? totalFreqFn() : [];
-        const maxCurr: number = d3.max(totalArr);
-        const y = d3.scaleLinear().domain([0, maxCurr]).range([height, 0]);
+        let graph = null;
+        let graphContainer = null;
+        let axisBottom: any = null;
 
-        svg.append('g')
+        if (!initiliazed) {
+            graph = createSVG(containerRef, width, height, margin);
+            graphContainer = createGraphContainer(graph, xWidth, yWidth, chart);
+            axisBottom = graphContainer.append('g').attr('class', 'axisBottom');
+            setInitiliazed(true);
+        } else {
+            graph = getSVG(containerRef, width, height, margin);
+            graphContainer = getGraphContainer(graph);
+            axisBottom = graphContainer.select('g.axisBottom');
+        }
+
+        axisBottom.attr('transform', `translate(0, ${yWidth})`).call(createAxisBottom(x));
+
+        graphContainer
+            .append('g')
             .selectAll('g')
-            .data(stackedData)
+            .data(d3.stack().keys(subgroups)(createGroupedData(freqFn, totalFreqFn, domain)))
             .join('g')
             .attr('class', (d: any) => d.key)
             .attr('fill', (d: any) => color(d.key) as any)
@@ -138,7 +134,6 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 const parentClass = d3.select(parentNode).attr('class');
                 if (parentClass === 'bluePart') {
                     d3.select(this).style('cursor', 'pointer');
-                    // d3.select(this).attr('filter', ' brightness(0.7)');
                     d3.select(this).style(
                         'filter',
                         ' brightness(0.7) drop-shadow(0px 0px 0.5px rgba(0, 0, 0, .5))',
@@ -151,21 +146,13 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 if (parentClass === 'bluePart') {
                     divTooltip
                         .style('position', 'absolute')
-                        .style('position', 'absolute')
                         .style('background-color', 'black')
                         .style('color', 'white')
                         .style('border-radius', '5px')
                         .style('padding', '10px')
                         .style('top', `${event.pageY}px`)
                         .style('left', `${event.pageX + 20}px`)
-                        .html(() => {
-                            const prob = d.data.bluePart / histogram.freqSum;
-                            const nDecimals = countDecimals(prob);
-                            const probFormated =
-                                nDecimals === 0 ? prob : prob.toFixed(Math.min(4, nDecimals));
-
-                            return `${probFormated} (${d.data.bluePart})`;
-                        })
+                        .html(() => createTooltipHtml(d))
                         .style('opacity', 0)
                         .transition()
                         .duration(200)
@@ -179,13 +166,66 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                     divTooltip.interrupt();
                     divTooltip.transition().ease(easeQuadIn).duration(200).style('opacity', 0);
                     d3.select(this).style('cursor', 'default');
-                    // d3.select(this).attr('filter', ' brightness(1)');
                     d3.select(this).style(
                         'filter',
                         'brightness(1) drop-shadow(0px 0px 0px rgba(0, 0, 0, 0))',
                     );
                 }
             });
+    }
+
+    function createGraphContainer(g: any, xWidth: number, yWidth: number, chart: any) {
+        return g
+            .append('g')
+            .attr('class', 'graphContainer')
+            .attr('width', xWidth - chart.left - chart.right)
+            .attr('height', yWidth - chart.top - chart.bottom)
+            .attr('transform', `translate(${0}, ${0})`);
+    }
+
+    function getGraphContainer(svg: any) {
+        return svg.select('g.graphContainer');
+    }
+
+    function createTooltipHtml(d: any) {
+        const prob = d.data.bluePart / histogram.freqSum;
+        const nDecimals = countDecimals(prob);
+        const probFormated = nDecimals === 0 ? prob : prob.toFixed(Math.min(4, nDecimals));
+        return `${probFormated} (${d.data.bluePart})`;
+    }
+
+    function createGroupedData(freqFn: any, totalFreqFn: any, domain: any) {
+        return freqFn(histogram).map((_: any, ix: number) => {
+            const rez: any = {};
+            rez.group = domain[ix];
+            rez.bluePart = freqFn(histogram)[ix];
+
+            if (timeType == null) {
+                rez.greyPart = totalFreqFn()[ix] - freqFn(histogram)[ix];
+            }
+            return rez;
+        });
+    }
+
+    function createAxisBottom(x: any) {
+        return d3
+            .axisBottom(x)
+            .tickValues(
+                x.domain().filter((d: any, i: number) => {
+                    if (timeType == null) {
+                        return !(i % 3);
+                    }
+                    return true;
+                }),
+            )
+            .tickFormat((d: any) => {
+                if (typeof d === 'number') {
+                    const nDecimals = countDecimals(d);
+                    return nDecimals === 0 ? d : d.toFixed(Math.min(2, nDecimals));
+                }
+                return d;
+            })
+            .tickSizeOuter(0);
     }
 
     return (

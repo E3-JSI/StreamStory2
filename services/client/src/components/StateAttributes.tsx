@@ -9,8 +9,6 @@ import Histogram from './Histogram';
 const StateAttributes = ({ model, selectedState, commonStateData }: any) => {
     const { t } = useTranslation();
     const classes = useStyles();
-
-    const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [histograms, setHistograms] = useState<any>([]);
     const [totalHistograms, setTotalHistograms] = useState<any>([]);
 
@@ -60,7 +58,7 @@ const StateAttributes = ({ model, selectedState, commonStateData }: any) => {
                     </Typography>
                     <Grid container spacing={1}>
                         {histograms.map((hist: any, i: number) => (
-                            <Grid key={hist.attrName} item xs={6}>
+                            <Grid key={hist.attrName} item xs={4}>
                                 
                                 <div className={classes.histogramBox}>
                                         <Histogram
