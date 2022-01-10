@@ -125,7 +125,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             <TextField
                 name="eventId"
                 label={t('event_id')}
-                value={eventId}
+                value={eventId || ''}
                 onChange={(e) => setEventId(e.target.value)}
                 variant="standard"
                 margin="normal"
