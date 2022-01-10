@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import Grid from '@material-ui/core/Grid';
@@ -21,7 +21,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
 
     const [label, setLabel] = useState<string>();
     const [description, setDescription] = useState<string>();
-    const [isEvent, setIsEvent] = useState(true);
+    const [isEvent, setIsEvent] = useState(false);
     const [eventId, setEventId] = useState<string>();
 
     useEffect(() => {
@@ -32,6 +32,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             const eventIdCurr = commonStateData[key].ui ? commonStateData[key].ui.eventId : null;
             setLabel(labelCurr)
             setDescription(descriptionCurr);
+            setIsEvent((eventIdCurr && eventIdCurr !== ""))
             setEventId(eventIdCurr);
         }
     }, [selectedState, commonStateData])
@@ -113,7 +114,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
             label={t('is_event')}
             control={
                 <Checkbox
-                checked={isEvent}
+                checked={isEvent || false}
                 onChange={handleIsEvent} // eslint-disable-line
                 name="isEvent"
                 color="primary"
