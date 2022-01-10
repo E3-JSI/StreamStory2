@@ -58,7 +58,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
                 renderHistogram(domain, subgroups, freqFn, totalFreqFn);
             }
         }
-    }, [histogram, totalHistogram, timeType]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [histogram, totalHistogram, timeType, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         function handleResize() {
@@ -81,7 +81,7 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
         const width = containerRef?.current?.offsetWidth || 150;
         const height = 360;
         const margin = { top: 5, left: 5, right: 5, bottom: 70 };
-        const chart = { top: 10, bottom: 50, left: 5, right: 0 };
+        const chart = { top: 10, bottom: 10, left: 5, right: 0 };
 
         const xWidth = width - margin.left - margin.right - chart.left - chart.right;
         const yWidth = height - margin.top - margin.bottom - chart.top - chart.bottom;
@@ -98,80 +98,73 @@ const Histogram = ({ histogram, totalHistogram, timeType }: any) => {
         let graph = null;
         let graphContainer = null;
         let axisBottom: any = null;
+        let gStackedBars = null;
 
         if (!initiliazed) {
             graph = createSVG(containerRef, width, height, margin);
             graphContainer = createGraphContainer(graph, xWidth, yWidth, chart);
             axisBottom = graphContainer.append('g').attr('class', 'axisBottom');
+            gStackedBars = graphContainer.append('g').attr('class', 'stackedBars');
             setInitiliazed(true);
         } else {
             graph = getSVG(containerRef, width, height, margin);
             graphContainer = getGraphContainer(graph);
             axisBottom = graphContainer.select('g.axisBottom');
+            gStackedBars = graphContainer.select('g.stackedBars');
         }
 
         axisBottom.attr('transform', `translate(0, ${yWidth})`).call(createAxisBottom(x));
 
-        graphContainer
-            .append('g')
-            .selectAll('g')
-            .data(d3.stack().keys(subgroups)(createGroupedData(freqFn, totalFreqFn, domain)))
-            .join('g')
-            .attr('class', (d: any) => d.key)
-            .attr('fill', (d: any) => color(d.key) as any)
-            .selectAll('rect')
+        const stackedData = d3.stack().keys(subgroups)(
+            createGroupedData(freqFn, totalFreqFn, domain),
+        );
+
+        renderStackedHistograms(stackedData, gStackedBars, x, y, color);
+    }
+
+    function renderStackedHistograms(
+        stackedData: any,
+        gStackedBars: any,
+        x: any,
+        y: any,
+        color: any,
+    ) {
+        console.log('start: renderStackedHistograms');
+
+        const gGroups = gStackedBars
+            .selectAll('.subgroup_g')
+            .data(stackedData, (d: any) => `c_${d.key}`)
+            .join(
+                (enter: any) =>
+                    enter
+                        .append('g')
+                        .attr('class', 'subgroup_g')
+                        .attr('id', (d: any) => `c_${d.key}`)
+                        .attr('fill', (d: any) => color(d.key)),
+                (update: any) => update,
+                (exit: any) => exit.remove(),
+            );
+
+        const rects = gGroups
+            .selectAll('.subgroup_rect')
             .data((d: any) => d)
-            .join('rect')
-            .attr('x', (d: any) => {
-                const val = x(d.data.group);
-                return val ? val : ''; // eslint-disable-line no-unneeded-ternary
-            })
-            .attr('y', (d: any) => y(d[1]))
-            .attr('height', (d: any) => y(d[0]) - y(d[1]))
-            .attr('width', x.bandwidth())
-            .on('mouseover', function (this: any, event: any, d: any) {
-                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
-                const parentClass = d3.select(parentNode).attr('class');
-                if (parentClass === 'bluePart') {
-                    d3.select(this).style('cursor', 'pointer');
-                    d3.select(this).style(
-                        'filter',
-                        ' brightness(0.7) drop-shadow(0px 0px 0.5px rgba(0, 0, 0, .5))',
-                    );
-                }
-            })
-            .on('mousemove', function (this: any, event: any, d: any) {
-                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
-                const parentClass = d3.select(parentNode).attr('class');
-                if (parentClass === 'bluePart') {
-                    divTooltip
-                        .style('position', 'absolute')
-                        .style('background-color', 'black')
-                        .style('color', 'white')
-                        .style('border-radius', '5px')
-                        .style('padding', '10px')
-                        .style('top', `${event.pageY}px`)
-                        .style('left', `${event.pageX + 20}px`)
-                        .html(() => createTooltipHtml(d))
-                        .style('opacity', 0)
-                        .transition()
-                        .duration(200)
-                        .style('opacity', '0.9');
-                }
-            })
-            .on('mouseout', function (this: any) {
-                const { parentNode } = this; // eslint-disable-line react/no-this-in-sfc
-                const parentClass = d3.select(parentNode).attr('class');
-                if (parentClass === 'bluePart') {
-                    divTooltip.interrupt();
-                    divTooltip.transition().ease(easeQuadIn).duration(200).style('opacity', 0);
-                    d3.select(this).style('cursor', 'default');
-                    d3.select(this).style(
-                        'filter',
-                        'brightness(1) drop-shadow(0px 0px 0px rgba(0, 0, 0, 0))',
-                    );
-                }
-            });
+            .join(
+                (enter: any) =>
+                    enter
+                        .append('rect')
+                        .attr('class', 'subgroup_rect')
+                        .attr('x', (d: any) => (x(d.data.group) ? x(d.data.group) : ''))
+                        .attr('y', (d: any) => y(d[1]))
+                        .attr('height', (d: any) => y(d[0]) - y(d[1]))
+                        .attr('width', x.bandwidth()),
+                (update: any) =>
+                    update
+                        .attr('x', (d: any) => (x(d.data.group) ? x(d.data.group) : ''))
+                        .attr('y', (d: any) => y(d[1]))
+                        .attr('height', (d: any) => y(d[0]) - y(d[1]))
+                        .attr('width', x.bandwidth()),
+                (exit: any) => exit.remove(),
+            );
     }
 
     function createGraphContainer(g: any, xWidth: number, yWidth: number, chart: any) {
