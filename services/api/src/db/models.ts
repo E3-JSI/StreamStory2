@@ -39,9 +39,9 @@ function getModel(row: QueryResultRow, metadata = false): Model {
     return metadata
         ? model
         : {
-              ...model,
-              model: row.model,
-          };
+            ...model,
+            model: row.model,
+        };
 }
 
 export async function findById(id: number): Promise<Model | null> {
@@ -143,6 +143,25 @@ export async function updateDescription(id: number, value: string): Promise<bool
         `
         UPDATE models
         SET description = $1
+        WHERE id = $2;`,
+        [value, id]
+    );
+
+    if (!rowCount) {
+        return false;
+    }
+
+    return true;
+}
+
+export async function updateModel(id: number, value: string): Promise<boolean> {
+
+    console.log("start: updateModel, id=", id, ", value=", value)
+
+    const { rowCount } = await db.query(
+        `
+        UPDATE models
+        SET model = $1
         WHERE id = $2;`,
         [value, id]
     );

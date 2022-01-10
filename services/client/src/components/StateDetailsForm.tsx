@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import Grid from '@material-ui/core/Grid';
@@ -8,28 +8,69 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 import CancelIcon from '@material-ui/icons/Cancel';
 import SaveIcon from '@material-ui/icons/Save';
+import useSession from '../hooks/useSession';
 
 import LoadingButton from './LoadingButton';
+import { updateModelState, Model as ModelType } from '../api/models';
+import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
 
 function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.Element {
     const { t } = useTranslation();
 
-    const [label] = useState(commonStateData[selectedState.initialStates.toString()].suggestedLabel.label);
+    const [{ currentModel, commonStateDataArr }, setSession] = useSession();
+
+    const [label, setLabel] = useState<string>();
+    const [description, setDescription] = useState<string>();
     const [isEvent, setIsEvent] = useState(true);
 
-    function handleSubmit(event:any) {
+    useEffect(() => {
+        if(selectedState && commonStateData) {
+            const key = selectedState.initialStates.toString();
+
+            console.log("key=", key)
+
+            const labelCurr = commonStateData[key].ui ? commonStateData[key].ui.label : commonStateData[key].suggestedLabel.label;
+            console.log("labelCurr=", labelCurr)
+            setLabel(labelCurr)
+
+            const descriptionCurr = commonStateData[key].ui ? commonStateData[key].ui.description : null;
+
+            setDescription(descriptionCurr);
+        }
+    }, [selectedState, commonStateData])
+
+    async function handleSubmit(event:any) {
         event.preventDefault(); // prevent refresh after submit
-        
         console.log("start: handleSubmit, modelId=", model.id);
 
-        const payload = {
+        const payload:any = {
             initialStates: selectedState.initialStates.toString(),
-            stateName: event.target.stateName.value,
-            stateDescription: event.target.stateDescription.value,
-            eventId: (isEvent && event.target.eventId.value ? event.target.eventId.value: null),
+            label: event.target.stateName.value,
+            description: event.target.stateDescription.value,
         }
 
-        console.log("payload=", payload);
+        if(isEvent && event.target.eventId.value) { // TODO: only if model is online
+            payload.eventId = event.target.eventId.value; // eslint-disable-line
+        }
+        const response = await updateModelState(model.id, payload);
+        const modelNew = response.data.model as ModelType;
+        console.log("modelNew=", modelNew)
+
+        // TODO: not optimal to calculate everything once again, refactor it.
+        const ixModelInSession = currentModel.findIndex((m) => m.id === Number(model.id));
+        const ixCommStateDataArr = commonStateDataArr.findIndex((m) => m.id === Number(model.id));
+        console.log("ixModelInSession=", ixModelInSession, ", ixCommStateDataArr=", ixCommStateDataArr)
+
+        const commStateDataNew = {
+            id: Number(model.id),
+            commonStateData: createCommonStateData(modelNew.model.scales),
+        };
+        addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
+        currentModel[ixModelInSession] = modelNew;
+        commonStateDataArr[ixCommStateDataArr] = commStateDataNew;
+        setSession({currentModel, commonStateDataArr});
+
+        console.log("end: updateModelState")
     }
 
     function handleChange(event:any, value:any) {
@@ -41,7 +82,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
         <TextField
             name="stateName"
             label={t('state_name')}
-            defaultValue={label}
+            value={label || ''}
             variant="standard"
             margin="none"
             InputLabelProps={{
@@ -52,6 +93,7 @@ function StateDetailsForm({ model, selectedState, commonStateData }: any): JSX.E
         <TextField
             name="stateDescription"
             label={t('description')}
+            value={description || ''}
             variant="standard"
             margin="normal"
             // rows={3}

@@ -99,6 +99,13 @@ export async function updateModel(
     return axios.put<UpdateModelResponse>(`/api/models/${id}`, props);
 }
 
+export async function updateModelState(
+    id: number,
+    props: any,
+): Promise<AxiosResponse<UpdateModelResponse>> {
+    return axios.put<UpdateModelResponse>(`/api/models/${id}/states`, props);
+}
+
 // Delete model
 // ------------
 

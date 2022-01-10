@@ -805,6 +805,7 @@ export function createCommonStateData(scales: any) { // TODO: calculate once, sa
                     suggestedLabel: state.suggestedLabel,
                     histograms: state.histograms,
                     decisionTree: state.decisionTree,
+                    ui: state.ui ? state.ui : null,
                 };
             }
         });
