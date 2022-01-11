@@ -271,22 +271,8 @@ const MarkovChain = ({
                     handleOnScaleChanged,
                 );
             } else {
-                updateSlider(
-                    sliderProb,
-                    pThreshold,
-                    xSliderProb,
-                    false,
-                    format2Decimals,
-                    handleOnProbChanged,
-                );
-                updateSlider(
-                    sliderScale,
-                    currentScaleIx,
-                    ySliderScale,
-                    false,
-                    format2Decimals,
-                    handleOnScaleChanged,
-                );
+                updateSlider(sliderProb, pThreshold, xSliderProb, false, format2Decimals);
+                updateSlider(sliderScale, currentScaleIx, ySliderScale, false, format2Decimals);
             }
             createLinks(theme, graphData[currentScaleIx], gNodes, gLinks, x, y, TRANSITION_PROPS);
             createMarkers(theme, graphData[currentScaleIx], gMarkers);

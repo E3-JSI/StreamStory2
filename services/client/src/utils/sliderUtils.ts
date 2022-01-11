@@ -102,9 +102,11 @@ export function updateSlider(
     x: any,
     showCurrVal: any,
     format: any,
-    onSliderValChange: any,
+    onSliderValChange?: any,
 ) {
-    onSliderValChange(h);
+    if (onSliderValChange) {
+        onSliderValChange(h);
+    }
     slider.select('.handle').attr('cx', x(h));
     slider
         .select('.label')
