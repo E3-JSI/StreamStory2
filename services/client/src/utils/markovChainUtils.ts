@@ -310,7 +310,7 @@ function nodeEnter(
         .append('circle')
         // .attr('class', `node_circle ${classes.statePulse}`)
         .attr('class', `node_circle`)
-        .classed(classes.statePulse, true)
+        // .classed(classes.statePulse, true)
         // .classed("trigger", (d: any) => commonStateData[d.initialStates.toString()].trigger === true)
         // .classed(classes.statePulse, (d: any) => commonStateData[d.initialStates.toString()].pulse === true)
         // .classed("trigger", (d: any) => commonStateData[d.initialStates.toString()].trigger === true)
