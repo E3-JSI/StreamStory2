@@ -47,12 +47,27 @@ export function createSlider(
         .call(
             d3
                 .drag()
-                .on('start', function (this: any) { return d3.select(this).interrupt(); })
-                .on('drag', (event: any) => { updateSlider(x.invert(event.x), slider, onSliderValChange, x, showCurrVal, format); })
+                .on('start', function (this: any) {
+                    return d3.select(this).interrupt();
+                })
+                .on('drag', (event: any) => {
+                    updateSlider(
+                        x.invert(event.x),
+                        slider,
+                        onSliderValChange,
+                        x,
+                        showCurrVal,
+                        format,
+                    );
+                }),
             // .on('end', (event: any) => { console.log('end') })
         )
-        .on("mouseover", function (this: any) { handleOnMouseOver.call(this, theme) })
-        .on("mouseout", function (this: any) { handleOnMouseOut.call(this, theme) })
+        .on('mouseover', function (this: any) {
+            handleOnMouseOver.call(this, theme);
+        })
+        .on('mouseout', function (this: any) {
+            handleOnMouseOut.call(this, theme);
+        });
 
     slider
         .insert('g', '.track-overlay')
@@ -89,38 +104,52 @@ export function createSlider(
     updateSlider(currVal, slider, onSliderValChange, x, showCurrVal, format);
 }
 
-export function updateSlider(h: any, slider: any, onSliderValChange: any, x: any, showCurrVal: any, format: any) {
+export function updateSlider(
+    h: any,
+    slider: any,
+    onSliderValChange: any,
+    x: any,
+    showCurrVal: any,
+    format: any,
+) {
     onSliderValChange(h);
-    slider.select(".handle").attr('cx', x(h));
-    slider.select(".label").attr('x', x(h)).text(showCurrVal ? format(h) : '');
+    slider.select('.handle').attr('cx', x(h));
+    slider
+        .select('.label')
+        .attr('x', x(h))
+        .text(showCurrVal ? format(h) : '');
 }
 
 function handleOnMouseOver(this: any, theme: any) {
     const parent = d3.select(this.parentNode);
 
-    parent.select('.track')
+    parent
+        .select('.track')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth)
+        .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth);
 
-    parent.select('.track-inset')
+    parent
+        .select('.track-inset')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth)
+        .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth);
 }
 
 function handleOnMouseOut(this: any, theme: any) {
     const parent = d3.select(this.parentNode);
 
-    parent.select('.track')
+    parent
+        .select('.track')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth);
 
-    parent.select('.track-inset')
+    parent
+        .select('.track-inset')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth);
 }
 
 export function test() {

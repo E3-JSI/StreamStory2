@@ -11,7 +11,7 @@ const useStyles = makeStyles((theme: Theme) =>
             paddingLeft: theme.spacing(0),
             paddingRight: theme.spacing(0),
             textAlign: 'center',
-        }
+        },
     }),
 );
 

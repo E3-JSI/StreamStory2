@@ -27,11 +27,7 @@ export interface UserProfileFormProps<FormRequestData, FormResponseData> {
     onResponse: FormResponseHandler<FormResponseData, FormRequestData>;
 }
 
-function UserProfileForm<
-    FormRequestData,
-    FormResponseData,
-    FormErrors extends Errors,
->(
+function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends Errors>(
     {
         children,
         form,

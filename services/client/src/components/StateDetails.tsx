@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@material-ui/core/Box';
 import Divider from '@material-ui/core/Divider';
@@ -13,24 +13,30 @@ import StateDetailsForm from './StateDetailsForm';
 
 export interface StateDetailsProps extends PaperProps {
     model?: Model;
-    commonStateData:any;
+    commonStateData: any;
     selectedState?: any;
 }
 
-function StateDetails({ model, selectedState, commonStateData, onFormChange, ...other }: any): JSX.Element {
+function StateDetails({
+    model,
+    selectedState,
+    commonStateData,
+    onFormChange,
+    ...other
+}: any): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
 
     const [label, setLabel] = useState<any>();
 
-    useEffect(()=> {
-        if(selectedState && model && model.model && model.model.scales) {
+    useEffect(() => {
+        if (selectedState && model && model.model && model.model.scales) {
             const key = selectedState.initialStates.toString();
             setLabel(commonStateData[key].suggestedLabel.label);
-        }  
+        }
     }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    function handleOnFormChange(modelNew:any) {
+    function handleOnFormChange(modelNew: any) {
         onFormChange(modelNew);
     }
 
@@ -45,9 +51,17 @@ function StateDetails({ model, selectedState, commonStateData, onFormChange, ...
 
             {selectedState && commonStateData && (
                 <Box p={2}>
-                    <StateDetailsForm model={model} selectedState={selectedState} commonStateData={commonStateData} onFormChange={handleOnFormChange} />
-                    <StateAttributes model={model} selectedState={selectedState} commonStateData={commonStateData} />
-
+                    <StateDetailsForm
+                        model={model}
+                        selectedState={selectedState}
+                        commonStateData={commonStateData}
+                        onFormChange={handleOnFormChange}
+                    />
+                    <StateAttributes
+                        model={model}
+                        selectedState={selectedState}
+                        commonStateData={commonStateData}
+                    />
                 </Box>
             )}
         </Paper>

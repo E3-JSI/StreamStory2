@@ -25,8 +25,7 @@ export interface ModelUrlParams {
 }
 
 function ModelIframe(): JSX.Element {
-
-    console.log("start: ModelIframe")
+    console.log('start: ModelIframe');
 
     const classes = useStyles();
     const muiTheme = useTheme();
@@ -86,7 +85,6 @@ function ModelIframe(): JSX.Element {
                 <PageTitle gutterBottom>
                     {isLoading ? t('loading_model') : model?.name || t('model_not_found')}
                 </PageTitle>
-
             </Box>
             {model && commonStateData && (
                 <Grid container spacing={2}>

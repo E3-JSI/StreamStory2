@@ -17,8 +17,7 @@ function PageIframeRoute({ component: Component, type, ...rest }: PageRouteProps
             render={() => {
                 const page = <Page>{Component && <Component />}</Page>;
                 return page;
-                }
-            }
+            }}
         />
     );
 }

@@ -10,48 +10,54 @@ import Histogram from './Histogram';
 
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
-    selectedState?:any;
-    onStateSelected?:any;
+    selectedState?: any;
+    onStateSelected?: any;
 }
 
 function StateTime({ model, selectedState, commonStateData }: any): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
-    
+
     const [histogram, setHistogram] = useState<any>();
     const [totalHistogram, setTotalHistogram] = useState<any>();
     const [tabs, setTabs] = useState<any>({
-        stateHistory: {visible: true, index: 0},
-        coordinates: {visible: true, index: 1},
-        time: {visible: true, index: 2},
-        explanationTree: {visible: true, index: 3},
+        stateHistory: { visible: true, index: 0 },
+        coordinates: { visible: true, index: 1 },
+        time: { visible: true, index: 2 },
+        explanationTree: { visible: true, index: 3 },
     });
-    
+
     useEffect(() => {
-        if(selectedState != null && commonStateData != null && model && model.model && model.model.scales) {
+        if (
+            selectedState != null &&
+            commonStateData != null &&
+            model &&
+            model.model &&
+            model.model.scales
+        ) {
             const key = selectedState.initialStates.toString();
-            const histIx = commonStateData[key].histograms.findIndex((hist:any)=> !Object.prototype.hasOwnProperty.call(hist, 'bounds'));
+            const histIx = commonStateData[key].histograms.findIndex(
+                (hist: any) => !Object.prototype.hasOwnProperty.call(hist, 'bounds'),
+            );
             const currHist = commonStateData[key].histograms[histIx];
             const totalHist = model.model.totalHistograms[histIx];
             setTotalHistogram(totalHist);
-                
-            if(currHist) {
+
+            if (currHist) {
                 setHistogram(currHist);
             }
         }
-       
-    }, [selectedState, commonStateData]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [selectedState, commonStateData]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <>
-            {selectedState &&  (
+            {selectedState && (
                 <>
-
                     <Histogram
-                    histogram={histogram}
-                    totalHistogram={totalHistogram}
-                    timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
-                    key={selectedState?.stateNo + Math.random()}
+                        histogram={histogram}
+                        totalHistogram={totalHistogram}
+                        timeType={'hourOfDay'} // eslint-disable-line react/jsx-curly-brace-presence
+                        key={selectedState?.stateNo + Math.random()}
                     />
                     <h4>{t('hour_of_day')}</h4>
 
@@ -60,9 +66,9 @@ function StateTime({ model, selectedState, commonStateData }: any): JSX.Element 
                     <Histogram
                         histogram={histogram}
                         totalHistogram={totalHistogram}
-                        timeType={"dayOfWeek"}  // eslint-disable-line react/jsx-curly-brace-presence
+                        timeType={'dayOfWeek'} // eslint-disable-line react/jsx-curly-brace-presence
                         key={selectedState?.stateNo + Math.random()}
-                        />
+                    />
                     <h4>{t('day_of_week')}</h4>
 
                     <Divider />
@@ -70,15 +76,15 @@ function StateTime({ model, selectedState, commonStateData }: any): JSX.Element 
                     <Histogram
                         histogram={histogram}
                         totalHistogram={totalHistogram}
-                        timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
+                        timeType={'month'} // eslint-disable-line react/jsx-curly-brace-presence
                         key={selectedState?.stateNo + Math.random()}
-                        />
+                    />
                     <h4>{t('month')}</h4>
 
                     <Divider />
                 </>
-                )}
-        </> 
+            )}
+        </>
     );
 }
 

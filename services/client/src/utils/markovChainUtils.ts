@@ -1,6 +1,6 @@
 import React from 'react';
 import * as d3 from 'd3';
-import { easeQuadIn } from 'd3'
+import { easeQuadIn } from 'd3';
 import { ITransitionProps, LinkType } from '../types/charts';
 
 export function scale(s: any, value: any) {
@@ -24,7 +24,8 @@ export function createSVG(
     container: React.MutableRefObject<any>,
     width: number,
     height: number,
-    margin: any) {
+    margin: any,
+) {
     const svg = d3
         .select(container.current)
         .append('svg')
@@ -34,12 +35,12 @@ export function createSVG(
         .attr('class', 'graph')
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-    svg
-        .append("rect")
-        .attr("class", "zoom_rect")
+    svg.append('rect')
+        .attr('class', 'zoom_rect')
         .attr('width', width - margin.left - margin.right)
         .attr('height', height - margin.top - margin.bottom)
-        .attr("fill", "green").attr("opacity", 0)
+        .attr('fill', 'green')
+        .attr('opacity', 0);
 
     return svg;
 }
@@ -106,21 +107,18 @@ export function createLinks(
                     .attr('fill', 'none')
                     .attr('marker-end', (d: any) => `url(#arrow_s${d.source}_t${d.target})`);
 
-                selectLinkPath(tmp).attr('d', (d: any) =>
-                    drawLineWithOffset(nodesMap, d),
-                );
+                selectLinkPath(tmp).attr('d', (d: any) => drawLineWithOffset(nodesMap, d));
 
-                tmp
-                    .append('text')
+                tmp.append('text')
                     .attr('class', 'link_path_text')
                     .attr('id', (d: any) => `path_text${d.source}t${d.target}`)
-                    .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                    .attr('x', (d: any) => {
                         const dSource = nodesMap[d.source].data()[0];
                         const dTarget = nodesMap[d.target].data()[0];
                         const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                         return newCoords.x;
                     })
-                    .attr("y", (d: any, i: number) => {
+                    .attr('y', (d: any, i: number) => {
                         const dSource = nodesMap[d.source].data()[0];
                         const dTarget = nodesMap[d.target].data()[0];
                         const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
@@ -136,21 +134,23 @@ export function createLinks(
             },
             (update: any) => {
                 selectLinkPath(update)
-                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d)).attr('stroke', theme.link.default.stroke);
+                    .attr('d', (d: any) => drawLineWithOffset(nodesMap, d))
+                    .attr('stroke', theme.link.default.stroke);
 
                 selectLinkPathText(update)
-                    .attr("x", function (this: any, d: any) { // eslint-disable-line prefer-arrow-callback
+                    .attr('x', (d: any) => {
                         const dSource = nodesMap[d.source].data()[0];
                         const dTarget = nodesMap[d.target].data()[0];
                         const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                         return newCoords.x;
                     })
-                    .attr("y", (d: any, i: number) => {
+                    .attr('y', (d: any, i: number) => {
                         const dSource = nodesMap[d.source].data()[0];
                         const dTarget = nodesMap[d.target].data()[0];
                         const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                         return newCoords.y;
-                    }).text((d: any) => formatLinkP(d.p))
+                    })
+                    .text((d: any) => formatLinkP(d.p));
                 update.call((updt: any) => updt.transition(tEnter).attr('opacity', 1));
 
                 return update;
@@ -165,7 +165,7 @@ export function createLinks(
 }
 
 export function moveObj(sourceStateNo: number, targetStateNo: number, prcnt: number) {
-    const path: any = document.querySelector(`#path_s${sourceStateNo}t${targetStateNo}`) // dirty bug fix- with d3.select does not work
+    const path: any = document.querySelector(`#path_s${sourceStateNo}t${targetStateNo}`); // dirty bug fix- with d3.select does not work
     const pathLength = Math.floor(path.getTotalLength());
     prcnt = (prcnt * pathLength) / 100; // eslint-disable-line no-param-reassign
     // Get x and y values at a certain point in the line
@@ -216,31 +216,28 @@ export function createNodes(
         .data(data.states, (d: any) => {
             const key = d.initialStates.toString();
             const stateData = commonStateData[key];
-            const eventId = stateData.ui ? stateData.ui.eventId : "";
-            const description = stateData.ui ? stateData.ui.description : "";
-            const label = stateData.ui ? stateData.ui.label : "";
-
-            console.log("stateData.ui=", stateData.ui)
-
-            const rez = `node_${uniqueId(d)}_eventId_${eventId}_description_${description}_label_${label}`
-
-            console.log("rez=", rez)
-
-            return rez;
+            const eventId = stateData.ui ? stateData.ui.eventId : '';
+            const description = stateData.ui ? stateData.ui.description : '';
+            const label = stateData.ui ? stateData.ui.label : '';
+            return `node_${uniqueId(
+                d,
+            )}_eventId_${eventId}_description_${description}_label_${label}`;
         })
         .join(
             (enter: any) => nodeEnter(enter, theme, x, y, r, tEnter, commonStateData, classes),
             (update: any) => {
-                const updateTmp = update
+                const updateTmp = update;
 
                 updateTmp
-                    .select(".isEventLabel")
+                    .select('.isEventLabel')
                     .attr('x', (d: any) => scale(x, d.x) + scale(r, d.r) * 0.3)
                     .attr('y', (d: any) => scale(y, d.y) - scale(r, d.r) * 0.3)
-                    .attr("opacity", (d: any) => {
+                    .attr('opacity', (d: any) => {
                         const key = d.initialStates.toString();
                         const stateData = commonStateData[key];
-                        return (stateData.ui && stateData.ui.eventId && stateData.ui.eventId !== "") ? 1 : 0;
+                        return stateData.ui && stateData.ui.eventId && stateData.ui.eventId !== ''
+                            ? 1
+                            : 0;
                     });
 
                 return updateTmp;
@@ -259,42 +256,51 @@ export function createNodes(
             colorBlueNodeAndLinks(nodeGroupClicked, theme, gNodes, gLinks, gMarkers);
             onNodeClickCallBack(event, (d3.select(this).data()[0] as any).stateNo);
         })
-        .on("mouseover", function (this: any, event: any, d: any) {
-            d3.select(this).style("cursor", "pointer")
+        .on('mouseover', function (this: any, event: any, d: any) {
+            d3.select(this).style('cursor', 'pointer');
         })
         .on('mousemove', (event: any, d: any) => {
             divTooltip
-                .style("position", "absolute")
+                .style('position', 'absolute')
                 .style('top', `${event.pageY + 10}px`)
                 .style('left', `${event.pageX + 10}px`)
                 .style('background-color', 'white')
                 .style('border-radius', '4px')
-                .style('width', "100%")
-                .style('max-width', "230px")
+                .style('width', '100%')
+                .style('max-width', '230px')
                 .style('padding', '1.5em')
-                .style("word-wrap", "break-word")
-                .style("opacity", 0)
-                .html(`<div style="color:black">
-                <h3><span>${getStateLabel(d, commonStateData)}</span> <span>(stateNo${d.stateNo})</span></h3>
+                .style('word-wrap', 'break-word')
+                .style('opacity', 0)
+                .html(
+                    `<div style="color:black">
+                <h3><span>${getStateLabel(d, commonStateData)}</span> <span>(stateNo${
+                        d.stateNo
+                    })</span></h3>
                 </div>
-                `)
+                `,
+                )
                 .transition()
                 .duration(700)
-                .style("opacity", "0.9")
+                .style('opacity', '0.9');
         })
-        .on("mouseout", function (this: any) {
+        .on('mouseout', function (this: any) {
             divTooltip.interrupt();
-            divTooltip
-                .transition()
-                .ease(easeQuadIn)
-                .duration(200)
-                .style("opacity", 0);
-            d3.select(this).style("cursor", "default")
+            divTooltip.transition().ease(easeQuadIn).duration(200).style('opacity', 0);
+            d3.select(this).style('cursor', 'default');
         })
         .call(onNodeDrag(createNodesMap(gNodes), gLinks));
 }
 
-function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: any, commonStateData: any, classes: any) {
+function nodeEnter(
+    selection: any,
+    theme: any,
+    x: any,
+    y: any,
+    r: any,
+    tEnter: any,
+    commonStateData: any,
+    classes: any,
+) {
     const enterTmp = selection
         .append('g')
         .attr('id', (d: any) => stateId(d))
@@ -313,65 +319,71 @@ function nodeEnter(selection: any, theme: any, x: any, y: any, r: any, tEnter: a
         .attr('r', (d: any) => scale(r, d.r))
         .attr('fill', (d: any) => d.color)
         .attr('opacity', theme.state.default.opacity)
-        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
+        .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))');
 
     const lineHeight = 40; // FIXME: hardcoded
-    const linesDict: any = {}
+    const linesDict: any = {};
+
+    enterTmp.each(function (this: any) {
+        const d: any = d3.select(this).data()[0];
+        const key = d.initialStates.toString();
+        const lines = createLines(getStateLabel(d, commonStateData), lineHeight);
+        linesDict[uniqueId(d)] = lines;
+    });
 
     enterTmp
-        .each(function (this: any) {
-            const d: any = d3.select(this).data()[0];
-            const key = d.initialStates.toString();
-            const lines = createLines(getStateLabel(d, commonStateData), lineHeight);
-            linesDict[uniqueId(d)] = lines;
-        });
-
-    enterTmp
-        .append("text")
-        .attr("class", "node_label")
-        .attr("text-anchor", "middle")
-        .attr("font-size", `${lineHeight}px`)
-        .style('fill', (d: any) => (d.color == null) ? "white" : theme.stateText.default.fill)
+        .append('text')
+        .attr('class', 'node_label')
+        .attr('text-anchor', 'middle')
+        .attr('font-size', `${lineHeight}px`)
+        .style('fill', (d: any) => (d.color == null ? 'white' : theme.stateText.default.fill))
         .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
         .attr(
-            "transform", (d: any, i: number) => `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))})`)
-        .selectAll("tspan")
+            'transform',
+            (d: any, i: number) =>
+                `translate(${scale(x, d.x)},${scale(y, d.y)}) scale(${
+                    scale(r, d.r) / scale(r, textRadius(linesDict[uniqueId(d)], lineHeight))
+                })`,
+        )
+        .selectAll('tspan')
         .data((d: any) => linesDict[uniqueId(d)])
         .enter()
-        .append("tspan")
-        .attr("x", 0)
-        .attr("y", (d: any, i: number, lines: any[]) => (i - lines.length / 2 + 0.8) * lineHeight)
+        .append('tspan')
+        .attr('x', 0)
+        .attr('y', (d: any, i: number, lines: any[]) => (i - lines.length / 2 + 0.8) * lineHeight)
         .text((d: any) => d.text);
 
     enterTmp
         .append('text')
         .attr('class', 'isEventLabel')
-        .attr("opacity", (d: any) => {
+        .attr('opacity', (d: any) => {
             const key = d.initialStates.toString();
             const stateData = commonStateData[key];
-            return (stateData.ui && stateData.ui.eventId && stateData.ui.eventId !== "") ? 1 : 0;
+            return stateData.ui && stateData.ui.eventId && stateData.ui.eventId !== '' ? 1 : 0;
         })
         .attr('x', (d: any) => scale(x, d.x) + scale(r, d.r) * 0.3)
         .attr('y', (d: any) => scale(y, d.y) - scale(r, d.r) * 0.3)
-        .attr("font-size", (d: any) => `${0.25 * scale(r, d.r)}px`)
+        .attr('font-size', (d: any) => `${0.25 * scale(r, d.r)}px`)
         .style('filter', 'drop-shadow(0 0 0.75rem gold)')
-        .text('🏷️')
+        .text('🏷️');
 
-    enterTmp
-        .call((enter: any) => enter.transition(tEnter).attr('opacity', 1))
+    enterTmp.call((enter: any) => enter.transition(tEnter).attr('opacity', 1));
     return enterTmp;
 }
 
 function getStateLabel(d: any, commonStateData: any) {
     const key = d.initialStates.toString();
-    let label = ""
-
+    let label = '';
 
     if (commonStateData && commonStateData[key]) {
-        if (commonStateData[key].ui && commonStateData[key].ui.label && commonStateData[key].ui.label !== "") {
+        if (
+            commonStateData[key].ui &&
+            commonStateData[key].ui.label &&
+            commonStateData[key].ui.label !== ''
+        ) {
             label = commonStateData[key].ui.label;
         } else {
-            label = commonStateData[key].suggestedLabel.label
+            label = commonStateData[key].suggestedLabel.label;
         }
     }
     return label;
@@ -398,22 +410,21 @@ function createWords(text: string) {
 }
 
 function createLines(text: any, lineHeight: number) {
-    const words: any[] = createWords(text.trim())
+    const words: any[] = createWords(text.trim());
     const targetWidth = Math.sqrt(measureWidth(text.trim()) * lineHeight);
     let line: any;
     let lineWidth0 = Infinity;
     const lines = [];
 
     for (let i = 0, n = words.length; i < n; ++i) {
-        const first = (line ? `${line.text} ` : "");
-        const lineText1 = `${first}${words[i]}` // (line ? line.text + " " : "") + words[i];
+        const first = line ? `${line.text} ` : '';
+        const lineText1 = `${first}${words[i]}`; // (line ? line.text + " " : "") + words[i];
         const lineWidth1 = measureWidth(lineText1);
 
         if ((lineWidth0 + lineWidth1) / 2 < targetWidth) {
             line.width = lineWidth0 = lineWidth1; // eslint-disable-line no-multi-assign
             line.text = lineText1;
-        }
-        else {
+        } else {
             lineWidth0 = measureWidth(words[i]);
             line = { width: lineWidth0, text: words[i] };
             lines.push(line);
@@ -423,13 +434,13 @@ function createLines(text: any, lineHeight: number) {
 }
 
 function measureWidth(text: string) {
-    const ctx: any = document.createElement("canvas").getContext("2d");
+    const ctx: any = document.createElement('canvas').getContext('2d');
     return ctx.measureText(text).width;
 }
 
 export function createMarkers(theme: any, data: any, gMarkers: any) {
     const markers = gMarkers
-        .selectAll(".line_arrow")
+        .selectAll('.line_arrow')
         .data(data.links, (d: any) => `link_s${d.source}t${d.target}`)
         .join(
             (enter: any) =>
@@ -445,10 +456,12 @@ export function createMarkers(theme: any, data: any, gMarkers: any) {
                     .attr('orient', 'auto')
                     .attr('stroke', theme.marker.default.stroke)
                     .attr('fill', theme.marker.default.fill)
-                    .append('svg:path').attr('d', 'M0,-5L10,0L0,5'),
-            (update: any) => update
-                .attr('stroke', theme.marker.default.stroke)
-                .attr('fill', theme.marker.default.fill),
+                    .append('svg:path')
+                    .attr('d', 'M0,-5L10,0L0,5'),
+            (update: any) =>
+                update
+                    .attr('stroke', theme.marker.default.stroke)
+                    .attr('fill', theme.marker.default.fill),
             (exit: any) => exit.remove(),
         );
     return markers;
@@ -470,24 +483,27 @@ function onNodeDrag(nodesMap: any, gLinks: any) {
         .on('drag', function (this: any, event: any, d: any) {
             const nodeGroup = d3.select(this).raise();
             selectNodeCircle(nodeGroup).attr('cx', event.x).attr('cy', event.y);
-            const transform = selectNodeLabel(nodeGroup).attr("transform");
-            const scaleIx = transform.indexOf("scale")
-            const scaleStr = transform.substring(scaleIx, transform.length)
-            selectNodeLabel(nodeGroup).attr("transform", `translate(${event.x}, ${event.y}) ${scaleStr}`)
+            const transform = selectNodeLabel(nodeGroup).attr('transform');
+            const scaleIx = transform.indexOf('scale');
+            const scaleStr = transform.substring(scaleIx, transform.length);
+            selectNodeLabel(nodeGroup).attr(
+                'transform',
+                `translate(${event.x}, ${event.y}) ${scaleStr}`,
+            );
             selectAllLinkPaths(gLinks).attr('d', (dTmp: any) => drawLineWithOffset(nodesMap, dTmp));
             selectAllLinkPathText(gLinks)
-                .attr("x", function (this: any, dCurr: any) { // eslint-disable-line prefer-arrow-callback
+                .attr('x', (dCurr: any) => {
                     const dSource = nodesMap[dCurr.source].data()[0];
                     const dTarget = nodesMap[dCurr.target].data()[0];
                     const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                     return newCoords.x;
                 })
-                .attr("y", (dCurr: any, i: number) => {
+                .attr('y', (dCurr: any, i: number) => {
                     const dSource = nodesMap[dCurr.source].data()[0];
                     const dTarget = nodesMap[dCurr.target].data()[0];
                     const newCoords = moveObj(dSource.stateNo, dTarget.stateNo, 50);
                     return newCoords.y;
-                })
+                });
         });
 }
 
@@ -512,14 +528,20 @@ function drawLineWithOffset(nodesMap: any, d: any) {
     return path;
 }
 
-export function colorBlueNodeAndLinks(nodeGroupClicked: any, theme: any, gNodes: any, gLinks: any, gMarkers: any): void {
+export function colorBlueNodeAndLinks(
+    nodeGroupClicked: any,
+    theme: any,
+    gNodes: any,
+    gLinks: any,
+    gMarkers: any,
+): void {
     selectAllNodeGroups(gNodes).each(function (this: any) {
         selectNodeCircle(d3.select(this)).attr('stroke', 'none');
     });
     if (nodeGroupClicked != null) {
         selectNodeCircle(nodeGroupClicked)
             .attr('stroke', theme.state.selected.stroke)
-            .attr('stroke-width', 6)
+            .attr('stroke-width', 6);
     }
     selectAllLinkGroups(gLinks).each(function (this: any) {
         const linkGroup = d3.select(this);
@@ -530,9 +552,9 @@ export function colorBlueNodeAndLinks(nodeGroupClicked: any, theme: any, gNodes:
 
         if (linePath && nodeGroupClicked && linkGroup) {
             const linkGroupData: any = linkGroup.data()[0];
-            const nodeGroupData: any = nodeGroupClicked.data()[0]
+            const nodeGroupData: any = nodeGroupClicked.data()[0];
 
-            if (linkGroupData && nodeGroupData && (linkGroupData.source === nodeGroupData.stateNo)) {
+            if (linkGroupData && nodeGroupData && linkGroupData.source === nodeGroupData.stateNo) {
                 linePath
                     .attr('stroke', theme.link.default.stroke)
                     .transition()
@@ -549,7 +571,9 @@ export function colorBlueNodeAndLinks(nodeGroupClicked: any, theme: any, gNodes:
                     .attr('stroke', theme.marker.selected.fill);
             } else {
                 linePath.attr('stroke', theme.link.default.stroke);
-                arrow.attr('stroke', theme.marker.default.stroke).attr('fill', theme.marker.default.stroke);
+                arrow
+                    .attr('stroke', theme.marker.default.stroke)
+                    .attr('fill', theme.marker.default.stroke);
             }
         }
     });
@@ -728,23 +752,18 @@ export function pseudoUniqueId(state: any, commonStateData: any) {
 }
 
 export function stateId(state: any) {
-    return `${uniqueId(state).replace(/\W+/g, "_")}`
+    return `${uniqueId(state).replace(/\W+/g, '_')}`;
 }
 
-export function createStateLinks(
-    stateIx: number,
-    state: any,
-    sc: any,
-    pThreshold: number,
-) {
-    const stateLinks: any[] = []
+export function createStateLinks(stateIx: number, state: any, sc: any, pThreshold: number) {
+    const stateLinks: any[] = [];
 
     for (let i = 0; i < state.nextStateProbDistr.length; i++) {
         const p = state.nextStateProbDistr[i];
 
         if (isValidProb(p, pThreshold)) {
             const sourceId = state.stateNo;
-            const targetId = sc.states[i].stateNo
+            const targetId = sc.states[i].stateNo;
 
             let linkType = null;
 
@@ -756,7 +775,7 @@ export function createStateLinks(
                 linkType = LinkType.SINGLE;
             }
 
-            const obj = { source: sourceId, target: targetId, linkType, p, }
+            const obj = { source: sourceId, target: targetId, linkType, p };
             stateLinks.push(obj);
         }
     }
@@ -777,7 +796,7 @@ export function createGraphData(scales: any, pThreshold: number) {
 
 export function addColorsToScaleStates(scales: any, commonStateData: any) {
     const dict: any = {};
-    const colorDict: any = {}
+    const colorDict: any = {};
     let degOffset = 0;
 
     scales.forEach((sc: any, scaleIx: any) => {
@@ -789,8 +808,15 @@ export function addColorsToScaleStates(scales: any, commonStateData: any) {
                     childStates.forEach((childState: any) => {
                         const angle = 360 * childState.stationaryProbability;
                         const angleMiddle = degOffset + angle / 2;
-                        dict[pseudoUniqueId(childState, commonStateData)] = { middle: angleMiddle, w: childState.stationaryProbability };
-                        colorDict[pseudoUniqueId(childState, commonStateData)] = generateColor(dict[pseudoUniqueId(childState, commonStateData)].middle, scaleIx - 1, scales.length);
+                        dict[pseudoUniqueId(childState, commonStateData)] = {
+                            middle: angleMiddle,
+                            w: childState.stationaryProbability,
+                        };
+                        colorDict[pseudoUniqueId(childState, commonStateData)] = generateColor(
+                            dict[pseudoUniqueId(childState, commonStateData)].middle,
+                            scaleIx - 1,
+                            scales.length,
+                        );
                         degOffset += angle;
                     });
                 } else {
@@ -804,7 +830,10 @@ export function addColorsToScaleStates(scales: any, commonStateData: any) {
                             sum += objCurr.w * objCurr.middle;
                             w += objCurr.w;
                             ix += 1;
-                            dict[pseudoUniqueId(childState, commonStateData)] = { middle: sum / w, w };
+                            dict[pseudoUniqueId(childState, commonStateData)] = {
+                                middle: sum / w,
+                                w,
+                            };
                             const color = generateColor(objCurr.middle, scaleIx - 1, scales.length); // eslint-disable-line  no-param-reassign
                             colorDict[pseudoUniqueId(childState, commonStateData)] = color;
                         }
@@ -815,13 +844,13 @@ export function addColorsToScaleStates(scales: any, commonStateData: any) {
         }
         sc.states.forEach((state: any) => {
             state.scaleIx = scaleIx; // eslint-disable-line no-param-reassign
-        })
-
+        });
     });
     // color added to each state, if added before same state in diff scale would have diff color
 
     scales
-        .map((sc: any) => sc.states).flat()
+        .map((sc: any) => sc.states)
+        .flat()
         .forEach((state: any) => {
             state.color = colorDict[pseudoUniqueId(state, commonStateData)]; // eslint-disable-line no-param-reassign
         });
@@ -829,8 +858,8 @@ export function addColorsToScaleStates(scales: any, commonStateData: any) {
 
 function generateColor(middle: number, scaleIx: number, nScales: number) {
     const xMin = 20; // FIXME: hardcoded
-    const xMax = 70;  // FIXME: hardcoded
-    const percent = 1 - ((scaleIx + 1) / nScales);
+    const xMax = 70; // FIXME: hardcoded
+    const percent = 1 - (scaleIx + 1) / nScales;
     const saturation = percent * (xMax - xMin) + xMin;
     return `hsl(${middle}, ${saturation}%, 50%)`;
 }
@@ -842,7 +871,8 @@ function findChildStates(state: any, prevScale: any) {
     });
 }
 
-export function createCommonStateData(scales: any) { // TODO: calculate once, save result globally
+export function createCommonStateData(scales: any) {
+    // TODO: calculate once, save result globally
     const commonStateData: any = {};
 
     scales.forEach((sc: any) => {

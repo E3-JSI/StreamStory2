@@ -22,7 +22,10 @@ export interface ModelConfigurationProps {
     datasetAttributes: DatasetAttribute[];
 }
 
-function ModelConfiguration({ datasetAttributes, datasetName }: ModelConfigurationProps): JSX.Element {
+function ModelConfiguration({
+    datasetAttributes,
+    datasetName,
+}: ModelConfigurationProps): JSX.Element {
     const { t } = useTranslation();
     const {
         control,

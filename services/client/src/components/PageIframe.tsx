@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 
 import clsx from 'clsx';
 import { Theme } from '@material-ui/core/styles';
@@ -14,20 +14,19 @@ export interface PageProps {
     children?: React.ReactNode;
 }
 
-function Page({children = null }: PageProps): JSX.Element {
-
-    console.log("start: Page")
+function Page({ children = null }: PageProps): JSX.Element {
+    console.log('start: Page');
 
     const classes = useStyles();
     const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-    }, [])
+    }, []);
 
     return (
         <Box className={classes.root}>
-            <main className={clsx((classes.mainNoMargin) , classes.mainApplication)}>
+            <main className={clsx(classes.mainNoMargin, classes.mainApplication)}>
                 <div className={classes.mainContent}>{children}</div>
             </main>
         </Box>

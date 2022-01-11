@@ -74,7 +74,7 @@ const useStyles = makeStyles((theme: Theme) =>
                 position: 'relative',
                 width: '100%',
                 height: 0,
-                paddingTop: `${768 / 1024 * 100}%`,
+                paddingTop: `${(768 / 1024) * 100}%`,
                 paddingRight: 0,
                 paddingBottom: 0,
                 paddingLeft: 0,

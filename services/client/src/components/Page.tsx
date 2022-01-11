@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 
 import clsx from 'clsx';
 import { Theme } from '@material-ui/core/styles';
@@ -41,11 +41,11 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
         const hide = params.get('hide');
         // console.log("hide=", hide);
 
-        if(hide != null) {
-            setTopNavVisible(hide.indexOf("top_nav") === -1);
-            setSideNavVisible(hide.indexOf("side_nav") === -1);
+        if (hide != null) {
+            setTopNavVisible(hide.indexOf('top_nav') === -1);
+            setSideNavVisible(hide.indexOf('side_nav') === -1);
         }
-    }, [])
+    }, []);
 
     switch (variant) {
         case 'simple':
@@ -68,11 +68,10 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
         default:
             return (
                 <Box className={classes.root}>
+                    <Header variant="application" />
+                    <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'} />
 
-                    <Header variant="application"/>
-                    <SideNav variant={isScreenWidthGteMd ? 'permanent' : 'temporary'}/>
-                    
-                    <main className={clsx((classes.main) , classes.mainApplication)}>
+                    <main className={clsx(classes.main, classes.mainApplication)}>
                         <div className={classes.mainContent}>{children}</div>
                     </main>
                 </Box>

@@ -63,7 +63,11 @@ function App(): JSX.Element {
                 <SnackbarProvider>
                     <Router>
                         <Switch>
-                            <PageIframeRoute path="/iframe/model/:id?" type="public" component={ModelIframe} />
+                            <PageIframeRoute
+                                path="/iframe/model/:id?"
+                                type="public"
+                                component={ModelIframe}
+                            />
                             {/* Private routes */}
                             <PageRoute
                                 path="/profile/:tab?"
