@@ -44,12 +44,12 @@ export function createSlider(
                 })
                 .on('drag', (event: any) => {
                     updateSlider(
-                        x.invert(event.x),
                         gSlider,
-                        onSliderValChange,
+                        x.invert(event.x),
                         x,
                         showCurrVal,
                         format,
+                        onSliderValChange,
                     );
                 }),
             // .on('end', (event: any) => { console.log('end') })
@@ -93,16 +93,16 @@ export function createSlider(
         .text(showCurrVal ? x.domain()[0] : '')
         .attr('transform', `translate(${0}, -25)`);
 
-    updateSlider(currVal, gSlider, onSliderValChange, x, showCurrVal, format);
+    updateSlider(gSlider, currVal, x, showCurrVal, format, onSliderValChange);
 }
 
 export function updateSlider(
-    h: any,
     slider: any,
-    onSliderValChange: any,
+    h: any,
     x: any,
     showCurrVal: any,
     format: any,
+    onSliderValChange: any,
 ) {
     onSliderValChange(h);
     slider.select('.handle').attr('cx', x(h));

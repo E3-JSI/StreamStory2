@@ -18,7 +18,7 @@ import {
     scale,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
-import { createSlider } from '../utils/sliderUtils';
+import { createSlider, updateSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
 
 import useStyles from './MarkovChain.styles';
@@ -243,11 +243,13 @@ const MarkovChain = ({
                 TRANSITION_PROPS,
                 handleOnStateSelected,
             );
+
+            const sliderProb = gSliderProb.attr('transform', `translate(${50}, ${height - 50})`);
+            const sliderScale = gSliderScale.attr(
+                'transform',
+                `translate(${margin.left + 20}, ${margin.right + 20}) rotate(90)`,
+            );
             if (!initialized) {
-                const sliderProb = gSliderProb.attr(
-                    'transform',
-                    `translate(${50}, ${height - 50})`,
-                );
                 createSlider(
                     theme,
                     sliderProb,
@@ -258,10 +260,6 @@ const MarkovChain = ({
                     format2Decimals,
                     handleOnProbChanged,
                 );
-                const sliderScale = gSliderScale.attr(
-                    'transform',
-                    `translate(${margin.left + 20}, ${margin.right + 20}) rotate(90)`,
-                );
                 createSlider(
                     theme,
                     sliderScale,
@@ -269,6 +267,23 @@ const MarkovChain = ({
                     currentScaleIx,
                     false,
                     true,
+                    format2Decimals,
+                    handleOnScaleChanged,
+                );
+            } else {
+                updateSlider(
+                    sliderProb,
+                    pThreshold,
+                    xSliderProb,
+                    false,
+                    format2Decimals,
+                    handleOnProbChanged,
+                );
+                updateSlider(
+                    sliderScale,
+                    currentScaleIx,
+                    ySliderScale,
+                    false,
                     format2Decimals,
                     handleOnScaleChanged,
                 );
