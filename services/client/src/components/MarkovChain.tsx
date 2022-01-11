@@ -15,6 +15,7 @@ import {
     createGraphData,
     colorBlueNodeAndLinks,
     stateId,
+    scale,
 } from '../utils/markovChainUtils';
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider } from '../utils/sliderUtils';
@@ -243,37 +244,32 @@ const MarkovChain = ({
                 handleOnStateSelected,
             );
             if (!initialized) {
-                const probStartX = 50;
-                const probStartY = height - 50;
-
+                const sliderProb = gSliderProb.attr(
+                    'transform',
+                    `translate(${50}, ${height - 50})`,
+                );
                 createSlider(
                     theme,
-                    gSliderProb,
+                    sliderProb,
                     xSliderProb,
-                    probStartX,
-                    probStartY,
                     pThreshold,
-                    false,
                     false,
                     true,
                     format2Decimals,
                     handleOnProbChanged,
                 );
-
-                const scaleStartX = 0 + margin.left + 20;
-                const scaleStartY = 0 + margin.right + 20;
-
+                const sliderScale = gSliderScale.attr(
+                    'transform',
+                    `translate(${margin.left + 20}, ${margin.right + 20}) rotate(90)`,
+                );
                 createSlider(
                     theme,
-                    gSliderScale,
+                    sliderScale,
                     ySliderScale,
-                    scaleStartX,
-                    scaleStartY,
-                    model.model.scales.length - 1,
+                    currentScaleIx,
+                    false,
                     true,
-                    false,
-                    false,
-                    null,
+                    format2Decimals,
                     handleOnScaleChanged,
                 );
             }

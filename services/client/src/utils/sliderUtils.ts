@@ -4,21 +4,13 @@ export function createSlider(
     theme: any,
     gSlider: any,
     x: any,
-    xStart: number,
-    yStart: number,
     currVal: any,
-    vertical: boolean,
     showTicks: boolean,
     showCurrVal: boolean,
     format: any,
     onSliderValChange: any,
 ) {
-    const slider = gSlider.attr(
-        'transform',
-        `translate(${xStart}, ${yStart})${vertical ? 'rotate(90)' : ''}`,
-    );
-
-    slider
+    gSlider
         .append('line')
         .attr('class', 'track')
         .style('stroke-linecap', 'round')
@@ -53,7 +45,7 @@ export function createSlider(
                 .on('drag', (event: any) => {
                     updateSlider(
                         x.invert(event.x),
-                        slider,
+                        gSlider,
                         onSliderValChange,
                         x,
                         showCurrVal,
@@ -69,7 +61,7 @@ export function createSlider(
             handleOnMouseOut.call(this, theme);
         });
 
-    slider
+    gSlider
         .insert('g', '.track-overlay')
         .attr('class', 'ticks')
         .style('font-size', theme.slider.default.trackInsetStrokeWidth)
@@ -84,7 +76,7 @@ export function createSlider(
         .attr('text-anchor', 'middle')
         .text((d: any) => (showTicks ? format(d) : ''));
 
-    const handle = slider
+    const handle = gSlider
         .insert('circle', '.track-overlay')
         .attr('class', 'handle')
         .style('fill', '#fff')
@@ -93,7 +85,7 @@ export function createSlider(
         .style('stroke-width', '1.25px')
         .attr('r', 9);
 
-    const label = slider
+    const label = gSlider
         .append('text')
         .attr('class', 'label')
         .style('fill', 'white')
@@ -101,7 +93,7 @@ export function createSlider(
         .text(showCurrVal ? x.domain()[0] : '')
         .attr('transform', `translate(${0}, -25)`);
 
-    updateSlider(currVal, slider, onSliderValChange, x, showCurrVal, format);
+    updateSlider(currVal, gSlider, onSliderValChange, x, showCurrVal, format);
 }
 
 export function updateSlider(
