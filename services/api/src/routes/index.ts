@@ -33,4 +33,6 @@ router.get(`${modelsPath}/:id`, requireAuth, models.getModel);
 router.put(`${modelsPath}/:id`, requireAuth, models.updateModel);
 router.delete(`${modelsPath}/:id`, requireAuth, models.deleteModel);
 
+router.put(`${modelsPath}/:id/states`, requireAuth, models.updateModelState);
+
 export default router;

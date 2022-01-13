@@ -5,132 +5,177 @@ import Box, { BoxProps } from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 import Tabs from '@material-ui/core/Tabs';
 
+import useStyles from './StateVisualization.styles';
 import { Model } from '../api/models';
+import DecisionTree from './DecisionTree';
+import StateHistory from './StateHistory';
+import StateTime from './StateTime';
 import Tab from './Tab';
 import TabPanel, { getTabA11yProps } from './TabPanel';
 
-import useStyles from './StateVisualization.styles';
-import Histogram from './Histogram';
-import StateHistory from './StateHistory';
-import { createCommonStateData } from '../utils/markovChainUtils';
-
 export interface StateVisualizationProps extends BoxProps {
     model: Model;
-    selectedState?:any;
-    onStateSelected?:any;
+    selectedState?: any;
+    commonStateData: any;
+    onStateSelected?: any;
 }
 
-function StateVisualization({ model, onStateSelected, selectedState, ...other }: StateVisualizationProps): JSX.Element {
+function StateVisualization({
+    model,
+    onStateSelected,
+    selectedState,
+    commonStateData,
+    ...other
+}: StateVisualizationProps): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
-    const [histogram, setHistogram] = useState<any>();
-    const [totalHistogram, setTotalHistogram] = useState<any>();
-    
+    const [tabs, setTabs] = useState<any>({
+        stateHistory: { visible: true, index: 0 },
+        coordinates: { visible: true, index: 1 },
+        time: { visible: true, index: 2 },
+        explanationTree: { visible: true, index: 3 },
+    });
+    const [tabsVisible, setTabsVisible] = useState(true);
+
     const stateTabPrefix = 'model-state';
 
     useEffect(() => {
-        if(selectedState != null && model && model.model && model.model.scales) {
-            const commonStateData = createCommonStateData(model.model.scales)
-            const key = selectedState.initialStates.toString();
+        const params = new URLSearchParams(window.location.search);
+        const hide = params.get('hide');
+        // console.log("hide=", hide);
 
-            const histIx = commonStateData[key].histograms.findIndex((hist:any)=> !Object.prototype.hasOwnProperty.call(hist, 'bounds'));
-            const currHist = commonStateData[key].histograms[histIx];
-            const totalHist = model.model.totalHistograms[histIx];
-            setTotalHistogram(totalHist);
-                
-            if(currHist) {
-                setHistogram(currHist);
+        if (hide != null) {
+            const stateHistoryVisible = hide.indexOf('state_history') === -1;
+            const coordinatesVisible = hide.indexOf('coordinates') === -1;
+            const timeVisible = hide.indexOf('time') === -1;
+            const explanationTreeVisible = hide.indexOf('explanation_tree') === -1;
+            const tabsNew = { ...tabs };
+            let index = 0;
+
+            tabsNew.stateHistory.visible = stateHistoryVisible;
+            tabsNew.stateHistory.index = stateHistoryVisible ? index : -1;
+
+            if (stateHistoryVisible) {
+                index += 1;
             }
-        }
-       
-    }, [selectedState]) // eslint-disable-line react-hooks/exhaustive-deps
+            tabsNew.coordinates.visible = coordinatesVisible;
+            tabsNew.coordinates.index = coordinatesVisible ? index : -1;
 
+            if (coordinatesVisible) {
+                index += 1;
+            }
+            tabsNew.time.visible = timeVisible;
+            tabsNew.time.index = timeVisible ? index : -1;
+
+            if (timeVisible) {
+                index += 1;
+            }
+            tabsNew.explanationTree.visible = explanationTreeVisible;
+            tabsNew.explanationTree.index = explanationTreeVisible ? index : -1;
+
+            if (explanationTreeVisible) {
+                index += 1;
+            }
+            const areTabsVisible = Object.keys(tabsNew).some((key: any) => tabsNew[key].visible);
+            setTabsVisible(areTabsVisible);
+            setTabs(tabsNew);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     function handleTabChange(event: React.ChangeEvent<Record<string, never>>, newValue: number) {
         setTabValue(newValue);
     }
 
     return (
-        <Box {...other}>
-            <Paper className={classes.tabsPaper} square>
-                <Tabs
-                    value={tabValue}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    indicatorColor="primary"
-                    textColor="primary"
-                    onChange={handleTabChange}
-                    aria-label={t('model_state')}
-                    // centered
-                >
-                    <Tab
-                        value={0}
-                        label={t('state_history')}
-                        {...getTabA11yProps(0, stateTabPrefix)}
-                    />
-                    <Tab
-                        value={1}
-                        label={t('coordinates')}
-                        {...getTabA11yProps(1, stateTabPrefix)}
-                    />
-                    <Tab value={2} label={t('time')} {...getTabA11yProps(2, stateTabPrefix)} />
-                    <Tab
-                        value={3}
-                        label={t('explanation_tree')}
-                        {...getTabA11yProps(3, stateTabPrefix)}
-                    />
-                </Tabs>
-            </Paper>
-            <TabPanel value={tabValue} index={0} prefix={stateTabPrefix}>
-                <StateHistory model={model} selectedState={selectedState} onStateSelected={(stateCurr:any)=> {
-                    onStateSelected(stateCurr)
-                }
+        <>
+            {tabsVisible && commonStateData && (
+                <Box {...other}>
+                    <Paper className={classes.tabsPaper} square>
+                        <Tabs
+                            value={tabValue}
+                            variant="scrollable"
+                            scrollButtons="auto"
+                            indicatorColor="primary"
+                            textColor="primary"
+                            onChange={handleTabChange}
+                            aria-label={t('model_state')}
+                            // centered
+                        >
+                            {tabs.stateHistory.visible ? (
+                                <Tab
+                                    value={tabs.stateHistory.index}
+                                    label={t('state_history')}
+                                    {...getTabA11yProps(tabs.stateHistory.index, stateTabPrefix)}
+                                />
+                            ) : null}
 
-                } />
-            </TabPanel>
-            <TabPanel value={tabValue} index={1} prefix={stateTabPrefix}>
-                {t('coordinates')}
-            </TabPanel>
-            <TabPanel value={tabValue} index={2} prefix={stateTabPrefix}>
+                            {tabs.coordinates.visible ? (
+                                <Tab
+                                    value={tabs.coordinates.index}
+                                    label={t('coordinates')}
+                                    {...getTabA11yProps(tabs.coordinates.index, stateTabPrefix)}
+                                />
+                            ) : null}
 
+                            {tabs.time.visible ? (
+                                <Tab
+                                    value={tabs.time.index}
+                                    label={t('time')}
+                                    {...getTabA11yProps(tabs.time.index, stateTabPrefix)}
+                                />
+                            ) : null}
 
-                {selectedState &&  <>
-                    <Histogram
-                    histogram={histogram}
-                    totalHistogram={totalHistogram}
-                    timeType={"hourOfDay"} // eslint-disable-line react/jsx-curly-brace-presence
-                    key={selectedState?.stateNo + Math.random()}
-                    />
-
-                <h4>Hour of Day</h4>
-
-                <Histogram
-                    histogram={histogram}
-                    totalHistogram={totalHistogram}
-                    timeType={"dayOfWeek"}  // eslint-disable-line react/jsx-curly-brace-presence
-                    key={selectedState?.stateNo + Math.random()}
-                    />
-
-                <h4>Day of Week</h4>
-
-                <Histogram
-                    histogram={histogram}
-                    totalHistogram={totalHistogram}
-                    timeType={"month"} // eslint-disable-line react/jsx-curly-brace-presence
-                    key={selectedState?.stateNo + Math.random()}
-                    />
-
-               <h4>Month</h4>
-
-                </>
-                }
-
-            </TabPanel>
-            <TabPanel value={tabValue} index={3} prefix={stateTabPrefix}>
-                {t('explanation_tree')}
-            </TabPanel>
-        </Box>
+                            {tabs.explanationTree.visible ? (
+                                <Tab
+                                    value={tabs.explanationTree.index}
+                                    label={t('explanation_tree')}
+                                    {...getTabA11yProps(tabs.explanationTree.index, stateTabPrefix)}
+                                />
+                            ) : null}
+                        </Tabs>
+                    </Paper>
+                    <TabPanel
+                        value={tabValue}
+                        index={tabs.stateHistory.index}
+                        prefix={stateTabPrefix}
+                    >
+                        <StateHistory
+                            model={model}
+                            selectedState={selectedState}
+                            commonStateData={commonStateData}
+                            onStateSelected={(stateCurr: any) => {
+                                onStateSelected(stateCurr);
+                            }}
+                        />
+                    </TabPanel>
+                    <TabPanel
+                        value={tabValue}
+                        index={tabs.coordinates.index}
+                        prefix={stateTabPrefix}
+                    >
+                        {t('coordinates')}
+                    </TabPanel>
+                    <TabPanel value={tabValue} index={tabs.time.index} prefix={stateTabPrefix}>
+                        <StateTime
+                            model={model}
+                            selectedState={selectedState}
+                            commonStateData={commonStateData}
+                        />
+                    </TabPanel>
+                    <TabPanel
+                        value={tabValue}
+                        index={tabs.explanationTree.index}
+                        prefix={stateTabPrefix}
+                    >
+                        <DecisionTree
+                            selectedState={selectedState}
+                            commonStateData={commonStateData}
+                        />
+                    </TabPanel>
+                </Box>
+            )}
+        </>
     );
 }
 

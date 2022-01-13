@@ -17,6 +17,7 @@ export interface Session {
     isPageLoading: boolean;
     modelsPerPage: Record<string, number>;
     currentModel: Model[];
+    commonStateDataArr: any[];
     update: null | UpdateSession;
 }
 
@@ -30,6 +31,7 @@ export const defaultProps: Required<SessionProps> = {
     isPageLoading: true,
     modelsPerPage: {},
     currentModel: [],
+    commonStateDataArr: [],
 };
 
 const SessionContext = React.createContext<Session>({

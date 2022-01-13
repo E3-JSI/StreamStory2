@@ -4,21 +4,13 @@ export function createSlider(
     theme: any,
     gSlider: any,
     x: any,
-    xStart: number,
-    yStart: number,
     currVal: any,
-    vertical: boolean,
     showTicks: boolean,
     showCurrVal: boolean,
     format: any,
     onSliderValChange: any,
 ) {
-    const slider = gSlider.attr(
-        'transform',
-        `translate(${xStart}, ${yStart})${vertical ? 'rotate(90)' : ''}`,
-    );
-
-    slider
+    gSlider
         .append('line')
         .attr('class', 'track')
         .style('stroke-linecap', 'round')
@@ -47,14 +39,29 @@ export function createSlider(
         .call(
             d3
                 .drag()
-                .on('start', function (this: any) { return d3.select(this).interrupt(); })
-                .on('drag', (event: any) => { updateSlider(x.invert(event.x), slider, onSliderValChange, x, showCurrVal, format); })
+                .on('start', function (this: any) {
+                    return d3.select(this).interrupt();
+                })
+                .on('drag', (event: any) => {
+                    updateSlider(
+                        gSlider,
+                        x.invert(event.x),
+                        x,
+                        showCurrVal,
+                        format,
+                        onSliderValChange,
+                    );
+                }),
             // .on('end', (event: any) => { console.log('end') })
         )
-        .on("mouseover", function (this: any) { handleOnMouseOver.call(this, theme) })
-        .on("mouseout", function (this: any) { handleOnMouseOut.call(this, theme) })
+        .on('mouseover', function (this: any) {
+            handleOnMouseOver.call(this, theme);
+        })
+        .on('mouseout', function (this: any) {
+            handleOnMouseOut.call(this, theme);
+        });
 
-    slider
+    gSlider
         .insert('g', '.track-overlay')
         .attr('class', 'ticks')
         .style('font-size', theme.slider.default.trackInsetStrokeWidth)
@@ -69,7 +76,7 @@ export function createSlider(
         .attr('text-anchor', 'middle')
         .text((d: any) => (showTicks ? format(d) : ''));
 
-    const handle = slider
+    const handle = gSlider
         .insert('circle', '.track-overlay')
         .attr('class', 'handle')
         .style('fill', '#fff')
@@ -78,7 +85,7 @@ export function createSlider(
         .style('stroke-width', '1.25px')
         .attr('r', 9);
 
-    const label = slider
+    const label = gSlider
         .append('text')
         .attr('class', 'label')
         .style('fill', 'white')
@@ -86,41 +93,57 @@ export function createSlider(
         .text(showCurrVal ? x.domain()[0] : '')
         .attr('transform', `translate(${0}, -25)`);
 
-    updateSlider(currVal, slider, onSliderValChange, x, showCurrVal, format);
+    updateSlider(gSlider, currVal, x, showCurrVal, format, onSliderValChange);
 }
 
-export function updateSlider(h: any, slider: any, onSliderValChange: any, x: any, showCurrVal: any, format: any) {
-    onSliderValChange(h);
-    slider.select(".handle").attr('cx', x(h));
-    slider.select(".label").attr('x', x(h)).text(showCurrVal ? format(h) : '');
+export function updateSlider(
+    slider: any,
+    h: any,
+    x: any,
+    showCurrVal: any,
+    format: any,
+    onSliderValChange?: any,
+) {
+    if (onSliderValChange) {
+        onSliderValChange(h);
+    }
+    slider.select('.handle').attr('cx', x(h));
+    slider
+        .select('.label')
+        .attr('x', x(h))
+        .text(showCurrVal ? format(h) : '');
 }
 
 function handleOnMouseOver(this: any, theme: any) {
     const parent = d3.select(this.parentNode);
 
-    parent.select('.track')
+    parent
+        .select('.track')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth)
+        .style('stroke-width', theme.slider.mouseOver.trackStrokeWidth);
 
-    parent.select('.track-inset')
+    parent
+        .select('.track-inset')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth)
+        .style('stroke-width', theme.slider.mouseOver.trackInsetStrokeWidth);
 }
 
 function handleOnMouseOut(this: any, theme: any) {
     const parent = d3.select(this.parentNode);
 
-    parent.select('.track')
+    parent
+        .select('.track')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth);
 
-    parent.select('.track-inset')
+    parent
+        .select('.track-inset')
         .transition()
         .duration(500)
-        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth)
+        .style('stroke-width', theme.slider.default.trackInsetStrokeWidth);
 }
 
 export function test() {

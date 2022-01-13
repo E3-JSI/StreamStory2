@@ -56,9 +56,9 @@ function getModelResponse(model: Model, metadata = false): ModelResponse {
     return metadata
         ? modelResponse
         : {
-              ...modelResponse,
-              model: model.model,
-          };
+            ...modelResponse,
+            model: model.model,
+        };
 }
 
 function getDataDirName(req: Request): string {
@@ -285,6 +285,78 @@ export async function updateModel(req: Request, res: Response, next: NextFunctio
 
         res.status(200).json({
             model: getModelResponse((await models.findById(modelId)) as Model, metadata),
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function updateModelState(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const user = req.user as User;
+    const modelId = Number(req.params.id);
+    const initialStates = req.body.initialStates;
+
+    try {
+        const model: any = await models.findById(modelId);
+
+        if (!model || user.id !== model.userId) {
+            res.status(401).json({
+                error: ['unauthorized'],
+            });
+            return;
+        }
+
+        if (!initialStates || initialStates === "") {
+            res.status(400).json({
+                error: ['field_intitialStates_must_be_provided'],
+            });
+            return;
+        }
+        let stateFound = null;
+
+        for (let i = 0; i < model.model.scales.length; i++) {
+            const scale = model.model.scales[i];
+
+            for (let j = 0; j < scale.states.length; j++) {
+                const state = scale.states[j];
+
+                if (!state.sameAsParent && (state.initialStates.toString() == initialStates)) {
+                    stateFound = state;
+                    break;
+                }
+            }
+        }
+
+        if (stateFound != null) {
+            const uiNew = {
+                label: (req.body.label && (req.body.label != null) ? req.body.label : null),
+                description: (req.body.description && (req.body.description != null) ? req.body.description : null),
+                eventId: (req.body.eventId && (req.body.eventId != null) ? req.body.eventId : null), // TODO: set eventId if model online only
+            }
+            stateFound.ui = { ...(stateFound.ui ? stateFound.ui : {}), ...uiNew };
+            const success = await models.updateModel(modelId, model.model); // update model with new 'ui' obj
+
+            if (!success) {
+                res.status(500).json({
+                    error: ["model_update_failed"],
+                });
+            }
+        } else {
+            res.status(500).json({
+                error: ["state_not_found"],
+            });
+            return;
+        }
+        const modelInDb: any = await models.findById(modelId);
+
+        if (!modelInDb) {
+            res.status(500).json({
+                error: ['updated_model_not_found'],
+            });
+            return;
+        }
+        res.status(200).json({
+            model: getModelResponse(modelInDb),
         });
     } catch (error) {
         next(error);

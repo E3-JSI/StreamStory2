@@ -20,12 +20,14 @@ import MarkovChain from './MarkovChain';
 export interface ModelVisualizationProps extends PaperProps {
     model: Model;
     selectedState?: any;
+    commonStateData: any;
     onStateSelected?: any;
 }
 
 function ModelVisualization({
     model,
     selectedState,
+    commonStateData,
     onStateSelected,
     ...other
 }: ModelVisualizationProps): JSX.Element {
@@ -56,6 +58,7 @@ function ModelVisualization({
             <MarkovChain
                 model={model}
                 selectedState={selectedState}
+                commonStateData={commonStateData}
                 onStateSelected={onStateSelected}
             />
 
