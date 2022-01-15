@@ -142,7 +142,7 @@ function SideNav({ variant = 'permanent' }: SideNavProps): JSX.Element {
                     {items.map((item) => (
                         <Tooltip
                             key={item.path}
-                            title={isSideNavExpanded || isSideNavOpen ? '' : item.title}
+                            title={item.title}
                             enterDelay={muiTheme.timing.tooltipEnterDelay}
                             placement="right"
                         >

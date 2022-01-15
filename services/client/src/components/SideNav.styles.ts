@@ -63,6 +63,9 @@ const useStyles = makeStyles((theme: Theme) =>
             minWidth: 0,
         },
         navItemText: {
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
             transition: theme.transitions.create('opacity', {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.standard,
