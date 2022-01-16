@@ -17,7 +17,10 @@ RUN apt-get install -y uuid-dev
 
 # Build glib
 RUN git clone https://github.com/qminer/qminer.git
+
+# TODO: Remove commit checkout and fix glib compilation error
 RUN cd qminer/src/glib && \
+    git checkout a7aa7b8d843b6d75eca6f870c054bec9684a978a && \
     make ${BUILD} && \
     mv glib.a glib-${BUILD}.a
 
