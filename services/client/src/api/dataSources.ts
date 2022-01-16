@@ -13,7 +13,9 @@ export interface DataSource {
     interval: number;
 }
 
-export type DataSourceConfiguration = Omit<DataSource, 'id'>;
+export type DataSourceConfiguration = Omit<DataSource, 'id' | 'userId'> & {
+    userId?: number;
+};
 
 export type DataSourceSettings = Omit<DataSource, 'id' | 'userId'>;
 
@@ -29,9 +31,12 @@ export interface GetDataSourcesResponse extends DataSourceResponse {
 }
 
 export async function getDataSources(
-    userId: number,
+    userId?: number,
 ): Promise<AxiosResponse<GetDataSourcesResponse>> {
-    return axios.get<GetDataSourcesResponse>('/api/datasources', { params: { userId } });
+    return axios.get<GetDataSourcesResponse>(
+        '/api/datasources',
+        userId ? { params: { userId } } : undefined,
+    );
 }
 
 // Get data source

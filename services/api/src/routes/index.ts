@@ -5,6 +5,7 @@ import * as auth from '../controllers/auth';
 import * as users from '../controllers/users';
 import * as models from '../controllers/models';
 import * as dataSources from '../controllers/dataSources';
+import * as apiKeys from '../controllers/apiKeys';
 
 const router = Router();
 
@@ -41,5 +42,12 @@ router.get(`${dataSourcesPath}/:id`, requireAuth, dataSources.getDataSource);
 router.post(`${dataSourcesPath}`, requireAuth, dataSources.addDataSource);
 router.put(`${dataSourcesPath}/:id`, requireAuth, dataSources.updateDataSource);
 router.delete(`${dataSourcesPath}/:id`, requireAuth, dataSources.deleteDataSource);
+
+const apiKeysPath = '/apikeys';
+router.get(`${apiKeysPath}`, requireAuth, apiKeys.getApiKeys);
+router.get(`${apiKeysPath}/:id`, requireAuth, apiKeys.getApiKey);
+router.post(`${apiKeysPath}`, requireAuth, apiKeys.addApiKey);
+router.put(`${apiKeysPath}/:id`, requireAuth, apiKeys.updateApiKey);
+router.delete(`${apiKeysPath}/:id`, requireAuth, apiKeys.deleteApiKey);
 
 export default router;

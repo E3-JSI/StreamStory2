@@ -72,7 +72,6 @@ function DatasetConfiguration({
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t, i18n } = useTranslation();
-    const [{ user }] = useSession();
     const [uploadState, setUploadState] = useState<UploadState>(UploadState.Ready);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadSpeed, setUploadSpeed] = useState(0);
@@ -107,11 +106,7 @@ function DatasetConfiguration({
 
     useMountEffect(() => {
         async function loadDataSources() {
-            if (!user) {
-                return;
-            }
-
-            const response = await getDataSources(user.id);
+            const response = await getDataSources();
             if (response.data.dataSources) {
                 setDataSources(response.data.dataSources);
             }

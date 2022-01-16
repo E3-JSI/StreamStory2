@@ -1,29 +1,29 @@
 import { NextFunction, Request, Response } from 'express';
 
-import * as dataSources from '../db/dataSources';
-import { DataSource } from '../db/dataSources';
+import * as apiKeys from '../db/apiKeys';
+import { ApiKey } from '../db/apiKeys';
 import { User, UserGroup } from '../db/users';
 
-type DataSourceResponse = DataSource;
+type ApiKeyResponse = ApiKey;
 
 /**
- * Generate data source response from data source.
- * @param dataSource Data source.
- * @returns Data source response object.
+ * Generate API key response from API key.
+ * @param apiToken API Token.
+ * @returns API key response object.
  */
-function getDataSourceResponse(dataSource: DataSource): DataSourceResponse {
-    const dataSourceResponse = dataSource;
-    return dataSourceResponse;
+function getApiKeyResponse(apiToken: ApiKey): ApiKeyResponse {
+    const apiKeyResponse = apiToken;
+    return apiKeyResponse;
 }
 
-export async function getDataSources(
+export async function getApiKeys(
     req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> {
     try {
         const user = req.user as User;
-        const userId = Number(req.query.userId);
+        const userId = req.query.userId ? Number(req.query.userId) : user.id;
 
         if (user.id !== userId && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
@@ -32,16 +32,16 @@ export async function getDataSources(
             return;
         }
 
-        const dataSourceList = await dataSources.get(userId);
+        const apiTokenList = await apiKeys.get(userId);
         res.status(200).json({
-            dataSources: dataSourceList.map((dataSource) => getDataSourceResponse(dataSource)),
+            apiTokens: apiTokenList.map((apiToken) => getApiKeyResponse(apiToken)),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function getDataSource(
+export async function getApiKey(
     req: Request,
     res: Response,
     next: NextFunction
@@ -49,9 +49,9 @@ export async function getDataSource(
     try {
         const user = req.user as User;
         const id = Number(req.params.id);
-        const dataSource = await dataSources.findById(id);
+        const apiToken = await apiKeys.findById(id);
 
-        if (dataSource && dataSource.userId !== user.id && user.groupId !== UserGroup.Admin) {
+        if (apiToken && apiToken.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
@@ -59,21 +59,21 @@ export async function getDataSource(
         }
 
         res.status(200).json({
-            dataSource: dataSource && getDataSourceResponse(dataSource),
+            apiToken: apiToken && getApiKeyResponse(apiToken),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function addDataSource(
+export async function addApiKey(
     req: Request,
     res: Response,
     next: NextFunction
 ): Promise<void> {
     try {
         const user = req.user as User;
-        const userId = Number(req.body.userId);
+        const userId = req.body.userId ? Number(req.body.userId) : user.id;
 
         if (user.id !== userId && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
@@ -82,30 +82,26 @@ export async function addDataSource(
             return;
         }
 
-        const { name, description, url, timeWindowStart, timeWindowEnd, interval } = req.body;
+        const { value, domain } = req.body;
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const id = await dataSources.add(
+        const id = await apiKeys.add(
             userId,
-            name,
-            description,
-            url,
-            timeWindowStart,
-            timeWindowEnd,
-            interval
+            value,
+            domain
         );
 
         if (!id) {
             res.status(500).json({
-                error: ['data_source_addition_failed'],
+                error: ['api_key_addition_failed'],
             });
             return;
         }
 
-        // Return added data source.
-        const dataSource = await dataSources.findById(id);
+        // Return added api key.
+        const apiToken = await apiKeys.findById(id);
 
-        if (!dataSource) {
+        if (!apiToken) {
             res.status(500).json({
                 error: ['db_query_failed'],
             });
@@ -113,14 +109,14 @@ export async function addDataSource(
         }
 
         res.status(200).json({
-            dataSource: getDataSourceResponse(dataSource),
+            apiToken: getApiKeyResponse(apiToken),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function updateDataSource(
+export async function updateApiKey(
     req: Request,
     res: Response,
     next: NextFunction
@@ -128,39 +124,34 @@ export async function updateDataSource(
     try {
         const user = req.user as User;
         const id = Number(req.params.id);
-        const dataSource = await dataSources.findById(id);
+        const apiToken = await apiKeys.findById(id);
 
-        if (dataSource && dataSource.userId !== user.id && user.groupId !== UserGroup.Admin) {
+        if (apiToken && apiToken.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
             return;
         }
 
-        const { name, description, url, timeWindowStart, timeWindowEnd, interval } = req.body;
+        const { domain } = req.body;
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const success = dataSources.update(
+        const success = apiKeys.update(
             id,
-            name,
-            description,
-            url,
-            timeWindowStart,
-            timeWindowEnd,
-            interval
+            domain
         );
 
         if (!success) {
             res.status(500).json({
-                error: ['data_source_update_failed'],
+                error: ['api_key_update_failed'],
             });
             return;
         }
 
-        // Return updated data source.
-        const updatedDataSource = await dataSources.findById(id);
+        // Return updated API key.
+        const updatedApiToken = await apiKeys.findById(id);
 
-        if (!updatedDataSource) {
+        if (!updatedApiToken) {
             res.status(500).json({
                 error: ['db_query_failed'],
             });
@@ -168,14 +159,14 @@ export async function updateDataSource(
         }
 
         res.status(200).json({
-            dataSource: getDataSourceResponse(updatedDataSource),
+            apiToken: getApiKeyResponse(updatedApiToken),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function deleteDataSource(
+export async function deleteApiKey(
     req: Request,
     res: Response,
     next: NextFunction
@@ -183,20 +174,20 @@ export async function deleteDataSource(
     try {
         const user = req.user as User;
         const id = Number(req.params.id);
-        const dataSource = await dataSources.findById(id);
+        const apiToken = await apiKeys.findById(id);
 
-        if (dataSource && dataSource.userId !== user.id && user.groupId !== UserGroup.Admin) {
+        if (apiToken && apiToken.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
             return;
         }
 
-        const success = await dataSources.del(id);
+        const success = await apiKeys.del(id);
 
         if (!success) {
             res.status(500).json({
-                error: ['data_source_deletion_failed'],
+                error: ['api_key_deletion_failed'],
             });
             return;
         }
