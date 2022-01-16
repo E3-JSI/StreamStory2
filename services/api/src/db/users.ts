@@ -8,9 +8,14 @@ export interface UserSettings {
     [key: string]: unknown;
 }
 
+export enum UserGroup {
+    Admin = 1,
+    Standard = 2,
+}
+
 export interface User {
     id: number;
-    groupId: number;
+    groupId: UserGroup;
     name: string;
     email: string;
     password: string;
@@ -75,8 +80,21 @@ export async function updateLastLogin(id: number): Promise<boolean> {
     return rowCount > 0;
 }
 
+export async function get(): Promise<User[]> {
+    const { rows } = await db.query(
+        `
+        SELECT * FROM users;`
+    );
+
+    if (!rows.length) {
+        return [];
+    }
+
+    return rows.map((row) => getUser(row));
+}
+
 export async function add(
-    groupId: number,
+    groupId: UserGroup,
     name: string,
     email: string,
     password: string,

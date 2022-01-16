@@ -113,10 +113,6 @@ function ModelListItem({
     }
 
     const handleSubmit: SubmitHandler<DescriptionFormData> = async (data) => {
-        // if (isSubmitting) {
-        //     return;
-        // }
-
         try {
             const response = await updateModel(model.id, data);
 

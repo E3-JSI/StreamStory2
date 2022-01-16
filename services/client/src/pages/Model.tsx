@@ -136,7 +136,7 @@ function Model(): JSX.Element {
                 <Grid container spacing={2}>
                     <Grid item xs={12} lg={8}>
                         <Grid item container direction="column" spacing={2}>
-                            <Grid item>
+                            <Grid item className={classes.visualizationItem}>
                                 <ModelVisualization
                                     model={model}
                                     selectedState={selectedState}
@@ -144,7 +144,7 @@ function Model(): JSX.Element {
                                     onStateSelected={setSelectedState}
                                 />
                             </Grid>
-                            <Grid item>
+                            <Grid item className={classes.visualizationItem}>
                                 <StateVisualization
                                     model={model}
                                     selectedState={selectedState}

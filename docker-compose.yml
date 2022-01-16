@@ -51,6 +51,7 @@ services:
         volumes:
             - ./services/db/data:/var/lib/postgresql/data
             - ./services/db/schema:/docker-entrypoint-initdb.d
+            - ./services/db/upgrade:/upgrade
         environment:
             PGDATA: /var/lib/postgresql/data/pgdata
             POSTGRES_DB: streamstory

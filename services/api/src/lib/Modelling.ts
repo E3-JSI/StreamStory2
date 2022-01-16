@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { once } from 'events';
 import readline from 'readline';
 
@@ -73,15 +74,19 @@ export interface ModellingRequest {
     };
 }
 
+export interface TrainedModel {
+    // TODO: Model data structure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [property: string]: any;
+}
+
 export interface ModellingResponse {
     status: 'ok' | 'error';
     errors: string[];
-    model: Record<string, unknown>;
+    model: TrainedModel;
 }
 
 export async function getModellingRequest(config: ModelConfig): Promise<ModellingRequest> {
-    console.log('config', JSON.stringify(config, null, 2));
-
     const req: ModellingRequest = {
         dataSource: {
             type: 'file',
@@ -146,8 +151,7 @@ export async function getModellingRequest(config: ModelConfig): Promise<Modellin
         timeAttr: attributes[timeIndex].name,
         windowSize: 1,
     }));
-    console.log('req', JSON.stringify(req, null, 2));
-    
+
     return req;
 }
 
@@ -155,30 +159,43 @@ export async function getDatasetAttributes(filePath: string): Promise<DatasetAtt
     const attributes: DatasetAttribute[] = [];
 
     try {
-        const lines: string[][] = [];
-        const fileStream = fs.createReadStream(filePath);
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity,
-        });
-        const readFirstLines = (line: string) => {
-            lines.push(...csvParse(line));
+        if (path.extname(filePath).toLowerCase() === '.csv') {
+            // CSV
+            const lines: string[][] = [];
+            const fileStream = fs.createReadStream(filePath);
+            const rl = readline.createInterface({
+                input: fileStream,
+                crlfDelay: Infinity,
+            });
+            const readFirstLines = (line: string) => {
+                lines.push(...csvParse(line));
 
-            if (lines.length > 1) {
-                rl.off('line', readFirstLines).close();
+                if (lines.length > 1) {
+                    rl.off('line', readFirstLines).close();
+                }
+            };
+
+            rl.on('line', readFirstLines);
+            await once(rl, 'close');
+
+            if (lines.length === 2 && lines[0].length === lines[1].length) {
+                const [header, data] = lines;
+
+                header.forEach((h, i) => {
+                    attributes.push({
+                        name: h,
+                        numeric: isNumeric(data[i]),
+                    });
+                });
             }
-        };
-
-        rl.on('line', readFirstLines);
-        await once(rl, 'close');
-
-        if (lines.length === 2 && lines[0].length === lines[1].length) {
-            const [header, data] = lines;
-
-            header.forEach((h, i) => {
+        } else {
+            // JSON
+            const series = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+            const data = series[0];
+            Object.keys(data).forEach((key) => {
                 attributes.push({
-                    name: h,
-                    numeric: isNumeric(data[i]),
+                    name: key,
+                    numeric: isNumeric(`${data[key]}`),
                 });
             });
         }

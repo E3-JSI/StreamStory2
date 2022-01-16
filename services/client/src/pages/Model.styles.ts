@@ -8,6 +8,9 @@ const useStyles = makeStyles((theme: Theme) =>
             marginLeft: theme.spacing(1),
             // marginLeft: 'auto',
         },
+        visualizationItem: {
+            width: '100%',
+        },
         details: {
             height: '100%',
         },

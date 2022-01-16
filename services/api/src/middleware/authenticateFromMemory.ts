@@ -4,7 +4,7 @@ import * as users from '../db/users';
 import * as tokens from '../db/tokens';
 import { rememberMeCookie } from '../config/const';
 
-export async function authenticateFromMemory(
+async function authenticateFromMemory(
     req: Request,
     res: Response,
     next: NextFunction

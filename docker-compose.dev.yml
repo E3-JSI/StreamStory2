@@ -19,6 +19,7 @@ services:
         ports:
             - ${API_PORT:-3001}:8080
         links:
+            - data
             - db
             - email
             - modelling
@@ -48,6 +49,19 @@ services:
             PORT: 3000
             REACT_APP_PROXY: http://api:8080
 
+    data:
+        # container_name: streamstory_data
+        build:
+            context: .
+            dockerfile: ./services/data/Dockerfile.dev
+            args:
+                ROOT: ./services/data
+        volumes:
+            - ./services/data:/app
+            - /app/node_modules
+        ports:
+            - ${DATA_PORT:-3002}:8081
+
     db:
         # container_name: streamstory_db
         # image: postgres:11.12
@@ -59,6 +73,7 @@ services:
         volumes:
             - ./services/db/data:/var/lib/postgresql/data
             - ./services/db/schema:/docker-entrypoint-initdb.d
+            - ./services/db/upgrade:/upgrade
         ports:
             - ${DB_PORT:-5432}:5432
         environment:

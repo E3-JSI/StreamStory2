@@ -65,6 +65,21 @@ CREATE TABLE IF NOT EXISTS public.tokens (
 );
 
 --
+-- Table: api_keys
+--
+
+-- DROP TABLE IF EXISTS api_keys;
+CREATE TABLE IF NOT EXISTS public.api_keys (
+    id serial PRIMARY KEY,
+    user_id integer NOT NULL,
+    value character(64) NOT NULL,
+    domain text NOT NULL,
+    CONSTRAINT user_fkey
+        FOREIGN KEY(user_id)
+	        REFERENCES users(id)
+);
+
+--
 -- Table: sessions
 --
 
@@ -114,6 +129,7 @@ CREATE TABLE IF NOT EXISTS public.models (
     id serial PRIMARY KEY,
     -- uuid UUID DEFAULT gen_random_uuid(),
     user_id integer NOT NULL,
+    datasource_id integer,
     name varchar(255) NOT NULL,
     description text NOT NULL DEFAULT '',
     dataset varchar(255) NOT NULL,
@@ -122,6 +138,25 @@ CREATE TABLE IF NOT EXISTS public.models (
     public boolean DEFAULT false NOT NULL,
     created_at timestamp DEFAULT now() NOT NULL,
     model json NOT NULL,
+    CONSTRAINT user_fkey
+        FOREIGN KEY(user_id)
+	        REFERENCES users(id)
+);
+
+--
+-- Table: datasources
+--
+
+-- DROP TABLE IF EXISTS datasources;
+CREATE TABLE IF NOT EXISTS public.datasources (
+    id serial PRIMARY KEY,
+    user_id integer NOT NULL,
+    name varchar(255) NOT NULL,
+    description text NOT NULL DEFAULT '',
+    url text NOT NULL,
+    time_window_start timestamp,
+    time_window_end timestamp,
+    interval integer,
     CONSTRAINT user_fkey
         FOREIGN KEY(user_id)
 	        REFERENCES users(id)

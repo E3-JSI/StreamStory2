@@ -49,10 +49,6 @@ function UserProfileForm<FormRequestData, FormResponseData, FormErrors extends E
     const { children: submitLabel, ...submitButtonProps } = submitButton || {};
 
     const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
-        // if (isSubmitting) {
-        //     return;
-        // }
-
         try {
             const response = await (Object.keys(data).length ? action(data) : action());
 

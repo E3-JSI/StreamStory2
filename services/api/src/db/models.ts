@@ -1,6 +1,7 @@
 import { QueryResultRow } from 'pg';
 
 import db from '../config/db';
+import { TrainedModel } from '../lib/Modelling';
 
 export interface Model {
     id: number;
@@ -13,7 +14,7 @@ export interface Model {
     active: boolean;
     public: boolean;
     createdAt: number;
-    model?: string;
+    model?: TrainedModel;
 }
 
 /**
@@ -39,9 +40,9 @@ function getModel(row: QueryResultRow, metadata = false): Model {
     return metadata
         ? model
         : {
-            ...model,
-            model: row.model,
-        };
+              ...model,
+              model: row.model,
+          };
 }
 
 export async function findById(id: number): Promise<Model | null> {
@@ -154,10 +155,7 @@ export async function updateDescription(id: number, value: string): Promise<bool
     return true;
 }
 
-export async function updateModel(id: number, value: string): Promise<boolean> {
-
-    console.log("start: updateModel, id=", id, ", value=", value)
-
+export async function updateModel(id: number, value: TrainedModel): Promise<boolean> {
     const { rowCount } = await db.query(
         `
         UPDATE models

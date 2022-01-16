@@ -1,3 +1,5 @@
+import { TFunction } from 'react-i18next';
+
 /**
  * Filter properties of given object based on predicate.
  * @param props Object
@@ -89,9 +91,50 @@ export function formatDataSize(
 }
 
 /**
+ * Format given time interval (in seconds) by dividing it into years, days, hours, minutes and seconds.
+ * @param seconds Number of seconds
+ * @param t Translation function
+ * @returns Formated time interval, e.g. `1 year 2 days 3 hours 4 minutes 5 seconds` 
+ */
+export function formatTimeInterval(seconds: number, t: TFunction): string {
+    let temp = seconds;
+    const parts: string[] = [];
+    const years = Math.floor(temp / 31536000);
+
+    if (years) {
+        parts.push(t('n_years' as never, { count: years }));
+        temp -= years * 31536000;
+    }
+
+    const days = Math.floor(temp / 86400);
+    if (days) {
+        parts.push(t('n_days' as never, { count: days }));
+        temp -= days * 86400;
+    }
+
+    const hours = Math.floor(temp / 3600);
+    if (hours) {
+        parts.push(t('n_hours' as never, { count: hours }));
+        temp -= hours * 3600;
+    }
+
+    const minutes = Math.floor(temp / 60);
+    if (minutes) {
+        parts.push(t('n_minutes' as never, { count: minutes }));
+        temp -= minutes * 60;
+    }
+
+    if (temp) {
+        parts.push(t('n_seconds' as never, { count: temp }));
+    }
+
+    return parts.join(' ');
+}
+
+/**
  * Check if given value is an object.
  * @param value Value
- * @returns `true` if value is an object, `false` otherwise.
+ * @returns `true` if value is an object, `false` otherwise
  */
 export function isObject(value: unknown): boolean {
     return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -101,9 +144,9 @@ export function isObject(value: unknown): boolean {
  * Recursively merge given source objects into target object, where source
  * objects are processed from left to right and next object's properties always
  * overwrite previous object's ones.
- * @param target Target object.
- * @param sources Source objects.
- * @returns Merged target object.
+ * @param target Target object
+ * @param sources Source objects
+ * @returns Merged target object
  */
 export function mergeDeep(
     target: Record<string, unknown>,
@@ -139,10 +182,10 @@ export function mergeDeep(
 
 /**
  * Set opacity of a given color.
- * @param color CSS color in HEX or RGB(A) format.
+ * @param color CSS color in HEX or RGB(A) format
  * @param opacity Opacity on [0, 1] interval, where 0 means 100% transparent
- * and 1 menas 100% opaque.
- * @returns Color with opacity in RGBA format.
+ * and 1 menas 100% opaque
+ * @returns Color with opacity in RGBA format
  */
 export function setColorOpacity(color: string, opacity: number): string {
     let r = 0;
@@ -180,8 +223,8 @@ export function setColorOpacity(color: string, opacity: number): string {
 
 /**
  * Create wrapper function for given string map.
- * @param map String map.
- * @returns New translation function based on given map.
+ * @param map String map
+ * @returns New translation function based on given map
  */
 export function setTranslationMap(
     map: Record<string, string>,
@@ -191,10 +234,10 @@ export function setTranslationMap(
 
 /**
  * Performs (simple) deep comparison between two given values.
- * @param value1 First value to compare.
- * @param value2 Second value to compare.
- * @param quick Indicates if quick (JSON based) comparison should be used.
- * @returns `true` if `value1` equals `value2`, `false` otherwise.
+ * @param value1 First value to compare
+ * @param value2 Second value to compare
+ * @param quick Indicates if quick (JSON based) comparison should be used
+ * @returns `true` if `value1` equals `value2`, `false` otherwise
  */
 export function isEqual(value1: unknown, value2: unknown, quick = true): boolean {
     if (quick) {

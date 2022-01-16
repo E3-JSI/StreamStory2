@@ -3,8 +3,14 @@ import axios, { AxiosResponse } from 'axios';
 import { ApiError } from './index';
 import { AppTheme } from '../contexts/SessionContext';
 
+export enum UserGroup {
+    Admin = 1,
+    Standard = 2,
+}
+
 export interface User {
     id: number;
+    groupId: number;
     name: string;
     email: string;
     active: boolean;
@@ -15,6 +21,17 @@ export interface User {
 
 export interface UsersResponse {
     error?: ApiError;
+}
+
+// Get users
+// ---------
+
+export interface GetUsersResponse extends UsersResponse {
+    users?: User[];
+}
+
+export async function getUsers(): Promise<AxiosResponse<GetUsersResponse>> {
+    return axios.get<GetUsersResponse>('/api/users');
 }
 
 // Update current user details

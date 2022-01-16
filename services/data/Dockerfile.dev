@@ -1,0 +1,16 @@
+FROM node:14.18.1-alpine3.14
+
+ARG ROOT
+ENV NODE_ENV=development
+
+WORKDIR /app
+
+COPY $ROOT/package*.json ./
+RUN npm install
+
+# Copy project files from host
+COPY $ROOT .
+
+# Run service
+EXPOSE 8081
+CMD ["npm", "run", "dev"]

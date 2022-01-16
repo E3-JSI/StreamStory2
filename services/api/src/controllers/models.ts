@@ -6,10 +6,12 @@ import multer from 'multer';
 import slugify from 'slugify';
 
 import modelling from '../config/modelling';
-import { getDatasetAttributes } from '../lib/Modelling';
+import { downloadFile } from '../lib/http';
+import { getDatasetAttributes, TrainedModel } from '../lib/Modelling';
+import * as dataSources from '../db/dataSources';
 import * as models from '../db/models';
 import { Model } from '../db/models';
-import { User } from '../db/users';
+import { User, UserGroup } from '../db/users';
 
 export interface ModelResponse {
     id: number;
@@ -21,8 +23,14 @@ export interface ModelResponse {
     active: boolean;
     public: boolean;
     createdAt: number;
-    model?: string;
+    model?: TrainedModel;
 }
+
+export interface DataResponse {
+    series: Record<string, unknown>[];
+}
+
+export type FileFormat = 'csv' | 'json';
 
 const storage = multer.diskStorage({
     destination(req, file, cb) {
@@ -56,9 +64,9 @@ function getModelResponse(model: Model, metadata = false): ModelResponse {
     return metadata
         ? modelResponse
         : {
-            ...modelResponse,
-            model: model.model,
-        };
+              ...modelResponse,
+              model: model.model,
+          };
 }
 
 function getDataDirName(req: Request): string {
@@ -75,12 +83,12 @@ function getDataDirPath(req: Request, create = false): string {
     return dirPath;
 }
 
-function getDataFileName(): string {
-    return 'data.csv';
+function getDataFileName(format: FileFormat = 'csv'): string {
+    return `data.${format}`;
 }
 
-function getDataFilePath(req: Request, createDir = false): string {
-    return path.join(getDataDirPath(req, createDir), getDataFileName());
+function getDataFilePath(req: Request, createDir = false, format: FileFormat = 'csv'): string {
+    return path.join(getDataDirPath(req, createDir), getDataFileName(format));
 }
 
 function cleanUpData(req: Request) {
@@ -92,13 +100,45 @@ function cleanUpData(req: Request) {
 }
 
 export async function storeData(req: Request, res: Response, next: NextFunction): Promise<void> {
-    upload(req, res, async (err: unknown) => {
+    if (req.body.dataSourceId) {
+        const user = req.user as User;
+
         try {
-            if (err) {
-                throw err;
+            const dataSource = await dataSources.findById(Number(req.body.dataSourceId));
+
+            if (!dataSource) {
+                res.status(404).json({
+                    error: ['data_source_not_found'],
+                });
+                return;
             }
 
-            const attributes = await getDatasetAttributes(getDataFilePath(req));
+            if (dataSource.userId !== user.id && user.groupId !== UserGroup.Admin) {
+                res.status(401).json({
+                    error: ['unauthorized'],
+                });
+                return;
+            }
+
+            const dataPath = getDataFilePath(req, true);
+            const query = Object.entries({
+                from: dataSource.timeWindowStart,
+                to: dataSource.timeWindowEnd,
+                interval: dataSource.interval,
+                format: 'csv',
+            })
+                .map((entry) => `${entry[0]}=${entry[1]}`)
+                .join('&');
+            const success = await downloadFile(`${dataSource.url}/series?${query}`, dataPath);
+
+            if (!success) {
+                res.status(404).json({
+                    error: ['no_data'],
+                });
+                return;
+            }
+
+            const attributes = await getDatasetAttributes(dataPath);
 
             if (attributes.length < 2) {
                 cleanUpData(req);
@@ -108,10 +148,30 @@ export async function storeData(req: Request, res: Response, next: NextFunction)
                 attributes,
             });
         } catch (error) {
-            cleanUpData(req);
             next(error);
         }
-    });
+    } else {
+        upload(req, res, async (err: unknown) => {
+            try {
+                if (err) {
+                    throw err;
+                }
+
+                const attributes = await getDatasetAttributes(getDataFilePath(req));
+
+                if (attributes.length < 2) {
+                    cleanUpData(req);
+                }
+
+                res.status(200).json({
+                    attributes,
+                });
+            } catch (error) {
+                cleanUpData(req);
+                next(error);
+            }
+        });
+    }
 }
 
 export async function deleteData(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -126,8 +186,15 @@ export async function deleteData(req: Request, res: Response, next: NextFunction
     }
 }
 
-export async function createModel(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function addModel(req: Request, res: Response, next: NextFunction): Promise<void> {
     const user = req.user as User;
+
+    if (!user.id) {
+        res.status(401).json({
+            error: ['unauthorized'],
+        });
+        return;
+    }
 
     try {
         const {
@@ -217,7 +284,7 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
     try {
         const model = await models.findById(modelId);
 
-        if (!model || user.id !== model.userId && !model.public) {
+        if (!model || (user.id !== model.userId && !model.public)) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
@@ -291,13 +358,17 @@ export async function updateModel(req: Request, res: Response, next: NextFunctio
     }
 }
 
-export async function updateModelState(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateModelState(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
     const user = req.user as User;
     const modelId = Number(req.params.id);
-    const initialStates = req.body.initialStates;
+    const { initialStates } = req.body;
 
     try {
-        const model: any = await models.findById(modelId);
+        const model = await models.findById(modelId);
 
         if (!model || user.id !== model.userId) {
             res.status(401).json({
@@ -306,13 +377,21 @@ export async function updateModelState(req: Request, res: Response, next: NextFu
             return;
         }
 
-        if (!initialStates || initialStates === "") {
+        if (!initialStates || initialStates === '') {
             res.status(400).json({
                 error: ['field_intitialStates_must_be_provided'],
             });
             return;
         }
+
         let stateFound = null;
+
+        if (!model.model) {
+            res.status(500).json({
+                error: ['model_update_failed'],
+            });
+            return;
+        }
 
         for (let i = 0; i < model.model.scales.length; i++) {
             const scale = model.model.scales[i];
@@ -320,7 +399,7 @@ export async function updateModelState(req: Request, res: Response, next: NextFu
             for (let j = 0; j < scale.states.length; j++) {
                 const state = scale.states[j];
 
-                if (!state.sameAsParent && (state.initialStates.toString() == initialStates)) {
+                if (!state.sameAsParent && state.initialStates.toString() === initialStates) {
                     stateFound = state;
                     break;
                 }
@@ -329,25 +408,30 @@ export async function updateModelState(req: Request, res: Response, next: NextFu
 
         if (stateFound != null) {
             const uiNew = {
-                label: (req.body.label && (req.body.label != null) ? req.body.label : null),
-                description: (req.body.description && (req.body.description != null) ? req.body.description : null),
-                eventId: (req.body.eventId && (req.body.eventId != null) ? req.body.eventId : null), // TODO: set eventId if model online only
-            }
+                label: req.body.label && req.body.label != null ? req.body.label : null,
+                description:
+                    req.body.description && req.body.description != null
+                        ? req.body.description
+                        : null,
+                eventId: req.body.eventId && req.body.eventId != null ? req.body.eventId : null, // TODO: set eventId if model online only
+            };
             stateFound.ui = { ...(stateFound.ui ? stateFound.ui : {}), ...uiNew };
+            // TODO: Validate model
             const success = await models.updateModel(modelId, model.model); // update model with new 'ui' obj
 
             if (!success) {
                 res.status(500).json({
-                    error: ["model_update_failed"],
+                    error: ['model_update_failed'],
                 });
+                return;
             }
         } else {
             res.status(500).json({
-                error: ["state_not_found"],
+                error: ['state_not_found'],
             });
             return;
         }
-        const modelInDb: any = await models.findById(modelId);
+        const modelInDb = await models.findById(modelId);
 
         if (!modelInDb) {
             res.status(500).json({

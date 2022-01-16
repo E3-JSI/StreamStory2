@@ -23,10 +23,17 @@ import useStyles from './AddModelDialog.styles';
 
 export interface AddModelDialogProps extends Omit<DialogProps, 'onClose'> {
     title: string;
+    online?: boolean;
     onClose: DialogOnCloseExt;
 }
 
-function AddModelDialog({ open, title, onClose, ...other }: AddModelDialogProps): JSX.Element {
+function AddModelDialog({
+    open,
+    title,
+    online: isOnline,
+    onClose,
+    ...other
+}: AddModelDialogProps): JSX.Element {
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t } = useTranslation();
@@ -80,6 +87,7 @@ function AddModelDialog({ open, title, onClose, ...other }: AddModelDialogProps)
             <DialogContent className={classes.content} dividers>
                 <Box className={classes.config}>
                     <DatasetConfiguration
+                        online={isOnline}
                         onChange={handleDatasetConfigChange}
                         onLoad={handleDatasetLoad}
                     />

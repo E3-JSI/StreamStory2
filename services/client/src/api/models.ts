@@ -120,24 +120,34 @@ export async function deleteModel(id: number): Promise<AxiosResponse<DeleteModel
 // Upload data
 // -----------
 
-export interface UploadDataResponse extends ModelResponse {
+export interface LoadDataResponse extends ModelResponse {
     attributes?: DatasetAttribute[];
 }
 
 export async function uploadData(
     file: Blob,
     { headers, ...config }: AxiosRequestConfig,
-): Promise<AxiosResponse<UploadDataResponse>> {
+): Promise<AxiosResponse<LoadDataResponse>> {
     const data = new FormData();
     data.append('file', file);
 
-    return axios.post<UploadDataResponse>('/api/models/data', data, {
+    return axios.post<LoadDataResponse>('/api/models/data', data, {
         headers: {
             'Content-Type': 'multipart/form-data',
             ...(headers || {}),
         },
         ...config,
     });
+}
+
+// Load data source
+// ----------------
+
+export async function loadDataSource(
+    id: number,
+    config: AxiosRequestConfig,
+): Promise<AxiosResponse<LoadDataResponse>> {
+    return axios.post<LoadDataResponse>('/api/models/data', { dataSourceId: id }, config);
 }
 
 // Delete data
