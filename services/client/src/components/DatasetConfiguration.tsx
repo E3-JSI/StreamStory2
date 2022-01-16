@@ -40,7 +40,6 @@ import TransHtml from './TransHtml';
 
 import useStyles from './DatasetConfiguration.styles';
 import useMountEffect from '../hooks/useMountEffect';
-import useSession from '../hooks/useSession';
 
 enum UploadState {
     Ready,
