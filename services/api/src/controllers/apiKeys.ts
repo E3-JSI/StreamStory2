@@ -8,19 +8,15 @@ type ApiKeyResponse = ApiKey;
 
 /**
  * Generate API key response from API key.
- * @param apiToken API Token.
+ * @param apiKey API Token.
  * @returns API key response object.
  */
-function getApiKeyResponse(apiToken: ApiKey): ApiKeyResponse {
-    const apiKeyResponse = apiToken;
+function getApiKeyResponse(apiKey: ApiKey): ApiKeyResponse {
+    const apiKeyResponse = apiKey;
     return apiKeyResponse;
 }
 
-export async function getApiKeys(
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> {
+export async function getApiKeys(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const user = req.user as User;
         const userId = req.query.userId ? Number(req.query.userId) : user.id;
@@ -32,26 +28,22 @@ export async function getApiKeys(
             return;
         }
 
-        const apiTokenList = await apiKeys.get(userId);
+        const apiKeyList = await apiKeys.get(userId);
         res.status(200).json({
-            apiTokens: apiTokenList.map((apiToken) => getApiKeyResponse(apiToken)),
+            apiKeys: apiKeyList.map((apiKey) => getApiKeyResponse(apiKey)),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function getApiKey(
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> {
+export async function getApiKey(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const user = req.user as User;
         const id = Number(req.params.id);
-        const apiToken = await apiKeys.findById(id);
+        const apiKey = await apiKeys.findById(id);
 
-        if (apiToken && apiToken.userId !== user.id && user.groupId !== UserGroup.Admin) {
+        if (apiKey && apiKey.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
@@ -59,18 +51,14 @@ export async function getApiKey(
         }
 
         res.status(200).json({
-            apiToken: apiToken && getApiKeyResponse(apiToken),
+            apiKey: apiKey && getApiKeyResponse(apiKey),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function addApiKey(
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> {
+export async function addApiKey(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const user = req.user as User;
         const userId = req.body.userId ? Number(req.body.userId) : user.id;
@@ -85,11 +73,7 @@ export async function addApiKey(
         const { value, domain } = req.body;
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const id = await apiKeys.add(
-            userId,
-            value,
-            domain
-        );
+        const id = await apiKeys.add(userId, value, domain);
 
         if (!id) {
             res.status(500).json({
@@ -99,9 +83,9 @@ export async function addApiKey(
         }
 
         // Return added api key.
-        const apiToken = await apiKeys.findById(id);
+        const apiKey = await apiKeys.findById(id);
 
-        if (!apiToken) {
+        if (!apiKey) {
             res.status(500).json({
                 error: ['db_query_failed'],
             });
@@ -109,24 +93,20 @@ export async function addApiKey(
         }
 
         res.status(200).json({
-            apiToken: getApiKeyResponse(apiToken),
+            apiKey: getApiKeyResponse(apiKey),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function updateApiKey(
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> {
+export async function updateApiKey(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const user = req.user as User;
         const id = Number(req.params.id);
-        const apiToken = await apiKeys.findById(id);
+        const apiKey = await apiKeys.findById(id);
 
-        if (apiToken && apiToken.userId !== user.id && user.groupId !== UserGroup.Admin) {
+        if (apiKey && apiKey.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
@@ -136,10 +116,7 @@ export async function updateApiKey(
         const { domain } = req.body;
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const success = apiKeys.update(
-            id,
-            domain
-        );
+        const success = apiKeys.update(id, domain);
 
         if (!success) {
             res.status(500).json({
@@ -149,9 +126,9 @@ export async function updateApiKey(
         }
 
         // Return updated API key.
-        const updatedApiToken = await apiKeys.findById(id);
+        const updatedApiKey = await apiKeys.findById(id);
 
-        if (!updatedApiToken) {
+        if (!updatedApiKey) {
             res.status(500).json({
                 error: ['db_query_failed'],
             });
@@ -159,24 +136,20 @@ export async function updateApiKey(
         }
 
         res.status(200).json({
-            apiToken: getApiKeyResponse(updatedApiToken),
+            apiKey: getApiKeyResponse(updatedApiKey),
         });
     } catch (error) {
         next(error);
     }
 }
 
-export async function deleteApiKey(
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> {
+export async function deleteApiKey(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const user = req.user as User;
         const id = Number(req.params.id);
-        const apiToken = await apiKeys.findById(id);
+        const apiKey = await apiKeys.findById(id);
 
-        if (apiToken && apiToken.userId !== user.id && user.groupId !== UserGroup.Admin) {
+        if (apiKey && apiKey.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
             });

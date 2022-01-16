@@ -23,7 +23,7 @@ export async function getDataSources(
 ): Promise<void> {
     try {
         const user = req.user as User;
-        const userId = Number(req.query.userId);
+        const userId = req.query.userId ? Number(req.query.userId) : user.id;
 
         if (user.id !== userId && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
@@ -73,7 +73,7 @@ export async function addDataSource(
 ): Promise<void> {
     try {
         const user = req.user as User;
-        const userId = Number(req.body.userId);
+        const userId = req.body.userId ? Number(req.body.userId) : user.id;
 
         if (user.id !== userId && user.groupId !== UserGroup.Admin) {
             res.status(401).json({

@@ -40,6 +40,21 @@ export async function findById(id: number): Promise<ApiKey | null> {
     return getApiKey(rows[0]);
 }
 
+export async function findByValue(value: string): Promise<ApiKey | null> {
+    const { rows } = await db.query(
+        `
+        SELECT * FROM api_keys
+        WHERE value = $1;`,
+        [value]
+    );
+
+    if (!rows.length) {
+        return null;
+    }
+
+    return getApiKey(rows[0]);
+}
+
 export async function get(userId: number): Promise<ApiKey[]> {
     const { rows } = await db.query(
         `

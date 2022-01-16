@@ -189,6 +189,13 @@ export async function deleteData(req: Request, res: Response, next: NextFunction
 export async function addModel(req: Request, res: Response, next: NextFunction): Promise<void> {
     const user = req.user as User;
 
+    if (!user.id) {
+        res.status(401).json({
+            error: ['unauthorized'],
+        });
+        return;
+    }
+
     try {
         const {
             selectedAttributes,
