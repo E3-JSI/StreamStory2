@@ -217,6 +217,7 @@ export function createNodes(
                 .style('left', `${event.pageX + 10}px`)
                 .style('background-color', 'white')
                 .style('border-radius', '4px')
+                .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
                 .style('width', '100%')
                 .style('max-width', '230px')
                 .style('padding', '1.5em')
@@ -231,8 +232,8 @@ export function createNodes(
                 `,
                 )
                 .transition()
-                .duration(700)
-                .style('opacity', '0.9');
+                .duration(350)
+                .style('opacity', 0.95);
         })
         .on('mouseout', function (this: any) {
             divTooltip.interrupt();
