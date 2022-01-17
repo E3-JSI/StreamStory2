@@ -24,14 +24,14 @@ async function main() {
     // Initialize express server.
     const app = express();
 
-    app.use(
-        helmet.contentSecurityPolicy({
-            useDefaults: true,
-            directives: {
-                'script-src': ["'self'", 'naiades.ijs.si', 'localhost:7000'],
-            },
-        })
-    );
+    // app.use(
+    //     helmet.contentSecurityPolicy({
+    //         useDefaults: true,
+    //         directives: {
+    //             'script-src': ["'self'", 'naiades.ijs.si', 'localhost:7000'],
+    //         },
+    //     })
+    // );
 
     app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
     app.use(express.json());

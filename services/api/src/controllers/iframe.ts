@@ -45,20 +45,9 @@ function getModelResponse(model: Model, metadata = false): ModelResponse {
 }
 
 export async function getModel(req: Request, res: Response, next: NextFunction): Promise<void> {
-
-    console.log("start: getModel")
-
     const apiKey = "" + (req.query.apiKey || "")
-
-    console.log("apiKey=", apiKey);
-
     const user = await users.findByApiKey(apiKey);
-
-    console.log("user=", user);
-
     const modelId = Number(req.params.id);
-
-    console.log("modelId=", modelId)
 
     try {
         if(user == null) {
@@ -67,12 +56,7 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
             });
             return;
         }
-
         const model = await models.findById(modelId);
-
-        console.log("model=", model)
-
-        console.log("user.id=", user.id, ", model.userId=", model?.userId)
 
         if (!model || (user.id !== model.userId /*&& !model.public*/)) {
             res.status(401).json({
