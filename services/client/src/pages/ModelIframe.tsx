@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import CloseIcon from '@material-ui/icons/Close';
+import { Divider, Paper, Toolbar, Typography } from '@material-ui/core';
 
 import { getModel, Model as ModelType } from '../api/models';
 import useMountEffect from '../hooks/useMountEffect';
 import useSession from '../hooks/useSession';
 import ModelVisualization from '../components/ModelVisualization';
-import StateDetails from '../components/StateDetails';
 import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
 
 import useStyles from './ModelIframe.styles';
 import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
+import StateAttributes from '../components/StateAttributes';
 
 export interface ModelUrlParams {
     id: string;
@@ -31,13 +29,13 @@ function ModelIframe(): JSX.Element {
     const muiTheme = useTheme();
     const { t } = useTranslation();
     const { id } = useParams<ModelUrlParams>();
-    const history = useHistory();
     const [{ currentModel, commonStateDataArr }, setSession] = useSession();
     const model = currentModel.find((m) => m.id === Number(id));
     const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
     const [isLoading, setIsLoading] = useState(!model);
     const [selectedState, setSelectedState] = useState<any>();
     const [stateDetailsVisible, setStateDetailsVisible] = useState(true);
+    const [label, setLabel] = useState<any>();
 
     useMountEffect(() => {
         async function loadModel() {
@@ -57,7 +55,6 @@ function ModelIframe(): JSX.Element {
                         commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
                     });
                 }
-
                 setIsLoading(false);
             } catch {
                 setIsLoading(false);
@@ -68,6 +65,13 @@ function ModelIframe(): JSX.Element {
             loadModel();
         }
     });
+
+    useEffect(() => {
+        if (selectedState && model && model.model && model.model.scales) {
+            const key = selectedState.initialStates.toString();
+            setLabel(commonStateData[key].suggestedLabel.label);
+        }
+    }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -114,12 +118,24 @@ function ModelIframe(): JSX.Element {
                         lg={4}
                         style={stateDetailsVisible ? {} : { display: 'none' }}
                     >
-                        <StateDetails
-                            className={classes.details}
-                            model={model}
-                            commonStateData={commonStateData}
-                            selectedState={selectedState}
-                        />
+                        <Paper key={label}>
+                            <Toolbar className={classes.toolbar} variant="dense">
+                                <Typography className={classes.title} component="h2" variant="h6">
+                                    {t('details')}
+                                </Typography>
+                            </Toolbar>
+                            <Divider />
+
+                            {selectedState && commonStateData && (
+                                <Box p={2}>
+                                    <StateAttributes
+                                        model={model}
+                                        selectedState={selectedState}
+                                        commonStateData={commonStateData}
+                                    />
+                                </Box>
+                            )}
+                        </Paper>
                     </Grid>
                 </Grid>
             )}
