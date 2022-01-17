@@ -1,6 +1,6 @@
+import React, { useRef, useEffect, useState } from 'react';
 import { BoxProps } from '@material-ui/core';
 import * as d3 from 'd3';
-import React, { useRef, useEffect, useState } from 'react';
 
 export interface DecisionTreeProps extends BoxProps {
     selectedState: any; // eslint-disable-line
@@ -68,7 +68,6 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
 
         if (!initialized) {
             container = d3.select(containerRef.current);
-
             graph = container
                 .append('svg')
                 .attr('width', width)
@@ -76,10 +75,8 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
                 .attr('class', classNames.decisionTree)
                 .append('svg:g')
                 .attr('transform', `translate(${opt.margin.left}, ${opt.margin.top})`);
-
             gLinks = graph.append('g').attr('class', 'links');
             gNodes = graph.append('g').attr('class', 'nodes');
-
             setInitialized(true);
         } else {
             container = d3.select(containerRef.current);
@@ -87,7 +84,6 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
             gLinks = graph.select('g.links');
             gNodes = graph.select('g.nodes');
         }
-
         if (decisionTreeData) {
             updateChart(gNodes, gLinks, opt, decisionTreeData, selectedState, height);
         }
@@ -127,15 +123,12 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
         node.join(
             (enter: any) => {
                 const enterTmp = enter;
-
-                // Enter any new nodes at the parent's previous position.
                 const nodeEnter = enterTmp
                     .append('g')
                     .attr('class', 'node')
                     .attr('id', (d: any) => `n_${d.id}`)
                     .classed('leaf', (d: any) => !d.data.hasOwnProperty('splitAttr')) // eslint-disable-line
                     .attr('transform', () => `translate(${source.x0},${source.y0})`);
-
                 nodeEnter
                     .append('rect')
                     .attr('width', 133 + 8)
@@ -148,14 +141,8 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
                     })
                     .attr('rx', 6)
                     .attr('ry', 6)
-                    .style('fill', (d: any) => {
-                        // d.color = colorMap( d.data.hasOwnProperty("splitLabel") ? d.parent.data.splitAttr : d.data.splitAttr ); // eslint-disable-line
-                        // return d.color;
-                        const a = 5;
-                        return 'rgb(168,168,168)';
-                    })
+                    .style('fill', 'rgb(168,168,168)')
                     .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))');
-
                 nodeEnter
                     .append('text')
                     .attr('dy', '32px')
@@ -164,13 +151,11 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
                     .style('fill-opacity', 1e-6)
                     .style('filter', 'drop-shadow(0px 0px 5px rgba(0, 0, 0, .5))')
                     .style('fill', 'white');
-
                 // Transition nodes to their new position.
                 const nodeUpdate = nodeEnter
                     .transition()
                     .duration(duration)
                     .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
-
                 nodeUpdate
                     .select('rect')
                     .attr('width', (d: any) => {
@@ -182,17 +167,9 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
                     .attr('height', opt.node.height);
 
                 nodeUpdate.select('text').style('fill-opacity', 1);
-
-                // set the color scale
                 const color = d3.scaleOrdinal().range(d3.schemeSet2);
-
-                // Compute the position of each group on the pie:
                 const pie = d3.pie().value((d: any) => d[1]);
-
-                // shape helper to build arcs:
                 const arcGenerator = d3.arc().innerRadius(0).outerRadius(20);
-
-                // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
                 nodeEnter
                     .selectAll('mySlices')
                     .data((d: any) =>
@@ -208,7 +185,6 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
             },
             (update: any) => {
                 const updateTmp = update;
-
                 updateTmp
                     .select('rect')
                     .attr('width', (d: any) => {
@@ -218,26 +194,20 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
                         return width;
                     })
                     .attr('height', opt.node.height);
-
                 return updateTmp;
             },
             (exit: any) => {
                 const exitTmp = exit;
-
                 const nodeExit = exitTmp
                     .transition()
                     .duration(duration)
                     .attr('transform', () => `translate(${source.x}, ${source.y})`)
                     .remove();
-
                 nodeExit.select('rect').attr('width', 1e-6).attr('height', 1e-6);
-
                 nodeExit.select('text').style('fill-opacity', 1e-6);
-
                 return nodeExit;
             },
         );
-
         // Update the links
         const link = gLinks.selectAll('path.link').data(links, (d: any) => {
             const sourcePosNeg = `${d.source.data.nPos}_${d.source.data.nNeg}`;
@@ -253,7 +223,6 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
         link.join(
             (enter: any) => {
                 const enterTmp = enter;
-
                 // Enter any new links at the parent's previous position.
                 const linkRez = enterTmp
                     .insert('svg:path', 'g')
@@ -292,11 +261,7 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
 
                 return updateTmp;
             },
-            (exit: any) =>
-                exit
-                    .transition()
-                    // .duration(duration)
-                    .remove(),
+            (exit: any) => exit.remove(),
         );
     }
 
@@ -307,7 +272,6 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
             .y((d: any) => d.y)(data);
     }
 
-    // Node labels
     function nodeLabel(d: any) {
         return d.data.hasOwnProperty('splitLabel') // eslint-disable-line
             ? `${d.parent.data.splitAttr} ${d.data.splitLabel}`
