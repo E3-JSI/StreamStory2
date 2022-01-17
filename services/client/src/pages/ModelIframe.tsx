@@ -6,14 +6,12 @@ import { useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import { Divider, Paper, Toolbar, Typography } from '@material-ui/core';
-
-import { getModel, Model as ModelType } from '../api/models';
+import { getModel, getModelWithApiKey, Model as ModelType } from '../api/models';
 import useMountEffect from '../hooks/useMountEffect';
 import useSession from '../hooks/useSession';
 import ModelVisualization from '../components/ModelVisualization';
 import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
-
 import useStyles from './ModelIframe.styles';
 import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
 import StateAttributes from '../components/StateAttributes';
@@ -40,22 +38,35 @@ function ModelIframe(): JSX.Element {
     useMountEffect(() => {
         async function loadModel() {
             try {
-                const response = await getModel(Number(id));
+                const params = new URLSearchParams(window.location.search);
+                const hide = params.get('hide');
+                const apiKey = params.get('apiKey');
 
-                if (response.data.model) {
-                    const modelNew = response.data.model as ModelType;
-                    const commStateDataNew = {
-                        id: Number(id),
-                        commonStateData: createCommonStateData(modelNew.model.scales),
-                    };
-                    addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
-
-                    setSession({
-                        currentModel: [modelNew, ...currentModel],
-                        commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
-                    });
+                if (hide != null) {
+                    setStateDetailsVisible(hide.indexOf('state_details') === -1);
                 }
-                setIsLoading(false);
+
+                if (apiKey && apiKey !== '') {
+                    const response = await getModelWithApiKey(Number(id), apiKey);
+
+                    if (response.data.model) {
+                        const modelNew = response.data.model as ModelType;
+                        const commStateDataNew = {
+                            id: Number(id),
+                            commonStateData: createCommonStateData(modelNew.model.scales),
+                        };
+                        addColorsToScaleStates(
+                            modelNew.model.scales,
+                            commStateDataNew.commonStateData,
+                        );
+
+                        setSession({
+                            currentModel: [modelNew, ...currentModel],
+                            commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
+                        });
+                    }
+                    setIsLoading(false);
+                }
             } catch {
                 setIsLoading(false);
             }
@@ -72,16 +83,6 @@ function ModelIframe(): JSX.Element {
             setLabel(commonStateData[key].suggestedLabel.label);
         }
     }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const hide = params.get('hide');
-        console.log('hide=', hide);
-
-        if (hide != null) {
-            setStateDetailsVisible(hide.indexOf('state_details') === -1);
-        }
-    }, []);
 
     return (
         <>

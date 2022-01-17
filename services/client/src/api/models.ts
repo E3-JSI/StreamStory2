@@ -74,6 +74,13 @@ export async function getModel(id: number): Promise<AxiosResponse<GetModelRespon
     return axios.get<GetModelResponse>(`/api/models/${id}`);
 }
 
+export async function getModelWithApiKey(
+    id: number,
+    apiKey: string,
+): Promise<AxiosResponse<GetModelResponse>> {
+    return axios.get<GetModelResponse>(`/api/iframe/models/${id}?apiKey=${apiKey}`);
+}
+
 // Get models
 // ----------
 
