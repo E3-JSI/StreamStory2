@@ -73,9 +73,7 @@ function UserProfileApiKeys(): JSX.Element {
     const isLoading = apiKeys === null;
     const isSearchActive = search !== null;
     const isScreenWidthGteSm = useMediaQuery((theme: Theme) => theme.breakpoints.up('sm'));
-    const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
-    const showDomainColumn = isScreenWidthGteMd;
-    const showUrlColumn = isScreenWidthGteSm;
+    const showDomainColumn = isScreenWidthGteSm;
     const filteredApiKeys =
         apiKeys &&
         apiKeys.filter((key) => {
@@ -96,13 +94,13 @@ function UserProfileApiKeys(): JSX.Element {
             id: 'value',
             numeric: false,
             label: t('api_key'),
-            class: classes.colHeadName,
+            class: classes.colHeadValue,
         },
         {
             id: 'domain',
             numeric: false,
             label: t('domain'),
-            class: classes.colHeadDescription,
+            class: classes.colHeadDomain,
         },
     ].filter<HeadCell>((cell): cell is HeadCell => {
         switch (cell.id) {
@@ -514,13 +512,6 @@ function UserProfileApiKeys(): JSX.Element {
                                             </Typography>
                                         </TableCell>
                                     )}
-                                    {showUrlColumn && (
-                                        <TableCell>
-                                            <Typography variant="body2">
-                                                <Skeleton />
-                                            </Typography>
-                                        </TableCell>
-                                    )}
                                     <TableCell>
                                         <Skeleton variant="rect" height={30} />
                                     </TableCell>
@@ -530,7 +521,7 @@ function UserProfileApiKeys(): JSX.Element {
                             <TableRow style={{ height: 43 * emptyRows }}>
                                 <TableCell
                                     colSpan={
-                                        2 + Number(!!showDomainColumn) + Number(!!showUrlColumn)
+                                        2 + Number(!!showDomainColumn) + Number(!!showDomainColumn)
                                     }
                                 />
                             </TableRow>

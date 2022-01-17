@@ -37,15 +37,11 @@ const useStyles = makeStyles((theme: Theme) =>
         table: {
             tableLayout: 'fixed',
         },
-        colHeadName: {},
-        colHeadDescription: {
-            width: '40%',
+        colHeadValue: {
+            width: '50%',
         },
-        colHeadUrl: {
-            width: '40%',
-            [theme.breakpoints.up('md')]: {
-                width: '20%',
-            },
+        colHeadDomain: {
+            width: '50%',
         },
         colHeadActions: {
             width: 92,

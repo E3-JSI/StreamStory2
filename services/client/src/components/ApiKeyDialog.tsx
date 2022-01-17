@@ -111,17 +111,12 @@ function ApiKeyDialog({
     };
 
     function generateApiKey() {
-        console.log('start: generateApiKey');
-
         let d = new Date().getTime();
         const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: any) => {
             const r = (d + Math.random() * 16) % 16 | 0; // eslint-disable-line
             d = Math.floor(d / 16);
             return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16); // eslint-disable-line
         });
-
-        console.log('uuid=', uuid);
-
         setValue('value', uuid as string);
     }
 
@@ -180,7 +175,7 @@ function ApiKeyDialog({
                                 render={({ field }) => (
                                     <TextField
                                         id="api-key-value"
-                                        // disabled
+                                        disabled
                                         label={t('api_key')}
                                         error={!!errors.value}
                                         helperText={errors.value?.message}
@@ -194,7 +189,11 @@ function ApiKeyDialog({
                         </Grid>
 
                         <Grid item xs={12} sm={2}>
-                            <Button color="primary" onClick={generateApiKey}>
+                            <Button
+                                disabled={(apiKey != null)!}
+                                color="primary"
+                                onClick={generateApiKey}
+                            >
                                 {t('generate')}
                             </Button>
                         </Grid>
