@@ -29,7 +29,14 @@ export interface UserProfileUrlParams {
 }
 
 const basePath = '/profile';
-const tabPaths = ['details', 'settings', 'data-sources', 'api-keys', 'change-password', 'delete-account'];
+const tabPaths = [
+    'details',
+    'settings',
+    'data-sources',
+    'api-keys',
+    'change-password',
+    'delete-account',
+];
 
 function UserProfile(): JSX.Element {
     const classes = useStyles();

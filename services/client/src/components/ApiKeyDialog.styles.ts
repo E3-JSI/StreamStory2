@@ -8,7 +8,6 @@ const useStyles = makeStyles((/* theme: Theme */) =>
         timeUnit: {
             minWidth: 120,
         },
-    }),
-);
+    }));
 
 export default useStyles;
