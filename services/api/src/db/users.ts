@@ -54,6 +54,23 @@ export async function findById(id: number): Promise<User | null> {
     return getUser(rows[0]);
 }
 
+export async function findByApiKey(apiKey:string): Promise<User | null> {
+    const { rows } = await db.query( // without 'api_keys.id as api_keys_id' id (api_keys) overwrittes id (users)
+        `
+        SELECT users.*, api_keys.id as api_keys_id
+        FROM users
+        LEFT JOIN api_keys ON api_keys.user_id = users.id
+        WHERE api_keys.value = $1;`,
+        [apiKey]
+    );
+
+    if (!rows.length) {
+        return null;
+    }
+
+    return getUser(rows[0]);
+}
+
 export async function findByEmail(email: string): Promise<User | null> {
     const { rows } = await db.query(
         `
