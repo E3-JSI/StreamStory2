@@ -48,9 +48,13 @@ export function updateChart(
                 .attr('height', 70)
                 .attr('x', (d: any) => {
                     const label = nodeLabel(d);
-                    const textLen = label.length * opt.char_to_pxl;
-                    const width = d3.max([opt.node.width, textLen]);
-                    return -width / 2;
+                    if (label && label.length) {
+                        const textLen = label.length * opt.char_to_pxl;
+                        const width = d3.max([opt.node.width, textLen]);
+                        return -width / 2;
+                    }
+                    console.log('Could not create label for d=', d);
+                    return 0;
                 })
                 .attr('rx', 6)
                 .attr('ry', 6)
@@ -73,9 +77,13 @@ export function updateChart(
                 .select('rect')
                 .attr('width', (d: any) => {
                     const label = nodeLabel(d);
-                    const textLen = label.length * opt.char_to_pxl;
-                    const width = d3.max([opt.node.width, textLen]);
-                    return width;
+                    if (label && label.length) {
+                        const textLen = label.length * opt.char_to_pxl;
+                        const width = d3.max([opt.node.width, textLen]);
+                        return width;
+                    }
+                    console.log('Could not create label for d=', d);
+                    return 0;
                 })
                 .attr('height', opt.node.height);
 
