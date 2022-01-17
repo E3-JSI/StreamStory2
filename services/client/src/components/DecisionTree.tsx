@@ -89,7 +89,7 @@ function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JS
         }
         if (decisionTreeData) {
             const treemap = d3.tree().size([opt.width, opt.height]);
-            const source: any = d3.hierarchy(decisionTreeData, (d: any) => d.children);
+            const source = d3.hierarchy(decisionTreeData, (d: any) => d.children) as any; // eslint-disable-line
             source.x0 = height / 2;
             source.y0 = 0;
             updateChart(gNodes, gLinks, opt, treemap, source, selectedState);

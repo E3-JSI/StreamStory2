@@ -3,62 +3,13 @@ import * as d3 from 'd3';
 import { easeQuadIn } from 'd3';
 import { ITransitionProps, LinkType } from '../types/charts';
 
+export interface GraphData {
+    links: any[]; // eslint-disable-line
+    states: any[]; // eslint-disable-line
+}
+
 export function scale(s: any, value: any) {
     return s(value);
-}
-
-export function createGraphContainer(g: any, width: number, height: number, chart: any) {
-    return g
-        .append('g')
-        .attr('class', 'graphContainer')
-        .attr('width', width - chart.left)
-        .attr('height', height - chart.top)
-        .attr('transform', `translate(${chart.left}, ${chart.top})`);
-}
-
-export function getGraphContainer(svg: any) {
-    return svg.select('g.graphContainer');
-}
-
-export function createSVG(
-    container: React.MutableRefObject<any>,
-    width: number,
-    height: number,
-    margin: any,
-) {
-    const svg = d3
-        .select(container.current)
-        .append('svg')
-        .attr('width', width - margin.left - margin.right)
-        .attr('height', height - margin.top - margin.bottom)
-        .append('g')
-        .attr('class', 'graph')
-        .attr('transform', `translate(${margin.left}, ${margin.top})`);
-
-    svg.append('rect')
-        .attr('class', 'zoom_rect')
-        .attr('width', width - margin.left - margin.right)
-        .attr('height', height - margin.top - margin.bottom)
-        .attr('fill', 'green')
-        .attr('opacity', 0);
-
-    return svg;
-}
-
-export function getSVG(
-    container: React.MutableRefObject<any>,
-    width: number,
-    height: number,
-    margin: any,
-) {
-    const svg = d3.select(container.current).select('svg');
-    svg.attr('width', width).attr('height', height);
-
-    const g = svg.select('g.graph');
-    g.attr('width', width - margin.left - margin.right)
-        .attr('height', height - margin.top - margin.bottom)
-        .attr('transform', `translate(${margin.left}, ${margin.top})`);
-    return g;
 }
 
 export function createNodesMap(gNodes: any) {
@@ -790,7 +741,7 @@ export function createGraphData(scales: any, pThreshold: number) {
             links.push(createStateLinks(stateIx, state, sc, pThreshold));
             states.push(state);
         });
-        return { states, links: links.flat() };
+        return { states, links: links.flat() } as GraphData;
     });
 }
 

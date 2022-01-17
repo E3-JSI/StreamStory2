@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import { Divider, Paper, Toolbar, Typography } from '@material-ui/core';
@@ -22,16 +21,15 @@ export interface ModelUrlParams {
 
 function ModelIframe(): JSX.Element {
     const classes = useStyles();
-    const muiTheme = useTheme();
     const { t } = useTranslation();
     const { id } = useParams<ModelUrlParams>();
     const [{ currentModel, commonStateDataArr }, setSession] = useSession();
     const model = currentModel.find((m) => m.id === Number(id));
     const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
     const [isLoading, setIsLoading] = useState(!model);
-    const [selectedState, setSelectedState] = useState<any>();
+    const [selectedState, setSelectedState] = useState<any>(); // eslint-disable-line
     const [stateDetailsVisible, setStateDetailsVisible] = useState(true);
-    const [label, setLabel] = useState<any>();
+    const [label, setLabel] = useState<string>();
 
     useMountEffect(() => {
         async function loadModel() {

@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
-
+import React from 'react';
 import clsx from 'clsx';
 import { Theme } from '@material-ui/core/styles';
 import { useMediaQuery } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
-
 import Header from './Header';
 import SideNav from './SideNav';
 import useSession from '../hooks/useSession';
-
 import useStyles from './Page.styles';
 
 export type PageVariant = 'application' | 'content' | 'simple';
