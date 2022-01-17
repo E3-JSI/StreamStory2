@@ -1,9 +1,20 @@
+import { BoxProps } from '@material-ui/core';
 import * as d3 from 'd3';
 import React, { useRef, useEffect, useState } from 'react';
 
-function DecisionTree({ selectedState, commonStateData }: any): JSX.Element {
+export interface DecisionTreeProps extends BoxProps {
+    selectedState: any; // eslint-disable-line
+    commonStateData: any; // eslint-disable-line
+}
+
+export interface ChartDim {
+    width?: number;
+    height?: number;
+}
+
+function DecisionTree({ selectedState, commonStateData }: DecisionTreeProps): JSX.Element {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [windowSize] = useState<any>({
+    const [windowSize] = useState<ChartDim>({
         width: undefined,
         height: undefined,
     });
@@ -15,12 +26,12 @@ function DecisionTree({ selectedState, commonStateData }: any): JSX.Element {
             const data = commonStateData[key];
 
             if (data && data.decisionTree) {
-                plotDecisionTree(selectedState, data.decisionTree);
+                plotDecisionTree(data.decisionTree);
             }
         }
     }, [selectedState, commonStateData, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    function plotDecisionTree(state: any, decisionTreeData: any) {
+    function plotDecisionTree(decisionTreeData: any) {
         const opt = {
             margin: {
                 top: 20,

@@ -11,7 +11,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import useSession from '../hooks/useSession';
 
 import LoadingButton from './LoadingButton';
-import { updateModelState, Model as ModelType } from '../api/models';
+import { updateModelState, Model as ModelType, ModelUiStateConfiguration } from '../api/models';
 import useSnackbar from '../hooks/useSnackbar';
 
 function StateDetailsForm({
@@ -47,7 +47,7 @@ function StateDetailsForm({
 
     async function handleSubmit(event: any) {
         event.preventDefault(); // prevent refresh after submit
-        const payload: any = {
+        const payload: ModelUiStateConfiguration = {
             initialStates: selectedState.initialStates.toString(),
             label: event.target.stateName.value,
             description: event.target.stateDescription.value,

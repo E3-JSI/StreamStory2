@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm, SubmitHandler } from 'react-hook-form';
@@ -20,8 +20,6 @@ import { getResponseErrors } from '../utils/errors';
 import useSnackbar from '../hooks/useSnackbar';
 import useSession from '../hooks/useSession';
 import LoadingButton from './LoadingButton';
-
-import useStyles from './ApiKeyDialog.styles';
 
 export enum ApiKeyDialogState {
     Closed,
@@ -46,7 +44,6 @@ function ApiKeyDialog({
     onDecline,
     ...other
 }: DataSourceDialogProps): JSX.Element {
-    const classes = useStyles();
     const { t } = useTranslation();
     const [{ user }] = useSession();
     const [showSnackbar] = useSnackbar();
@@ -57,7 +54,6 @@ function ApiKeyDialog({
         register,
         setError,
         setValue,
-        getValues,
     } = useForm();
     const variant = apiKey ? 'edit' : 'add';
 
@@ -107,12 +103,12 @@ function ApiKeyDialog({
 
     function generateApiKey() {
         let d = new Date().getTime();
-        const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: any) => {
+        const key: string = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: string) => {
             const r = (d + Math.random() * 16) % 16 | 0; // eslint-disable-line
             d = Math.floor(d / 16);
             return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16); // eslint-disable-line
         });
-        setValue('value', uuid as string);
+        setValue('value', key as string);
     }
 
     return (
@@ -185,7 +181,7 @@ function ApiKeyDialog({
 
                         <Grid item xs={12} sm={2}>
                             <Button
-                                disabled={(apiKey != null)!}
+                                disabled={(apiKey != null)!} // eslint-disable-line
                                 color="primary"
                                 onClick={generateApiKey}
                             >
