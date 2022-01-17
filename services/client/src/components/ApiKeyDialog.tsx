@@ -62,14 +62,9 @@ function ApiKeyDialog({
     const variant = apiKey ? 'edit' : 'add';
 
     const handleSubmit: SubmitHandler<FormRequestData> = async (data) => {
-        console.log('start: handleSubmit, data=', data);
-
         const requestData = {
             ...data,
         };
-
-        console.log('requestData=', requestData);
-
         try {
             const response = await (apiKey
                 ? updateApiKey(apiKey.id, requestData)

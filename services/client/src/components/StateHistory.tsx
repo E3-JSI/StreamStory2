@@ -22,7 +22,6 @@ const StateHistory = ({ model, selectedState, onStateSelected, commonStateData }
             model.model.scales.length
         ) {
             createStateHistory();
-            console.log('\n');
         }
     }, [model.model.scales, commonStateData]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -43,8 +42,6 @@ const StateHistory = ({ model, selectedState, onStateSelected, commonStateData }
     }
 
     function createStateHistory() {
-        console.log('start: createStateHistory, initializedStateHistory=', initializedStateHistory);
-
         const width = containerStateHistoryRef?.current?.offsetWidth || 150; // FIXME: hardcoded
         const height = 450;
         const chart = { top: 10, left: 10 };

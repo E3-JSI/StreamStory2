@@ -15,8 +15,6 @@ export interface PageProps {
 }
 
 function Page({ children = null }: PageProps): JSX.Element {
-    console.log('start: Page');
-
     const classes = useStyles();
     const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
 

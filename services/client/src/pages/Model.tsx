@@ -80,8 +80,6 @@ function Model(): JSX.Element {
     }, [id, currentModel, commonStateDataArr]);
 
     function handleModelChange(modelNew: any) {
-        console.log('start: handleModelChange, modelNew=', modelNew);
-
         if (modelNew) {
             const modelIx = currentModel.findIndex((m) => m.id === Number(id));
             const commStateDataIx = commonStateDataArr.findIndex((m) => m.id === Number(id));

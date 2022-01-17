@@ -21,13 +21,6 @@ function DecisionTree({ selectedState, commonStateData }: any): JSX.Element {
     }, [selectedState, commonStateData, windowSize]); // eslint-disable-line react-hooks/exhaustive-deps
 
     function plotDecisionTree(state: any, decisionTreeData: any) {
-        console.log(
-            'start: plotDecisionTree, state=',
-            state,
-            ', decisionTreeData=',
-            decisionTreeData,
-        );
-
         const opt = {
             margin: {
                 top: 20,
@@ -90,11 +83,8 @@ function DecisionTree({ selectedState, commonStateData }: any): JSX.Element {
     }
 
     function updateChart(gNodes: any, gLinks: any, opt: any, data: any, state: any, height: any) {
-        console.log('start: updateChart, data=', data);
-
         const duration = 500;
         const treemap = d3.tree().size([opt.width, opt.height]);
-
         const source: any = d3.hierarchy(data, (d: any) => d.children);
         source.x0 = height / 2;
         source.y0 = 0;
@@ -102,7 +92,6 @@ function DecisionTree({ selectedState, commonStateData }: any): JSX.Element {
         const treeData = treemap(source);
         const nodes = treeData.descendants();
         const links = treeData.links();
-
         const nSamples = source.data.nPos + source.data.nNeg;
 
         const linkStrokeScale = d3
@@ -142,9 +131,6 @@ function DecisionTree({ selectedState, commonStateData }: any): JSX.Element {
                     .attr('height', 70)
                     .attr('x', (d: any) => {
                         const label = nodeLabel(d);
-
-                        console.log('label=', label, 'd=', d);
-
                         const textLen = label.length * opt.char_to_pxl;
                         const width = d3.max([opt.node.width, textLen]);
                         return -width / 2;

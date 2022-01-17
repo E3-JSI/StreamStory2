@@ -6,7 +6,7 @@ import { useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import { Divider, Paper, Toolbar, Typography } from '@material-ui/core';
-import { getModel, getModelWithApiKey, Model as ModelType } from '../api/models';
+import { getModelWithApiKey, Model as ModelType } from '../api/models';
 import useMountEffect from '../hooks/useMountEffect';
 import useSession from '../hooks/useSession';
 import ModelVisualization from '../components/ModelVisualization';
@@ -21,8 +21,6 @@ export interface ModelUrlParams {
 }
 
 function ModelIframe(): JSX.Element {
-    console.log('start: ModelIframe');
-
     const classes = useStyles();
     const muiTheme = useTheme();
     const { t } = useTranslation();
@@ -67,7 +65,7 @@ function ModelIframe(): JSX.Element {
                     }
                     setIsLoading(false);
                 }
-            } catch {
+            } catch (ex) {
                 setIsLoading(false);
             }
         }
