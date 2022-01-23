@@ -1,9 +1,7 @@
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, makeStyles } from '@material-ui/core/styles';
 
-const useStyles = makeStyles((theme: Theme) => {
-    console.log('start: useStyles');
-
-    return createStyles({
+const useStyles = makeStyles(() =>
+    createStyles({
         statePulse: {
             borderRadius: '50%',
             filter: 'drop-shadow(0px 1px 1px #0000001a)',
@@ -20,7 +18,7 @@ const useStyles = makeStyles((theme: Theme) => {
                 filter: 'drop-shadow(0 0 3em rgba(0,0,0, 0))',
             },
         },
-    });
-});
+    }),
+);
 
 export default useStyles;

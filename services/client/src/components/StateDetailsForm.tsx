@@ -8,18 +8,24 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 import CancelIcon from '@material-ui/icons/Cancel';
 import SaveIcon from '@material-ui/icons/Save';
-import useSession from '../hooks/useSession';
 
 import LoadingButton from './LoadingButton';
-import { updateModelState, Model as ModelType } from '../api/models';
+import { updateModelState, Model as ModelType, ModelUiStateConfiguration } from '../api/models';
 import useSnackbar from '../hooks/useSnackbar';
+
+export interface StateDetailsProps {
+    model: any; // eslint-disable-line
+    selectedState: any; // eslint-disable-line
+    commonStateData: any; // eslint-disable-line
+    onFormChange: any; // eslint-disable-line
+}
 
 function StateDetailsForm({
     model,
     selectedState,
     commonStateData,
     onFormChange,
-}: any): JSX.Element {
+}: StateDetailsProps): JSX.Element {
     const { t } = useTranslation();
 
     const [label, setLabel] = useState<string>();
@@ -47,7 +53,7 @@ function StateDetailsForm({
 
     async function handleSubmit(event: any) {
         event.preventDefault(); // prevent refresh after submit
-        const payload: any = {
+        const payload: ModelUiStateConfiguration = {
             initialStates: selectedState.initialStates.toString(),
             label: event.target.stateName.value,
             description: event.target.stateDescription.value,
@@ -68,11 +74,7 @@ function StateDetailsForm({
         }
     }
 
-    function handleIsEvent(event: any, value: any) {
-        setIsEvent(value);
-    }
-
-    function handleResetDefaultButtonClick(event: any) {
+    function handleResetDefaultButtonClick() {
         const key = selectedState.initialStates.toString();
         setLabel(commonStateData[key].suggestedLabel.label);
         setDescription('');
@@ -109,7 +111,7 @@ function StateDetailsForm({
                 control={
                     <Checkbox
                         checked={isEvent || false}
-                        onChange={handleIsEvent} // eslint-disable-line
+                        onChange={(event, value) => setIsEvent(value)} // eslint-disable-line
                         name="isEvent"
                         color="primary"
                     />

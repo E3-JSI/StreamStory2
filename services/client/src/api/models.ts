@@ -17,7 +17,7 @@ export interface Model {
     active: boolean;
     public: boolean;
     createdAt: number;
-    model?: any;
+    model?: any; // eslint-disable-line
 }
 
 export interface ModelConfiguration {
@@ -44,6 +44,13 @@ export interface ModelSettings {
     description?: string;
     active?: boolean;
     public?: boolean;
+}
+
+export interface ModelUiStateConfiguration {
+    initialStates: string;
+    label: string;
+    description: string;
+    eventId?: string;
 }
 
 export interface ModelResponse {
@@ -74,6 +81,13 @@ export async function getModel(id: number): Promise<AxiosResponse<GetModelRespon
     return axios.get<GetModelResponse>(`/api/models/${id}`);
 }
 
+export async function getModelWithApiKey(
+    id: number,
+    apiKey: string,
+): Promise<AxiosResponse<GetModelResponse>> {
+    return axios.get<GetModelResponse>(`/api/iframe/models/${id}?apiKey=${apiKey}`);
+}
+
 // Get models
 // ----------
 
@@ -101,7 +115,7 @@ export async function updateModel(
 
 export async function updateModelState(
     id: number,
-    props: any,
+    props: ModelUiStateConfiguration,
 ): Promise<AxiosResponse<UpdateModelResponse>> {
     return axios.put<UpdateModelResponse>(`/api/models/${id}/states`, props);
 }

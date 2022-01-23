@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
@@ -9,19 +9,17 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import Typography from '@material-ui/core/Typography';
 import TuneIcon from '@material-ui/icons/Tune';
-
 import { Model } from '../api/models';
 import AlertPopup from './AlertPopup';
 import TransHtml from './TransHtml';
-
 import useStyles from './ModelVisualization.styles';
 import MarkovChain from './MarkovChain';
 
 export interface ModelVisualizationProps extends PaperProps {
     model: Model;
-    selectedState?: any;
-    commonStateData: any;
-    onStateSelected?: any;
+    selectedState?: any; // eslint-disable-line
+    commonStateData: any; // eslint-disable-line
+    onStateSelected?: any; // eslint-disable-line
 }
 
 function ModelVisualization({
@@ -53,7 +51,6 @@ function ModelVisualization({
                 </Box>
             </Toolbar>
             <Divider />
-            {/* Replace with Markov model */}
 
             <MarkovChain
                 model={model}
@@ -61,12 +58,6 @@ function ModelVisualization({
                 commonStateData={commonStateData}
                 onStateSelected={onStateSelected}
             />
-
-            {/* <Box p={2} overflow="auto" height={600}>
-                <Typography component="pre" style={{ fontFamily: 'monospace' }}>
-                    {JSON.stringify(model, null, 2)}
-                </Typography>
-            </Box> */}
         </Paper>
     );
 }

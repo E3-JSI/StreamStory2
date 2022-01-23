@@ -52,7 +52,6 @@ export function createSlider(
                         onSliderValChange,
                     );
                 }),
-            // .on('end', (event: any) => { console.log('end') })
         )
         .on('mouseover', function (this: any) {
             handleOnMouseOver.call(this, theme);
@@ -144,8 +143,4 @@ function handleOnMouseOut(this: any, theme: any) {
         .transition()
         .duration(500)
         .style('stroke-width', theme.slider.default.trackInsetStrokeWidth);
-}
-
-export function test() {
-    console.log('test');
 }

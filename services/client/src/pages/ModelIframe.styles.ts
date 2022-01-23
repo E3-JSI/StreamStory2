@@ -11,6 +11,15 @@ const useStyles = makeStyles((theme: Theme) =>
         details: {
             height: '100%',
         },
+        toolbar: {
+            paddingRight: theme.spacing(2),
+            paddingLeft: theme.spacing(2),
+        },
+        title: {
+            flex: '1 1 100%',
+            paddingTop: theme.spacing(1),
+            paddingBottom: theme.spacing(1),
+        },
     }),
 );
 

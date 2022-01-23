@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Route, RouteProps } from 'react-router-dom';
-import Page, { PageVariant } from './PageIframe';
+import Page from './PageIframe';
 
 export type RouteType = 'public' | 'restricted' | 'private';
 
@@ -10,7 +10,7 @@ export interface PageRouteProps extends Omit<RouteProps, 'children' | 'render'> 
     component: React.FC;
 }
 
-function PageIframeRoute({ component: Component, type, ...rest }: PageRouteProps): JSX.Element {
+function PageIframeRoute({ component: Component, ...rest }: PageRouteProps): JSX.Element {
     return (
         <Route
             {...rest}

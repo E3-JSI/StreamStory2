@@ -94,7 +94,7 @@ export function formatDataSize(
  * Format given time interval (in seconds) by dividing it into years, days, hours, minutes and seconds.
  * @param seconds Number of seconds
  * @param t Translation function
- * @returns Formated time interval, e.g. `1 year 2 days 3 hours 4 minutes 5 seconds` 
+ * @returns Formated time interval, e.g. `1 year 2 days 3 hours 4 minutes 5 seconds`
  */
 export function formatTimeInterval(seconds: number, t: TFunction): string {
     let temp = seconds;

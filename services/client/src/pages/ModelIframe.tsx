@@ -1,65 +1,69 @@
 import React, { useState, useEffect } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { useHistory, useParams } from 'react-router-dom';
-import { useTheme } from '@material-ui/core/styles';
+import { useParams } from 'react-router-dom';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
-import IconButton from '@material-ui/core/IconButton';
-import Tooltip from '@material-ui/core/Tooltip';
-import CloseIcon from '@material-ui/icons/Close';
-
-import { getModel, Model as ModelType } from '../api/models';
+import { Divider, Paper, Toolbar, Typography } from '@material-ui/core';
+import { getModelWithApiKey, Model as ModelType } from '../api/models';
 import useMountEffect from '../hooks/useMountEffect';
 import useSession from '../hooks/useSession';
 import ModelVisualization from '../components/ModelVisualization';
-import StateDetails from '../components/StateDetails';
 import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
-
 import useStyles from './ModelIframe.styles';
 import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
+import StateAttributes from '../components/StateAttributes';
 
 export interface ModelUrlParams {
     id: string;
 }
 
 function ModelIframe(): JSX.Element {
-    console.log('start: ModelIframe');
-
     const classes = useStyles();
-    const muiTheme = useTheme();
     const { t } = useTranslation();
     const { id } = useParams<ModelUrlParams>();
-    const history = useHistory();
     const [{ currentModel, commonStateDataArr }, setSession] = useSession();
     const model = currentModel.find((m) => m.id === Number(id));
     const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
     const [isLoading, setIsLoading] = useState(!model);
-    const [selectedState, setSelectedState] = useState<any>();
+    const [selectedState, setSelectedState] = useState<any>(); // eslint-disable-line
     const [stateDetailsVisible, setStateDetailsVisible] = useState(true);
+    const [label, setLabel] = useState<string>();
 
     useMountEffect(() => {
         async function loadModel() {
             try {
-                const response = await getModel(Number(id));
+                const params = new URLSearchParams(window.location.search);
+                const hide = params.get('hide');
+                const apiKey = params.get('apiKey');
 
-                if (response.data.model) {
-                    const modelNew = response.data.model as ModelType;
-                    const commStateDataNew = {
-                        id: Number(id),
-                        commonStateData: createCommonStateData(modelNew.model.scales),
-                    };
-                    addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
-
-                    setSession({
-                        currentModel: [modelNew, ...currentModel],
-                        commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
-                    });
+                if (hide != null) {
+                    setStateDetailsVisible(hide.indexOf('state_details') === -1);
                 }
 
-                setIsLoading(false);
-            } catch {
+                if (apiKey && apiKey !== '') {
+                    const response = await getModelWithApiKey(Number(id), apiKey);
+
+                    if (response.data.model) {
+                        const modelNew = response.data.model as ModelType;
+                        const commStateDataNew = {
+                            id: Number(id),
+                            commonStateData: createCommonStateData(modelNew.model.scales),
+                        };
+                        addColorsToScaleStates(
+                            modelNew.model.scales,
+                            commStateDataNew.commonStateData,
+                        );
+
+                        setSession({
+                            currentModel: [modelNew, ...currentModel],
+                            commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
+                        });
+                    }
+                    setIsLoading(false);
+                }
+            } catch (ex) {
                 setIsLoading(false);
             }
         }
@@ -70,14 +74,11 @@ function ModelIframe(): JSX.Element {
     });
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const hide = params.get('hide');
-        console.log('hide=', hide);
-
-        if (hide != null) {
-            setStateDetailsVisible(hide.indexOf('state_details') === -1);
+        if (selectedState && model && model.model && model.model.scales) {
+            const key = selectedState.initialStates.toString();
+            setLabel(commonStateData[key].suggestedLabel.label);
         }
-    }, []);
+    }, [selectedState]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <>
@@ -114,12 +115,24 @@ function ModelIframe(): JSX.Element {
                         lg={4}
                         style={stateDetailsVisible ? {} : { display: 'none' }}
                     >
-                        <StateDetails
-                            className={classes.details}
-                            model={model}
-                            commonStateData={commonStateData}
-                            selectedState={selectedState}
-                        />
+                        <Paper key={label}>
+                            <Toolbar className={classes.toolbar} variant="dense">
+                                <Typography className={classes.title} component="h2" variant="h6">
+                                    {t('details')}
+                                </Typography>
+                            </Toolbar>
+                            <Divider />
+
+                            {selectedState && commonStateData && (
+                                <Box p={2}>
+                                    <StateAttributes
+                                        model={model}
+                                        selectedState={selectedState}
+                                        commonStateData={commonStateData}
+                                    />
+                                </Box>
+                            )}
+                        </Paper>
                     </Grid>
                 </Grid>
             )}

@@ -3,20 +3,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '@material-ui/core/styles';
 
 import {
-    createSVG,
-    getSVG,
     createLinearScale,
     createNodes,
     createLinks,
     createMarkers,
-    createGraphContainer,
-    getGraphContainer,
     findMinMaxValues,
     createGraphData,
     colorBlueNodeAndLinks,
     stateId,
-    scale,
 } from '../utils/markovChainUtils';
+
+import {
+    createSVG,
+    getSVG,
+    createGraphContainer,
+    getGraphContainer,
+} from '../utils/commonChartUtils';
+
 import { ModelVisualizationProps } from './ModelVisualization';
 import { createSlider, updateSlider } from '../utils/sliderUtils';
 import { TRANSITION_PROPS } from '../types/charts';
@@ -35,8 +38,8 @@ const MarkovChain = ({
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [initialized, setInitialized] = useState<boolean>(false);
     const [currentScaleIx, setCurrentScaleIx] = useState<number>(-1);
-    const [currentState, setCurrentState] = useState<any>();
-    const [data, setData] = useState<any>();
+    const [currentState, setCurrentState] = useState<number>();
+    const [data, setData] = useState<any>(); // eslint-disable-line
     const [windowSize] = useState<any>({ width: undefined, height: undefined });
     const [pThreshold, setPThreshold] = useState<number>(0.1);
     const [sliderProbPrecision] = useState<number>(2);
@@ -165,7 +168,7 @@ const MarkovChain = ({
             let gLinks = null;
             let gMarkers = null;
             let gSliderProb = null;
-            let gSliderScale: any = null;
+            let gSliderScale: any = null; // eslint-disable-line
 
             if (!initialized) {
                 graph = createSVG(containerRef, width, height, margin); // FIXME: hardcoded theme
@@ -187,7 +190,7 @@ const MarkovChain = ({
             }
             let direction = 1; // FIXME: not elegant solution
             const zoom = d3
-                .zoom<any, any>()
+                .zoom<any, any>() // eslint-disable-line
                 .scaleExtent([0, 20])
                 .wheelDelta((event: any) => {
                     direction = event.deltaY > 0 ? 1 : -1;
@@ -278,7 +281,7 @@ const MarkovChain = ({
             createMarkers(theme, graphData[currentScaleIx], gMarkers);
 
             if (currentState) {
-                const selectedNodeGroup: any = d3.select(`#${stateId(currentState)}`);
+                const selectedNodeGroup = d3.select(`#${stateId(currentState)}`) as any; // eslint-disable-line
 
                 if (selectedNodeGroup) {
                     colorBlueNodeAndLinks(selectedNodeGroup, theme, gNodes, gLinks, gMarkers);
@@ -289,7 +292,7 @@ const MarkovChain = ({
 
     function handleOnStateSelected(event: any, stateNo: number) {
         const currState = model.model.scales[currentScaleIx].states.find(
-            (state: any) => state.stateNo === stateNo,
+            (state: any) => state.stateNo === stateNo, // eslint-disable-line
         );
         onStateSelected(currState);
     }

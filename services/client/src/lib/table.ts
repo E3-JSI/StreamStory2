@@ -8,7 +8,7 @@ export type Order = Exclude<SortDirection, false>;
  * @param b Second value
  * @param orderBy Property to compare
  * @returns -1 if property of a is greater than property of b, 1 if property of
- * a is less than property of b, 1 otherwise 
+ * a is less than property of b, 1 otherwise
  */
 export function compareDescending<T>(a: T, b: T, orderBy: keyof T): number {
     if (b[orderBy] < a[orderBy]) {
@@ -21,7 +21,7 @@ export function compareDescending<T>(a: T, b: T, orderBy: keyof T): number {
 
     return 0;
 }
- 
+
 /**
  * Sort given array of values using comparator. When comparator can't
  * distinguish values, indices are used.
