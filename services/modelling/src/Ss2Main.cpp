@@ -213,7 +213,7 @@ public:
 		dataset->InitColsFromConfig(config);
 		if (! dataset->ReadDataFromJsonDataSourceSpec(req.inJson->GetObjKey("dataSource"), req.errList)) { req.status = "error"; return false; }
 		if (! dataset->ApplyOps(req.errList)) { req.status = "error"; return false; }
-		if (dataset->nRows < config->numInitialStates) { req.status = "error"; req.errList.Add(TStr::Fmt("Not enough data (%d initial states were requested, %d rows are available).", config->numInitialStates, dataset->nRows)); return false; }
+		// if (dataset->nRows < config->numInitialStates) { req.status = "error"; req.errList.Add(TStr::Fmt("Not enough data (%d initial states were requested, %d rows are available).", config->numInitialStates, dataset->nRows)); return false; }
 		// dataset->CalcDefaultDistWeights(); // the config we loaded from the model has the actual distance weights used when building the model
 		// Initialize the model.
 		PModel model = new TModel({});
