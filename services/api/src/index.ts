@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
-import * as helmet from 'helmet';
+// import * as helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
@@ -11,6 +11,7 @@ import handleUnknown from './middleware/handleUnknown';
 import authenticateFromMemory from './middleware/authenticateFromMemory';
 import routes from './routes';
 import db, { waitForDB } from './config/db';
+import schedule from './lib/schedule';
 
 async function main() {
     // Load environment variables (from .env file).
@@ -64,6 +65,9 @@ async function main() {
 
     // Handle uncaught errors.
     app.use(handleErrors);
+
+    // Schedule tasks
+    schedule();
 
     // Start up server.
     const port = Number(process.env.PORT || 8080);

@@ -50,7 +50,7 @@ enum UploadState {
 
 export interface DatasetConfigurationProps {
     online?: boolean;
-    onLoad: (name: string, attributes: DatasetAttribute[]) => void;
+    onLoad: (name: string, attributes: DatasetAttribute[], dataSourceId: number) => void;
     onChange: (ready: boolean) => void;
 }
 
@@ -139,7 +139,7 @@ function DatasetConfiguration({
                 if (attributes.length > 1) {
                     // Success
                     setUploadState(UploadState.Success);
-                    onLoad((file as File).name, attributes);
+                    onLoad((file as File).name, attributes, 0);
                     onChange(true);
                 } else {
                     // Invalid data file
@@ -185,7 +185,7 @@ function DatasetConfiguration({
             if (attributes) {
                 if (attributes.length > 1) {
                     setUploadState(UploadState.Success);
-                    onLoad(dataSource.name, attributes);
+                    onLoad(dataSource.name, attributes, dataSource.id);
                     onChange(true);
                 } else {
                     setUploadState(UploadState.Failure);

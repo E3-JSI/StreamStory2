@@ -3,7 +3,7 @@
 # directories
 /bin
 /data
-/qminer
+# /qminer
 
 # misc
 .DS_Store

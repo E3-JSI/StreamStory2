@@ -45,7 +45,7 @@ function getModelResponse(model: Model, metadata = false): ModelResponse {
 }
 
 export async function getModel(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const apiKey = "" + (req.query.apiKey || "")
+    const apiKey = `${req.query.apiKey || ""}`
     const user = await users.findByApiKey(apiKey);
     const modelId = Number(req.params.id);
 
@@ -58,7 +58,7 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
         }
         const model = await models.findById(modelId);
 
-        if (!model || (user.id !== model.userId /*&& !model.public*/)) {
+        if (!model || (user.id !== model.userId)) {
             res.status(401).json({
                 error: ['unauthorized'],
             });

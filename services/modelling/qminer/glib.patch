@@ -1,0 +1,13 @@
+diff --git a/src/glib/net/websrv.cpp b/src/glib/net/websrv.cpp
+index bf7f29ce..e0f0714d 100644
+--- a/src/glib/net/websrv.cpp
++++ b/src/glib/net/websrv.cpp
+@@ -6,6 +6,8 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
++#include <limits>
++
+ /////////////////////////////////////////////////
+ // Web-Server-Socket-Event
+ void TWebSrvSockEvent::OnRead(const uint64& SockId, const PSIn& SIn){
