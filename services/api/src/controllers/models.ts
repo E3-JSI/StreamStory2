@@ -122,8 +122,8 @@ export async function storeData(req: Request, res: Response, next: NextFunction)
 
             const dataPath = getDataFilePath(req, true);
             const query = Object.entries({
-                from: dataSource.timeWindowStart,
-                to: dataSource.timeWindowEnd,
+                from: new Date(dataSource.timeWindowStart).toISOString(),
+                to: new Date(dataSource.timeWindowEnd).toISOString(),
                 interval: dataSource.interval,
                 format: 'csv',
             })
@@ -209,6 +209,7 @@ export async function addModel(req: Request, res: Response, next: NextFunction):
             description,
             dataset,
             online,
+            dataSource,
         } = req.body;
 
         // Build model.
@@ -237,7 +238,15 @@ export async function addModel(req: Request, res: Response, next: NextFunction):
         cleanUpData(req);
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const modelId = await models.add(user.id, name, description, dataset, online, model);
+        const modelId = await models.add(
+            user.id,
+            Number(dataSource),
+            name,
+            description,
+            dataset,
+            online,
+            model
+        );
 
         if (!modelId) {
             res.status(500).json({

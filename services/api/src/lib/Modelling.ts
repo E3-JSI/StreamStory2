@@ -8,6 +8,9 @@ import csvParse from 'csv-parse/lib/sync';
 
 import { isNumeric } from '../utils/misc';
 
+export interface DataPoint {
+    [attribute: string]: number | string | null;
+}
 export interface ModelConfig {
     filePath: string;
     selectedAttributes: string[];
@@ -45,14 +48,16 @@ export interface ModellingOperation {
     windowSize: number;
 }
 
+export interface DataSource {
+    type: 'file' | 'internal';
+    format: 'csv' | 'json';
+    fieldSep?: ',' | ';';
+    fileName?: string;
+    data?: string | DataPoint[];
+}
+
 export interface ModellingRequest {
-    dataSource: {
-        type: 'file' | 'internal';
-        format: 'csv' | 'json';
-        fieldSep: ',' | ';';
-        fileName?: string;
-        data?: string;
-    };
+    dataSource: DataSource;
     config: {
         numInitialStates: number;
         numHistogramBuckets: number;
@@ -84,6 +89,91 @@ export interface ModellingResponse {
     status: 'ok' | 'error';
     errors: string[];
     model: TrainedModel;
+}
+
+export interface ModelState {
+    state: number;
+    data: DataPoint;
+}
+
+export interface ClassificationRequest {
+    dataSource: DataSource;
+    model: TrainedModel;
+}
+
+export interface ClassificationResponse {
+    status: 'ok' | 'error';
+    errors: string[];
+    classifications?: number[];
+}
+
+export function isDataValid(data: DataPoint, model: TrainedModel): boolean {
+    if (!model.dataset || !model.dataset.cols) {
+        return false;
+    }
+
+    const datasetCols = model.dataset.cols.map((col: any) => col.name);
+    const dataCols = Object.keys(data);
+
+    for (let i = 0; i < dataCols.length; i++) {
+        const dataCol = dataCols[i];
+        if (!datasetCols.includes(dataCol)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+export async function getDatasetAttributes(filePath: string): Promise<DatasetAttribute[]> {
+    const attributes: DatasetAttribute[] = [];
+
+    try {
+        if (path.extname(filePath).toLowerCase() === '.csv') {
+            // CSV
+            const lines: string[][] = [];
+            const fileStream = fs.createReadStream(filePath);
+            const rl = readline.createInterface({
+                input: fileStream,
+                crlfDelay: Infinity,
+            });
+            const readFirstLines = (line: string) => {
+                lines.push(...csvParse(line));
+
+                if (lines.length > 1) {
+                    rl.off('line', readFirstLines).close();
+                }
+            };
+
+            rl.on('line', readFirstLines);
+            await once(rl, 'close');
+
+            if (lines.length === 2 && lines[0].length === lines[1].length) {
+                const [header, data] = lines;
+
+                header.forEach((h, i) => {
+                    attributes.push({
+                        name: h,
+                        numeric: !data[i].trim() || isNumeric(data[i]),
+                    });
+                });
+            }
+        } else {
+            // JSON
+            const series = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+            const data = series[0];
+            Object.keys(data).forEach((key) => {
+                attributes.push({
+                    name: key,
+                    numeric: !data[key].trim() || isNumeric(`${data[key]}`),
+                });
+            });
+        }
+    } catch {
+        // Failed to read attributes.
+    }
+
+    return attributes;
 }
 
 export async function getModellingRequest(config: ModelConfig): Promise<ModellingRequest> {
@@ -155,55 +245,21 @@ export async function getModellingRequest(config: ModelConfig): Promise<Modellin
     return req;
 }
 
-export async function getDatasetAttributes(filePath: string): Promise<DatasetAttribute[]> {
-    const attributes: DatasetAttribute[] = [];
+export function getClassificationRequest(
+    data: DataPoint,
+    model: TrainedModel
+): ClassificationRequest {
+    const req: ClassificationRequest = {
+        dataSource: {
+            type: 'internal',
+            format: 'csv',
+            fieldSep: ',',
+            data: `${Object.keys(data).join(',')}\n${Object.values(data).join(',')}`,
+        },
+        model,
+    };
 
-    try {
-        if (path.extname(filePath).toLowerCase() === '.csv') {
-            // CSV
-            const lines: string[][] = [];
-            const fileStream = fs.createReadStream(filePath);
-            const rl = readline.createInterface({
-                input: fileStream,
-                crlfDelay: Infinity,
-            });
-            const readFirstLines = (line: string) => {
-                lines.push(...csvParse(line));
-
-                if (lines.length > 1) {
-                    rl.off('line', readFirstLines).close();
-                }
-            };
-
-            rl.on('line', readFirstLines);
-            await once(rl, 'close');
-
-            if (lines.length === 2 && lines[0].length === lines[1].length) {
-                const [header, data] = lines;
-
-                header.forEach((h, i) => {
-                    attributes.push({
-                        name: h,
-                        numeric: isNumeric(data[i]),
-                    });
-                });
-            }
-        } else {
-            // JSON
-            const series = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            const data = series[0];
-            Object.keys(data).forEach((key) => {
-                attributes.push({
-                    name: key,
-                    numeric: isNumeric(`${data[key]}`),
-                });
-            });
-        }
-    } catch {
-        // Failed to read attributes.
-    }
-
-    return attributes;
+    return req;
 }
 
 class Modelling {
@@ -211,11 +267,6 @@ class Modelling {
 
     constructor(options: AxiosRequestConfig) {
         this.options = options;
-    }
-
-    async buildFromModelConfig(config: ModelConfig): Promise<ModellingResponse> {
-        const req = await getModellingRequest(config);
-        return this.build(req);
     }
 
     async build(req: ModellingRequest): Promise<ModellingResponse> {
@@ -237,6 +288,36 @@ class Modelling {
         >(options);
 
         return res.data;
+    }
+
+    async buildFromModelConfig(config: ModelConfig): Promise<ModellingResponse> {
+        const req = await getModellingRequest(config);
+        return this.build(req);
+    }
+
+    async classify(req: ClassificationRequest): Promise<ClassificationResponse> {
+        const options: AxiosRequestConfig<ClassificationRequest> = {
+            ...this.options,
+            url: '/classifySamples',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // 'Content-Length': `${data.length}`,
+            },
+            data: req,
+        };
+        const res = await axios.request<
+            ClassificationResponse,
+            AxiosResponse<ClassificationResponse>,
+            ClassificationRequest
+        >(options);
+
+        return res.data;
+    }
+
+    async classifyDataPoint(data: DataPoint, model: TrainedModel): Promise<ClassificationResponse> {
+        const req = getClassificationRequest(data, model);
+        return this.classify(req);
     }
 }
 

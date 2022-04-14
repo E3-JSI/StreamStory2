@@ -24,12 +24,33 @@ export function getAbsoluteUrl(req: Request, port?: number, path?: string): stri
  */
 export async function downloadFile(url: string, filePath: string): Promise<boolean | Error> {
     return new Promise((resolve, reject) => {
-        http.get(url, (resp) => {
-            resp.on('data', (chunk) => {
+        http.get(url, (res) => {
+            res.on('data', (chunk) => {
                 fs.appendFileSync(filePath, chunk);
             });
-            resp.on('end', () => {
+            res.on('end', () => {
                 resolve(true);
+            });
+        }).on('error', (err) => {
+            reject(new Error(err.message));
+        });
+    });
+}
+
+/**
+ * Send GET request to given URL.
+ * @param url Request URL.
+ * @returns Response or error.
+ */
+export async function get(url: string): Promise<any | Error> {
+    return new Promise((resolve, reject) => {
+        let result = '';
+        http.get(url, (res) => {
+            res.on('data', (chunk) => {
+                result += chunk;
+            });
+            res.on('end', () => {
+                resolve(JSON.parse(result));
             });
         }).on('error', (err) => {
             reject(new Error(err.message));

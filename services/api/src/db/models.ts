@@ -1,11 +1,12 @@
 import { QueryResultRow } from 'pg';
 
 import db from '../config/db';
-import { TrainedModel } from '../lib/Modelling';
+import { TrainedModel, ModelState } from '../lib/Modelling';
 
 export interface Model {
     id: number;
     userId: number;
+    dataSourceId: number;
     username: string;
     name: string;
     description: string;
@@ -15,6 +16,7 @@ export interface Model {
     public: boolean;
     createdAt: number;
     model?: TrainedModel;
+    state?: ModelState;
 }
 
 /**
@@ -27,6 +29,7 @@ function getModel(row: QueryResultRow, metadata = false): Model {
     const model = {
         id: row.id,
         userId: row.user_id,
+        dataSourceId: row.datasource_id,
         username: row.username,
         name: row.name,
         description: row.description,
@@ -42,6 +45,7 @@ function getModel(row: QueryResultRow, metadata = false): Model {
         : {
               ...model,
               model: row.model,
+              state: row.state,
           };
 }
 
@@ -74,8 +78,19 @@ export async function get(userId: number, includePublic = false): Promise<Model[
     return rows.map((row) => getModel(row, true));
 }
 
+export async function getActive(): Promise<Model[]> {
+    const { rows } = await db.query(
+        `
+        SELECT * FROM models
+        WHERE online = true AND active = true;`
+    );
+
+    return rows.map((row) => getModel(row, false));
+}
+
 export async function add(
     userId: number,
+    dataSourceId: number,
     name: string,
     description: string,
     dataset: string,
@@ -84,10 +99,10 @@ export async function add(
 ): Promise<number> {
     const { rowCount, rows } = await db.query(
         `
-        INSERT INTO models(user_id, name, description, dataset, online, active, public, model)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO models(user_id, datasource_id, name, description, dataset, online, active, public, model)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id;`,
-        [userId, name, description, dataset, online, online, false, model]
+        [userId, dataSourceId || null, name, description, dataset, online, online, false, model]
     );
     return rowCount && rows[0].id;
 }
@@ -160,6 +175,22 @@ export async function updateModel(id: number, value: TrainedModel): Promise<bool
         `
         UPDATE models
         SET model = $1
+        WHERE id = $2;`,
+        [value, id]
+    );
+
+    if (!rowCount) {
+        return false;
+    }
+
+    return true;
+}
+
+export async function updateState(id: number, value: ModelState): Promise<boolean> {
+    const { rowCount } = await db.query(
+        `
+        UPDATE models
+        SET state = $1
         WHERE id = $2;`,
         [value, id]
     );

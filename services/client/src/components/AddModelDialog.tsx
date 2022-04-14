@@ -40,6 +40,7 @@ function AddModelDialog({
     const [isDatasetConfigReady, setIsDatasetConfigReady] = useState(false);
     const [datasetAttributes, setDatasetAttributes] = useState<DatasetAttribute[]>([]);
     const [datasetName, setDatasetName] = useState<string>('');
+    const [dataSource, setDataSource] = useState<number>(0);
     const {
         formState: { isValid },
         // getValues,
@@ -51,9 +52,10 @@ function AddModelDialog({
         }
     }
 
-    function handleDatasetLoad(name: string, attributes: DatasetAttribute[]) {
+    function handleDatasetLoad(name: string, attributes: DatasetAttribute[], dataSourceId: number) {
         setDatasetName(name);
         setDatasetAttributes(attributes);
+        setDataSource(dataSourceId);
     }
 
     function handleDatasetConfigChange(ready: boolean) {
@@ -95,6 +97,7 @@ function AddModelDialog({
                         <ModelConfiguration
                             datasetName={datasetName}
                             datasetAttributes={datasetAttributes}
+                            dataSource={dataSource}
                         />
                     )}
                 </Box>

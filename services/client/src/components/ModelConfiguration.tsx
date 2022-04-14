@@ -20,11 +20,13 @@ import TransHtml from './TransHtml';
 export interface ModelConfigurationProps {
     datasetName: string;
     datasetAttributes: DatasetAttribute[];
+    dataSource: number;
 }
 
 function ModelConfiguration({
-    datasetAttributes,
     datasetName,
+    datasetAttributes,
+    dataSource,
 }: ModelConfigurationProps): JSX.Element {
     const { t } = useTranslation();
     const {
@@ -143,6 +145,7 @@ function ModelConfiguration({
     return (
         <>
             <input type="hidden" value={datasetName} {...register('dataset')} />
+            <input type="hidden" value={dataSource} {...register('dataSource')} />
             <Fieldset
                 legend={t('select_attributes')}
                 description={<TransHtml i18nKey="select_attributes_description" />}
