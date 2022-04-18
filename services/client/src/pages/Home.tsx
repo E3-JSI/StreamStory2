@@ -28,6 +28,7 @@ import SectionName from '../components/SectionName';
 import SectionTitle from '../components/SectionTitle';
 import Footer from '../components/Footer';
 
+import config from '../config';
 import useStyles from './Home.styles';
 import { ReactComponent as DetectiveIcon } from '../assets/images/icons/detective.svg';
 import { ReactComponent as FreeButterflyIcon } from '../assets/images/icons/free-butterfly.svg';
@@ -354,7 +355,7 @@ function Home(): JSX.Element {
                         <Grid xs={12} sm="auto" item>
                             <Button
                                 component="a"
-                                href="mailto:streamstoryai@gmail.com"
+                                href={`mailto:${config.email}`}
                                 target="_blank"
                                 variant="contained"
                                 size="large"

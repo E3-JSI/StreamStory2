@@ -4,6 +4,7 @@ import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 export interface Config extends Record<string, unknown> {
     url: string;
+    email: string;
     // mailer: SmtpOptions;
     mailer: string | SMTPTransport | SMTPTransport.Options;
     auth?: {

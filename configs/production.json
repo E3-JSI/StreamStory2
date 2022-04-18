@@ -1,5 +1,6 @@
 {
     "url": "http://streamstory.ijs.si",
+    "email": "streamstoryai@gmail.com",
     "mailer": {
         "service": "gmail",
         "auth": {

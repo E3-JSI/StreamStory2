@@ -1,5 +1,6 @@
 {
     "url": "http://atena.ijs.si:$CLIENT_PORT",
+    "email": "streamstoryai@gmail.com",
     "mailer": {
         "service": "gmail",
         "auth": {
