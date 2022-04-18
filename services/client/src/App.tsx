@@ -15,7 +15,6 @@ import { getAuthStatus } from './api/auth';
 import useMountEffect from './hooks/useMountEffect';
 import useSession from './hooks/useSession';
 import PageRoute from './components/PageRoute';
-import PageIframeRoute from './components/PageIframeRoute';
 import PageProgress from './components/PageProgress';
 import SnackbarProvider from './components/SnackbarProvider';
 import themes from './themes';
@@ -62,11 +61,6 @@ function App(): JSX.Element {
                 <SnackbarProvider>
                     <Router>
                         <Switch>
-                            <PageIframeRoute
-                                path="/iframe/model/:id?"
-                                type="public"
-                                component={ModelIframe}
-                            />
                             {/* Private routes */}
                             <PageRoute
                                 path="/profile/:tab?"
@@ -113,6 +107,12 @@ function App(): JSX.Element {
                             />
                             {/* Public routes */}
                             <PageRoute path="/" type="public" variant="content" component={Home} />
+                            <PageRoute
+                                path="/iframe/model/:id?"
+                                type="public"
+                                variant="iframe"
+                                component={ModelIframe}
+                            />
                         </Switch>
                     </Router>
                 </SnackbarProvider>
