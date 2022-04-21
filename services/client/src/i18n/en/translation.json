@@ -320,6 +320,8 @@
         "model_sharing_failed": "Failed to share your model.",
         "model_unsharing_failed": "Failed to unshare your model.",
         "no_data": "No data",
+        "notification_deletion_failed": "Failed to delete notification.",
+        "notification_update_failed": "Failed to update notification.",
         "oauth_email_retrieval_failed": "Failed to retrieve e-mail from OAuth provider.",
         "oauth_user_request_failed": "OAuth user request failed.",
         "password_mismatch": "Confirmation password doesn't match password.",
