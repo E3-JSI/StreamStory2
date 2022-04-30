@@ -1,13 +1,8 @@
 {
     "url": "http://streamstory.ijs.si",
-    "email": "streamstoryai@gmail.com",
+    "email": "streamstory@ijs.si",
     "mailer": {
-        "service": "gmail",
-        "auth": {
-            "auth": {
-                "user": "streamstoryai@gmail.com",
-                "pass": "$MAILER_PASS"
-            }
-        }
+        "host": "mail.ijs.si",
+        "port": 25
     }
 }
