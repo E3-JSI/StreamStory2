@@ -32,7 +32,8 @@ export async function getNotifications(
             return;
         }
 
-        const notificationList = await notifications.get(userId);
+        const unread = req.query.unread === 'true';
+        const notificationList = await notifications.get(userId, unread);
         res.status(200).json({
             notifications: notificationList.map((notification) =>
                 getNotificationResponse(notification)

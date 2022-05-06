@@ -180,6 +180,7 @@
     "next_page": "Next page",
     "next": "Next",
     "no": "No",
+    "notifications": "Notifications",
     "number_of_states": "Number of states",
     "numeric": "Numeric",
     "of": "of",
@@ -275,6 +276,8 @@
     "watch_video_presentation": "Watch video presentation",
     "week": "Week",
     "yes": "Yes",
+    "you_have_n_new_messages_0": "You have {{count}} new message.",
+    "you_have_n_new_messages_1": "You have {{count}} new messages.",
     "successful_account_activation": {
         "title": "You have successfully activated your account",
         "message": "You can now log in with your credentials."

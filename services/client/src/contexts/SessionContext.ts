@@ -3,6 +3,7 @@ import React from 'react';
 import { PaletteType } from '@material-ui/core';
 
 import { Model } from '../api/models';
+import { Notification } from '../api/notifications';
 import { User } from '../api/users';
 
 export type AppTheme = PaletteType | 'system';
@@ -18,6 +19,7 @@ export interface Session {
     modelsPerPage: Record<string, number>;
     currentModel: Model[];
     commonStateDataArr: any[];
+    notifications: Notification[];
     update: null | UpdateSession;
 }
 
@@ -32,6 +34,7 @@ export const defaultProps: Required<SessionProps> = {
     modelsPerPage: {},
     currentModel: [],
     commonStateDataArr: [],
+    notifications: [],
 };
 
 const SessionContext = React.createContext<Session>({

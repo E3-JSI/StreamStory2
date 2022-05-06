@@ -52,6 +52,8 @@ function UserAccountMenu(
             if (response.data.success) {
                 setSession({
                     user: null,
+                    currentModel: [],
+                    notifications: [],
                 });
             }
         } catch (error) {

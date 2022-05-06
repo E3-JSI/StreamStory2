@@ -28,7 +28,7 @@ export interface ThemeMenuProps extends MenuProps {
 function ThemeMenu(
     { open, themes, toggleMenu, ...rest }: ThemeMenuProps,
     ref: React.ForwardedRef<HTMLUListElement>,
-) {
+): JSX.Element {
     const classes = useStyles();
     const [{ theme, user }, setSession] = useSession();
 

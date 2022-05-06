@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import { ApiError } from './index';
 
@@ -22,17 +22,32 @@ export interface NotificationResponse {
 // Get notifications
 // -----------------
 
+export interface GetNotificationsRequest {
+    userId?: number;
+    unread?: boolean;
+}
+
 export interface GetNotificationsResponse extends NotificationResponse {
     notifications?: Notification[];
 }
 
 export async function getNotifications(
     userId?: number,
+    unread?: boolean,
 ): Promise<AxiosResponse<GetNotificationsResponse>> {
-    return axios.get<GetNotificationsResponse>(
-        '/api/notifications',
-        userId ? { params: { userId } } : undefined,
-    );
+    const config: AxiosRequestConfig<GetNotificationsRequest> = {
+        params: {},
+    };
+
+    if (userId !== undefined) {
+        config.params.userId = userId;
+    }
+
+    if (unread !== undefined) {
+        config.params.unread = unread;
+    }
+
+    return axios.get<GetNotificationsResponse>('/api/notifications', config);
 }
 
 // Get notification

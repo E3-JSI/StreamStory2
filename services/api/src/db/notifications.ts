@@ -48,11 +48,12 @@ export async function findById(id: number): Promise<Notification | null> {
     return getNotification(rows[0]);
 }
 
-export async function get(userId: number): Promise<Notification[]> {
+export async function get(userId: number, unread = false): Promise<Notification[]> {
+    const condition = unread ? ' and read = false' : '';
     const { rows } = await db.query(
         `
         SELECT * FROM notifications
-        WHERE user_id = $1;`,
+        WHERE user_id = $1${condition};`,
         [userId]
     );
     return rows.map((row) => getNotification(row));

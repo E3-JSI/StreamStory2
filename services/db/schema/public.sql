@@ -26,7 +26,7 @@ DO $$
             (
                 SELECT *
                 FROM users
-                WHERE email = 'streamstoryai@gmail.com'
+                WHERE email = 'streamstory@ijs.si'
             )
         THEN
             INSERT INTO users (
@@ -40,7 +40,7 @@ DO $$
             VALUES (
                 1,
                 'Admin',
-                'streamstoryai@gmail.com',
+                'streamstory@ijs.si',
                 '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
                 true,
                 '{}'

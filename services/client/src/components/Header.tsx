@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useMediaQuery, useScrollTrigger } from '@material-ui/core';
+import { useMediaQuery, useScrollTrigger, PropTypes } from '@material-ui/core';
 import { Theme, useTheme } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Avatar from '@material-ui/core/Avatar';
@@ -22,6 +22,7 @@ import { User } from '../api/users';
 import useSession from '../hooks/useSession';
 import { PageVariant } from './Page';
 import Logo from './Logo';
+import NotificationsButton from './NotificationsButton';
 import ThemeMenu from './ThemeMenu';
 import UserAccountMenu from './UserAccountMenu';
 
@@ -39,7 +40,8 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
     const { t } = useTranslation();
     const accountButtonRef = useRef(null);
     const themeButtonRef = useRef(null);
-    const [{ isSideNavOpen, isSideNavExpanded, theme: appTheme, user }, setSession] = useSession();
+    const [{ isSideNavOpen, isSideNavExpanded, theme: appTheme, user, notifications }, setSession] =
+        useSession();
     const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
     const [isUserAccountMenuOpen, setIsUserAccountMenuOpen] = useState(false);
     const isScreenWidthGteMd = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
@@ -47,7 +49,7 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
 
     const isSimpleHeader = variant === 'simple';
     const isPublicHeader = variant !== 'application';
-    const iconColor = isPublicHeader ? 'default' : 'inherit';
+    const iconColor: PropTypes.Color = isPublicHeader ? 'default' : 'inherit';
     const themes = {
         light: {
             label: t('light'),
@@ -141,6 +143,7 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
                         <Logo />
                     </Link>
                 </Box>
+                {notifications.length > 0 && <NotificationsButton color={iconColor} />}
                 <Tooltip title={t('change_theme')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                     <IconButton
                         ref={themeButtonRef}
