@@ -8,6 +8,7 @@ var newConfig = {};
 switch (serviceName) {
     case 'client': {
         newConfig['url'] = config.url;
+        newConfig['email'] = config.email;
 
         // Include auth config.
         if (config.auth) {

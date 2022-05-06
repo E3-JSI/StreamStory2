@@ -17,6 +17,10 @@ const useStyles = makeStyles((theme: Theme) =>
                 marginTop: theme.spacing(8),
             },
         },
+        mainIframe: {
+            flexGrow: 1,
+            overflow: 'auto',
+        },
         mainApplication: {
             height: `calc(100vh - ${theme.spacing(7)}px)`,
             '@media (min-width: 0px) and (orientation: landscape)': {

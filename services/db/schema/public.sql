@@ -26,7 +26,7 @@ DO $$
             (
                 SELECT *
                 FROM users
-                WHERE email = 'streamstoryai@gmail.com'
+                WHERE email = 'streamstory@ijs.si'
             )
         THEN
             INSERT INTO users (
@@ -40,7 +40,7 @@ DO $$
             VALUES (
                 1,
                 'Admin',
-                'streamstoryai@gmail.com',
+                'streamstory@ijs.si',
                 '$2a$10$kF2crRMmb.4xOA28lt6CDejGe9bShzUllL9hJxwSfr0zb3zjilIYW',
                 true,
                 '{}'
@@ -171,9 +171,11 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     id serial PRIMARY KEY,
     user_id integer NOT NULL,
     model_id integer,
+    type varchar(64),
     title text NOT NULL,
     content text NOT NULL,
     time timestamp DEFAULT now() NOT NULL,
+    read boolean DEFAULT false NOT NULL,
     CONSTRAINT user_fkey
         FOREIGN KEY(user_id)
 	        REFERENCES users(id),

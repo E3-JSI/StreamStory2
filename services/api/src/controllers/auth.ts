@@ -244,7 +244,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
 
         // TODO: prepare email templates (separate content from code)
         await transporter.sendMail({
-            from: 'StreamStory <streamstoryai@gmail.com>',
+            from: `StreamStory <${config.email}>`,
             to: email,
             subject: 'Activate your account',
             text: `Thank you for registering.\nFollow the link below to activate your account:\n${activationLink}`,
@@ -312,7 +312,7 @@ export async function initiatePasswordReset(
 
         // TODO: prepare email templates (separate content from code)
         await transporter.sendMail({
-            from: 'StreamStory <streamstoryai@gmail.com>',
+            from: `StreamStory <${config.email}>`,
             to: email,
             subject: 'Reset your password',
             text: `You requested a password reset for your StreamStory account.\nTo reset your password follow the link below:\n${resetLink}\nThis link will be valid for the next 24 hours.\nIf you did not request a password reset, you can safely ignore this e-mail.`,

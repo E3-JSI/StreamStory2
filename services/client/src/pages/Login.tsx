@@ -4,6 +4,7 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { activateAccount, logInWithOauth } from '../api/auth';
+import { getNotifications } from '../api/notifications';
 import { getResponseErrors } from '../utils/errors';
 import { validationPatterns } from '../utils/forms';
 import config from '../config';
@@ -76,7 +77,13 @@ function Login(): JSX.Element {
                 });
 
                 if (response.data.user) {
-                    setSession({ user: response.data.user });
+                    const {
+                        data: { notifications },
+                    } = await getNotifications(response.data.user.id, true);
+                    setSession({
+                        user: response.data.user,
+                        notifications,
+                    });
                 }
 
                 setSession({ isPageLoading: false });

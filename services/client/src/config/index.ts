@@ -1,5 +1,6 @@
 export interface Config extends Record<string, unknown> {
     url: string;
+    email: string;
     auth?: {
         local?: boolean;
         providers?: {

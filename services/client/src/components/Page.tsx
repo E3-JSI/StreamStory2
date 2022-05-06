@@ -8,7 +8,7 @@ import SideNav from './SideNav';
 import useSession from '../hooks/useSession';
 import useStyles from './Page.styles';
 
-export type PageVariant = 'application' | 'content' | 'simple';
+export type PageVariant = 'application' | 'content' | 'iframe' | 'simple';
 
 export interface PageProps {
     variant?: PageVariant;
@@ -46,6 +46,14 @@ function Page({ variant = 'application', children = null }: PageProps): JSX.Elem
                     <Header variant="content" />
                     {isUserLoggedIn && <SideNav variant="temporary" />}
                     <main className={clsx(classes.main)}>{children}</main>
+                </Box>
+            );
+        case 'iframe':
+            return (
+                <Box className={classes.root}>
+                    <main className={clsx(classes.mainIframe, classes.mainApplication)}>
+                        <div className={classes.mainContent}>{children}</div>
+                    </main>
                 </Box>
             );
         default:

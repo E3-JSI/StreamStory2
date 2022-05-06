@@ -35,6 +35,7 @@ import {
     ResetPasswordRequest,
     ResetPasswordResponse,
 } from '../api/auth';
+import { getNotifications } from '../api/notifications';
 import { cleanProps } from '../utils/misc';
 import { validationPatterns, minPasswordLength, initMuiRegister } from '../utils/forms';
 import { Errors, getResponseErrors } from '../utils/errors';
@@ -74,7 +75,7 @@ type FormResponseData =
     | RegisterResponse
     | ResetPasswordResponse;
 
-export type ResponseHandler = (response: AxiosResponse<FormResponseData>) => void;
+export type ResponseHandler = (response: AxiosResponse<FormResponseData>) => Promise<void>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type UserAccountAction = (data: any) => Promise<AxiosResponse<any>>;
@@ -135,7 +136,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                 url: '/login',
                 title: t('already_have_an_account'),
             };
-            handleResponse = (response: AxiosResponse<RegisterResponse>) => {
+            handleResponse = async (response: AxiosResponse<RegisterResponse>) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
@@ -156,7 +157,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                 url: '/password-reset',
                 title: t('reset_link_expired'),
             };
-            handleResponse = (response: AxiosResponse<ResetPasswordResponse>) => {
+            handleResponse = async (response: AxiosResponse<ResetPasswordResponse>) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
@@ -179,7 +180,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                 url: '/login',
                 title: t('back_to_login'),
             };
-            handleResponse = (response: AxiosResponse<InitPasswordResetResponse>) => {
+            handleResponse = async (response: AxiosResponse<InitPasswordResetResponse>) => {
                 if (response.data.success) {
                     reset();
                     showSnackbar({
@@ -201,9 +202,15 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
                 url: '/registration',
                 title: t('dont_have_an_account'),
             };
-            handleResponse = (response: AxiosResponse<LogInResponse>) => {
+            handleResponse = async (response: AxiosResponse<LogInResponse>) => {
                 if (response.data.user) {
-                    setSession({ user: response.data.user });
+                    const {
+                        data: { notifications },
+                    } = await getNotifications(response.data.user.id, true);
+                    setSession({
+                        user: response.data.user,
+                        notifications,
+                    });
                 }
             };
             break;
@@ -213,7 +220,7 @@ function UserAccountForm({ variant }: UserAccountFormProps): JSX.Element {
         try {
             const response = await action(data);
 
-            handleResponse(response);
+            await handleResponse(response);
         } catch (error) {
             // Handle form errors.
             const responseErrors = getResponseErrors<FormErrors>(error, t);

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { BrowserRouter as Router, Switch } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { CssBaseline, useMediaQuery } from '@material-ui/core';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 
@@ -7,24 +8,29 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Model from './pages/Model';
+import ModelIframe from './pages/ModelIframe';
 import PasswordReset from './pages/PasswordReset';
 import Registration from './pages/Registration';
 import UserProfile from './pages/UserProfile';
 
+import { getNotifications } from './api/notifications';
 import { getAuthStatus } from './api/auth';
+import { SessionProps } from './contexts/SessionContext';
+import { ShowSnackbar } from './contexts/SnackbarContext';
 import useMountEffect from './hooks/useMountEffect';
+import useSnackbar from './hooks/useSnackbar';
 import useSession from './hooks/useSession';
 import PageRoute from './components/PageRoute';
-import PageIframeRoute from './components/PageIframeRoute';
 import PageProgress from './components/PageProgress';
 import SnackbarProvider from './components/SnackbarProvider';
 import themes from './themes';
 import './i18n/config';
-import ModelIframe from './pages/ModelIframe';
 
 function App(): JSX.Element {
+    const { t } = useTranslation();
     const [session, setSession] = useSession();
     const [syncing, setSyncing] = useState(true);
+    const [showSnackbar] = useSnackbar();
     const preferredTheme = useMediaQuery('(prefers-color-scheme: dark)') ? 'dark' : 'light';
     const selectedTheme = session.theme === 'system' ? preferredTheme : session.theme;
     const muiTheme = useMemo(
@@ -32,6 +38,11 @@ function App(): JSX.Element {
         // Recreate theme only when switched.
         [selectedTheme],
     );
+    const sessionRef = useRef<Required<SessionProps> | null>(null);
+    const showSnackbarRef = useRef<ShowSnackbar | null>(null);
+
+    sessionRef.current = session;
+    showSnackbarRef.current = showSnackbar;
 
     // Sync user/login status.
     useMountEffect(() => {
@@ -40,7 +51,13 @@ function App(): JSX.Element {
                 const response = await getAuthStatus();
 
                 if (response.data.user) {
-                    setSession({ user: response.data.user });
+                    const {
+                        data: { notifications },
+                    } = await getNotifications(response.data.user.id, true);
+                    setSession({
+                        user: response.data.user,
+                        notifications,
+                    });
                 }
 
                 setSyncing(false);
@@ -51,7 +68,57 @@ function App(): JSX.Element {
             }
         }
 
+        async function updateStatus() {
+            const { current: currentSession } = sessionRef;
+
+            try {
+                const {
+                    data: { user },
+                } = await getAuthStatus();
+
+                if (user) {
+                    const {
+                        data: { notifications },
+                    } = await getNotifications(user.id, true);
+
+                    if (
+                        notifications &&
+                        currentSession &&
+                        notifications.length > currentSession.notifications.length &&
+                        showSnackbarRef.current !== null
+                    ) {
+                        const numNewMessages =
+                            notifications.length - currentSession.notifications.length;
+                        showSnackbarRef.current({
+                            message: t('you_have_n_new_messages' as Parameters<typeof t>[0], {
+                                count: numNewMessages,
+                            }) as string,
+                            severity: 'info',
+                        });
+                    }
+
+                    setSession({
+                        user,
+                        notifications,
+                    });
+                } else if (user === null && currentSession && currentSession.user !== null) {
+                    setSession({
+                        user: null,
+                        currentModel: [],
+                        notifications: [],
+                    });
+                }
+            } catch (error) {
+                // Failed to update status.
+            }
+        }
+
         loadStatus();
+        const interval = setInterval(updateStatus, 60 * 1000);
+
+        return () => {
+            clearInterval(interval);
+        };
     });
 
     return (
@@ -62,11 +129,6 @@ function App(): JSX.Element {
                 <SnackbarProvider>
                     <Router>
                         <Switch>
-                            <PageIframeRoute
-                                path="/iframe/model/:id?"
-                                type="public"
-                                component={ModelIframe}
-                            />
                             {/* Private routes */}
                             <PageRoute
                                 path="/profile/:tab?"
@@ -113,6 +175,12 @@ function App(): JSX.Element {
                             />
                             {/* Public routes */}
                             <PageRoute path="/" type="public" variant="content" component={Home} />
+                            <PageRoute
+                                path="/iframe/model/:id?"
+                                type="public"
+                                variant="iframe"
+                                component={ModelIframe}
+                            />
                         </Switch>
                     </Router>
                 </SnackbarProvider>

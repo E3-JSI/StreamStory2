@@ -4,6 +4,7 @@ import cron from 'node-cron';
 import modelling from '../config/modelling';
 import * as models from '../db/models';
 import * as dataSources from '../db/dataSources';
+import * as notifications from '../db/notifications';
 import { DataPoint, isDataValid } from './Modelling';
 
 async function classify(): Promise<void> {
@@ -11,7 +12,7 @@ async function classify(): Promise<void> {
     if (!activeModels.length) {
         return;
     }
-
+    
     activeModels.forEach(async (model) => {
         if (!model.dataSourceId || !model.model) {
             return;
@@ -35,6 +36,7 @@ async function classify(): Promise<void> {
             }
 
             const lastData = data.series[0];
+            // console.log("lastData", lastData);
 
             if (!model.state || JSON.stringify(model.state.data) !== JSON.stringify(lastData)) {
                 if (!isDataValid(lastData, model.model)) {
@@ -51,6 +53,13 @@ async function classify(): Promise<void> {
                         state: res.classifications[0],
                         data: lastData,
                     });
+                    notifications.add(
+                        model.userId,
+                        model.id,
+                        'new_data',
+                        `New data for model "${model.name}"`,
+                        `<pre>${JSON.stringify(lastData, null, 2)}</pre>`
+                    );
                 } else {
                     console.log('Invalid response:', res);
                 }
