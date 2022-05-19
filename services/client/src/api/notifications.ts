@@ -13,7 +13,7 @@ export interface Notification {
     read: boolean;
 }
 
-export type NotificationSettings = Omit<Notification, 'id' | 'userId'>;
+export type NotificationSettings = Pick<Notification, 'read'>;
 
 export interface NotificationResponse {
     error?: ApiError;

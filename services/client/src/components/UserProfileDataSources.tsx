@@ -67,10 +67,10 @@ function UserProfileDetaSources(): JSX.Element {
     const [order, setOrder] = useState<Order>('desc');
     const [orderBy, setOrderBy] = useState<SortableKey>('name');
     const [page, setPage] = useState(0);
-    const [dataSourcesPerPage, setDataSourcesPerPage] = useState(5);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
     const [isRemoveDataSourceDialogOpen, setIsRemoveDataSourceDialogOpen] = useState(0);
     const [users, setUsers] = useState<User[] | null>(null);
-    const [selectedUser, setSelectedUser] = useState<User | null>(user);
+    const [selectedUser, setSelectedUser] = useState<User>(user as User);
 
     const isLoading = dataSources === null;
     const isSearchActive = search !== null;
@@ -88,7 +88,7 @@ function UserProfileDetaSources(): JSX.Element {
                 source.url.search(searchRegExp) > -1
             );
         });
-    const rowsPerPage = isScreenWidthGteSm ? dataSourcesPerPage : 5;
+    const rowsPerPage = isScreenWidthGteSm ? itemsPerPage : 5;
     const currentPageRows =
         Number(filteredDataSources && filteredDataSources.length) - page * rowsPerPage;
     const emptyRows = rowsPerPage - Math.min(rowsPerPage, currentPageRows);
@@ -250,8 +250,8 @@ function UserProfileDetaSources(): JSX.Element {
         setPage(newPage);
     }
 
-    function handleChangeModelsPerPage(event: React.ChangeEvent<HTMLInputElement>) {
-        setDataSourcesPerPage(parseInt(event.target.value, 10));
+    function handleChangeItemsPerPage(event: React.ChangeEvent<HTMLInputElement>) {
+        setItemsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     }
 
@@ -318,10 +318,7 @@ function UserProfileDetaSources(): JSX.Element {
         };
     }
 
-    function handleUserChange(
-        event: React.ChangeEvent<Record<string, unknown>>,
-        newUser: User | null,
-    ) {
+    function handleUserChange(event: React.ChangeEvent<Record<string, unknown>>, newUser: User) {
         setDataSources(null);
         setSelectedUser(newUser);
     }
@@ -365,9 +362,9 @@ function UserProfileDetaSources(): JSX.Element {
                                 onClick={handleSearchToggle}
                             >
                                 {isSearchActive ? (
-                                    <CloseIcon fontSize="small" />
+                                    <CloseIcon />
                                 ) : (
-                                    <SearchIcon fontSize="small" />
+                                    <SearchIcon />
                                 )}
                             </IconButton>
                         </Tooltip>
@@ -491,7 +488,7 @@ function UserProfileDetaSources(): JSX.Element {
                                                     aria-label={t('edit_data_source')}
                                                     onClick={getEditButtonClickHandler(source.id)}
                                                 >
-                                                    <EditIcon fontSize="small" />
+                                                    <EditIcon />
                                                 </IconButton>
                                             </Tooltip>
                                             <Tooltip
@@ -500,12 +497,13 @@ function UserProfileDetaSources(): JSX.Element {
                                             >
                                                 <IconButton
                                                     size="small"
+                                                    edge="end"
                                                     aria-label={t('delete_data_source')}
                                                     onClick={getRemoveDataSourceDialogButtonClickHandler(
                                                         source.id,
                                                     )}
                                                 >
-                                                    <DeleteIcon fontSize="small" />
+                                                    <DeleteIcon />
                                                 </IconButton>
                                             </Tooltip>
                                             <ConfirmationDialog
@@ -591,6 +589,7 @@ function UserProfileDetaSources(): JSX.Element {
                                 renderInput={(params) => (
                                     <TextField {...params} label={t('user')} />
                                 )}
+                                disableClearable
                             />
                         ) : (
                             <Skeleton variant="rect" height={40} />
@@ -599,13 +598,20 @@ function UserProfileDetaSources(): JSX.Element {
                 )}
                 <Grid item className={classes.paginationGridItem}>
                     <TablePagination
+                        className={classes.pagination}
                         rowsPerPageOptions={isScreenWidthGteSm ? [5, 10, 25] : [5]}
                         component="div"
                         count={Number(filteredDataSources && filteredDataSources.length)}
                         rowsPerPage={isScreenWidthGteSm ? rowsPerPage : 5}
                         page={page}
                         backIconButtonText={t('previous_page')}
+                        backIconButtonProps={{
+                            size: 'small',
+                        }}
                         nextIconButtonText={t('next_page')}
+                        nextIconButtonProps={{
+                            size: 'small',
+                        }}
                         labelRowsPerPage={`${t('rows_per_page')}:`}
                         labelDisplayedRows={({ from, to, count }) => {
                             if (isLoading) {
@@ -619,7 +625,7 @@ function UserProfileDetaSources(): JSX.Element {
                                 ? t(
                                       (count > 0 || Number(dataSources && dataSources.length)
                                           ? 'from_to_of'
-                                          : 'n_models') as Parameters<typeof t>[0],
+                                          : 'n_data_sources') as Parameters<typeof t>[0],
                                       {
                                           from,
                                           to,
@@ -632,7 +638,7 @@ function UserProfileDetaSources(): JSX.Element {
                                   });
                         }}
                         onChangePage={handleChangePage}
-                        onChangeRowsPerPage={handleChangeModelsPerPage}
+                        onChangeRowsPerPage={handleChangeItemsPerPage}
                     />
                 </Grid>
             </Grid>

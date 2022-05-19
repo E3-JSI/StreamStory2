@@ -198,7 +198,7 @@ function ModelListItem({
                                 aria-label={detailsButtonTooltip}
                                 onClick={(event) => onItemClick(event, model.id)}
                             >
-                                <ChevronRightIcon fontSize="small" />
+                                <ChevronRightIcon />
                             </IconButton>
                         </Tooltip>
                         <Typography
@@ -243,7 +243,7 @@ function ModelListItem({
                             size="small"
                             aria-label={t('view_model')}
                         >
-                            <VisibilityIcon fontSize="small" />
+                            <VisibilityIcon />
                         </IconButton>
                     </Tooltip>
                     {isOwnModel ? (
@@ -261,7 +261,7 @@ function ModelListItem({
                                     aria-controls="action-menu"
                                     aria-haspopup="true"
                                 >
-                                    <MoreVertIcon fontSize="small" />
+                                    <MoreVertIcon />
                                 </IconButton>
                             </Tooltip>
                             <ActionMenu
@@ -280,7 +280,7 @@ function ModelListItem({
                         </Box>
                     ) : (
                         <IconButton size="small" edge="end" disabled>
-                            <MoreVertIcon fontSize="small" />
+                            <MoreVertIcon />
                         </IconButton>
                     )}
                 </TableCell>
@@ -368,7 +368,7 @@ function ModelListItem({
                                                         aria-label={t('edit_description')}
                                                         onClick={handleEditButtonClick}
                                                     >
-                                                        <EditIcon fontSize="small" />
+                                                        <EditIcon />
                                                     </IconButton>
                                                 </Tooltip>
                                             )}

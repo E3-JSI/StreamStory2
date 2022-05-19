@@ -10,6 +10,7 @@ const resources = {
 } as const;
 
 i18n.use(initReactI18next).init({
+    // interpolation: { escapeValue: false },
     lng: 'en-GB',
     simplifyPluralSuffix: false,
     resources,

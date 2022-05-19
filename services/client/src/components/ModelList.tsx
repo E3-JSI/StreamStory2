@@ -288,9 +288,9 @@ function ModelList({
                                 onClick={handleSearchToggle}
                             >
                                 {isSearchActive ? (
-                                    <CloseIcon fontSize="small" />
+                                    <CloseIcon />
                                 ) : (
-                                    <SearchIcon fontSize="small" />
+                                    <SearchIcon />
                                 )}
                             </IconButton>
                         </Tooltip>
@@ -478,7 +478,13 @@ function ModelList({
                 rowsPerPage={isScreenWidthGteSm ? rowsPerPage : 5}
                 page={page}
                 backIconButtonText={t('previous_page')}
+                backIconButtonProps={{
+                    size: 'small',
+                }}
                 nextIconButtonText={t('next_page')}
+                nextIconButtonProps={{
+                    size: 'small',
+                }}
                 labelRowsPerPage={`${t('rows_per_page')}:`}
                 labelDisplayedRows={({ from, to, count }) => {
                     if (isLoading) {

@@ -65,10 +65,10 @@ function UserProfileApiKeys(): JSX.Element {
     const [order, setOrder] = useState<Order>('desc');
     const [orderBy, setOrderBy] = useState<SortableKey>('domain');
     const [page, setPage] = useState(0);
-    const [apiKeysPerPage, setApiKeysPerPage] = useState(5);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
     const [isRemoveApiKeyDialogOpen, setIsRemoveApiKeyDialogOpen] = useState(0);
     const [users, setUsers] = useState<User[] | null>(null);
-    const [selectedUser, setSelectedUser] = useState<User | null>(user);
+    const [selectedUser, setSelectedUser] = useState<User>(user as User);
 
     const isLoading = apiKeys === null;
     const isSearchActive = search !== null;
@@ -80,7 +80,7 @@ function UserProfileApiKeys(): JSX.Element {
             const searchRegExp = new RegExp(search || '', 'i');
             return key.value.search(searchRegExp) > -1 || key.domain.search(searchRegExp) > -1;
         });
-    const rowsPerPage = isScreenWidthGteSm ? apiKeysPerPage : 5;
+    const rowsPerPage = isScreenWidthGteSm ? itemsPerPage : 5;
     const currentPageRows = Number(filteredApiKeys && filteredApiKeys.length) - page * rowsPerPage;
     const emptyRows = rowsPerPage - Math.min(rowsPerPage, currentPageRows);
     const pageApiKeys =
@@ -232,8 +232,8 @@ function UserProfileApiKeys(): JSX.Element {
         setPage(newPage);
     }
 
-    function handleChangeModelsPerPage(event: React.ChangeEvent<HTMLInputElement>) {
-        setApiKeysPerPage(parseInt(event.target.value, 10));
+    function handleChangeItemsPerPage(event: React.ChangeEvent<HTMLInputElement>) {
+        setItemsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     }
 
@@ -300,10 +300,7 @@ function UserProfileApiKeys(): JSX.Element {
         };
     }
 
-    function handleUserChange(
-        event: React.ChangeEvent<Record<string, unknown>>,
-        newUser: User | null,
-    ) {
+    function handleUserChange(event: React.ChangeEvent<Record<string, unknown>>, newUser: User) {
         setApiKeys(null);
         setSelectedUser(newUser);
     }
@@ -347,9 +344,9 @@ function UserProfileApiKeys(): JSX.Element {
                                 onClick={handleSearchToggle}
                             >
                                 {isSearchActive ? (
-                                    <CloseIcon fontSize="small" />
+                                    <CloseIcon />
                                 ) : (
-                                    <SearchIcon fontSize="small" />
+                                    <SearchIcon />
                                 )}
                             </IconButton>
                         </Tooltip>
@@ -457,7 +454,7 @@ function UserProfileApiKeys(): JSX.Element {
                                                     aria-label={t('edit_api_key')}
                                                     onClick={getEditButtonClickHandler(key.id)}
                                                 >
-                                                    <EditIcon fontSize="small" />
+                                                    <EditIcon />
                                                 </IconButton>
                                             </Tooltip>
                                             <Tooltip
@@ -466,12 +463,13 @@ function UserProfileApiKeys(): JSX.Element {
                                             >
                                                 <IconButton
                                                     size="small"
+                                                    edge="end"
                                                     aria-label={t('delete_api_key')}
                                                     onClick={getRemoveApiKeyDialogButtonClickHandler(
                                                         key.id,
                                                     )}
                                                 >
-                                                    <DeleteIcon fontSize="small" />
+                                                    <DeleteIcon />
                                                 </IconButton>
                                             </Tooltip>
                                             <ConfirmationDialog
@@ -548,6 +546,7 @@ function UserProfileApiKeys(): JSX.Element {
                                 renderInput={(params) => (
                                     <TextField {...params} label={t('user')} />
                                 )}
+                                disableClearable
                             />
                         ) : (
                             <Skeleton variant="rect" height={40} />
@@ -556,13 +555,20 @@ function UserProfileApiKeys(): JSX.Element {
                 )}
                 <Grid item className={classes.paginationGridItem}>
                     <TablePagination
+                        className={classes.pagination}
                         rowsPerPageOptions={isScreenWidthGteSm ? [5, 10, 25] : [5]}
                         component="div"
                         count={Number(filteredApiKeys && filteredApiKeys.length)}
                         rowsPerPage={isScreenWidthGteSm ? rowsPerPage : 5}
                         page={page}
                         backIconButtonText={t('previous_page')}
+                        backIconButtonProps={{
+                            size: 'small',
+                        }}
                         nextIconButtonText={t('next_page')}
+                        nextIconButtonProps={{
+                            size: 'small',
+                        }}
                         labelRowsPerPage={`${t('rows_per_page')}:`}
                         labelDisplayedRows={({ from, to, count }) => {
                             if (isLoading) {
@@ -576,7 +582,7 @@ function UserProfileApiKeys(): JSX.Element {
                                 ? t(
                                       (count > 0 || Number(apiKeys && apiKeys.length)
                                           ? 'from_to_of'
-                                          : 'n_models') as Parameters<typeof t>[0],
+                                          : 'n_api_keys') as Parameters<typeof t>[0],
                                       {
                                           from,
                                           to,
@@ -589,7 +595,7 @@ function UserProfileApiKeys(): JSX.Element {
                                   });
                         }}
                         onChangePage={handleChangePage}
-                        onChangeRowsPerPage={handleChangeModelsPerPage}
+                        onChangeRowsPerPage={handleChangeItemsPerPage}
                     />
                 </Grid>
             </Grid>

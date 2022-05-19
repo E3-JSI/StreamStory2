@@ -129,9 +129,9 @@ function PasswordField(
                         onMouseDown={handleMouseDownPassword}
                     >
                         {passwordVisible ? (
-                            <VisibilityIcon fontSize="small" />
+                            <VisibilityIcon />
                         ) : (
-                            <VisibilityOffIcon fontSize="small" />
+                            <VisibilityOffIcon />
                         )}
                     </IconButton>
                 </InputAdornment>

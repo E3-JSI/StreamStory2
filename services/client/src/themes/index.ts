@@ -126,6 +126,10 @@ const theme: ThemeOptions = {
                 '&.MuiIconButton-edgeStart': {
                     marginLeft: -5,
                 },
+                '& .MuiSvgIcon-root': {
+                    width: 20,
+                    height: 20,
+                },
             },
         },
         MuiListItemIcon: {

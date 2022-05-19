@@ -45,7 +45,7 @@ function ModelVisualization({
                 <Box className={classes.buttons}>
                     <Tooltip title={t('options')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                         <IconButton size="small" edge="end">
-                            <TuneIcon fontSize="small" />
+                            <TuneIcon />
                         </IconButton>
                     </Tooltip>
                 </Box>

@@ -13,8 +13,13 @@ import ModelList from '../components/ModelList';
 import PageTitle from '../components/PageTitle';
 import TransHtml from '../components/TransHtml';
 
+export enum DashboardView {
+    OfflineModels = 'offline-models',
+    OnlineModels = 'online-models',
+}
+
 export interface DashboardUrlParams {
-    view?: string;
+    view?: DashboardView;
 }
 
 function Dashboard(): JSX.Element {
@@ -73,7 +78,7 @@ function Dashboard(): JSX.Element {
     let lists;
 
     switch (view) {
-        case 'online-models':
+        case DashboardView.OnlineModels:
             title = t('online_models');
             lists = [
                 <ModelList
@@ -107,7 +112,7 @@ function Dashboard(): JSX.Element {
 
         default:
             if (!view) {
-                view = 'offline-models';
+                view = DashboardView.OfflineModels;
             }
 
             title = t('offline_models');

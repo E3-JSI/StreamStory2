@@ -89,7 +89,7 @@ export async function updateNotification(
         const { read } = req.body;
 
         // TODO: form validation/sanitation (use: express-validation!?).
-        const success = notifications.update(id, read);
+        const success = await notifications.update(id, read);
 
         if (!success) {
             res.status(500).json({

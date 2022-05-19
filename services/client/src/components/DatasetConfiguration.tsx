@@ -595,9 +595,9 @@ function DatasetConfiguration({
                                         }
                                     >
                                         {isUploading ? (
-                                            <CloseIcon fontSize="small" />
+                                            <CloseIcon />
                                         ) : (
-                                            <DeleteIcon fontSize="small" />
+                                            <DeleteIcon />
                                         )}
                                     </IconButton>
                                 </Tooltip>

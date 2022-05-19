@@ -37,12 +37,12 @@ const useStyles = makeStyles((theme: Theme) =>
         table: {
             tableLayout: 'fixed',
         },
-        colHeadName: {},
-        colHeadDescription: {
-            width: '40%',
+        colHeadTitle: {},
+        colHeadType: {
+            width: '30%',
         },
-        colHeadUrl: {
-            width: '40%',
+        colHeadTime: {
+            width: '30%',
             [theme.breakpoints.up('md')]: {
                 width: '20%',
             },
@@ -53,6 +53,15 @@ const useStyles = makeStyles((theme: Theme) =>
                 width: 92,
             },
         },
+        row: {
+            textDecoration: 'none',
+            '&:focus': {
+                backgroundColor: theme.palette.action.selected,
+            },
+        },
+        rowRead: {
+            backgroundColor: theme.palette.action.selected,
+        },
         rowMainContent: {
             display: 'block',
             width: '100%',
@@ -60,6 +69,15 @@ const useStyles = makeStyles((theme: Theme) =>
         footerGrid: {
             paddingLeft: theme.spacing(2),
             paddingRight: theme.spacing(2),
+        },
+        notificationContent: {
+            padding: theme.spacing(2),
+            '& pre:first-child': {
+                marginTop: 0,
+            },
+            '& pre:last-child': {
+                marginBottom: 0,
+            },
         },
         userAutocompleteGridItem: {
             flexGrow: 1,
