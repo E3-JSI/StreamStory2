@@ -256,9 +256,9 @@ function Multiselect({
                                     onClick={handleToggleSearch}
                                 >
                                     {search !== null ? (
-                                        <CloseIcon fontSize="small" />
+                                        <CloseIcon />
                                     ) : (
-                                        <SearchIcon fontSize="small" />
+                                        <SearchIcon />
                                     )}
                                 </IconButton>
                             </Box>

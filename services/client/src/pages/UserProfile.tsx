@@ -16,36 +16,39 @@ import useSession from '../hooks/useSession';
 import PageTitle from '../components/PageTitle';
 import Tab from '../components/Tab';
 import TabPanel, { getTabA11yProps } from '../components/TabPanel';
+import UserProfileApiKeys from '../components/UserProfileApiKeys';
 import UserProfileChangePasswordForm from '../components/UserProfileChangePasswordForm';
 import UserProfileDataSources from '../components/UserProfileDataSources';
 import UserProfileDeleteAccountForm from '../components/UserProfileDeleteAccountForm';
 import UserProfileDetailsForm from '../components/UserProfileDetailsForm';
+import UserProfileNotifications from '../components/UserProfileNotifications';
 import UserProfileSettingsForm from '../components/UserProfileSettingsForm';
 
 import useStyles from './UserProfile.styles';
-import UserProfileApiKeys from '../components/UserProfileApiKeys';
+
+export enum UserProfilePath {
+    Details = 'details',
+    Settings = 'settings',
+    Notifications = 'notifications',
+    DataSources = 'data-sources',
+    ApiKeys = 'api-keys',
+    ChangePassword = 'change-password',
+    DeleteAccount = 'delete-account',
+}
 
 export interface UserProfileUrlParams {
     tab?: string;
+    item?: string;
 }
 
 const basePath = '/profile';
-const tabPaths = {
-    details: 'details',
-    settings: 'settings',
-    notifications: 'notifications',
-    dataSources: 'data-sources',
-    apiKeys: 'api-keys',
-    changePassword: 'change-password',
-    deleteAccount: 'delete-account',
-};
 
 function UserProfile(): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
     const params = useParams<UserProfileUrlParams>();
     const [session] = useSession();
-    const [tabValue, setTabValue] = useState(params.tab || tabPaths.details);
+    const [tabValue, setTabValue] = useState(params.tab || UserProfilePath.Details);
 
     const profileTabPrefix = 'profile';
 
@@ -70,86 +73,101 @@ function UserProfile(): JSX.Element {
                 >
                     <Tab
                         component={RouterLink}
-                        to={`${basePath}/${tabPaths.details}`}
-                        value={tabPaths.details}
+                        to={`${basePath}/${UserProfilePath.Details}`}
+                        value={UserProfilePath.Details}
                         label={t('details')}
                         icon={<InfoIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths.details, profileTabPrefix)}
+                        {...getTabA11yProps(UserProfilePath.Details, profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
-                        to={`${basePath}/${tabPaths.settings}`}
-                        value={tabPaths.settings}
+                        to={`${basePath}/${UserProfilePath.Settings}`}
+                        value={UserProfilePath.Settings}
                         label={t('settings')}
                         icon={<SettingsIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths.settings, profileTabPrefix)}
+                        {...getTabA11yProps(UserProfilePath.Settings, profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
-                        to={`${basePath}/${tabPaths.notifications}`}
-                        value={tabPaths.notifications}
+                        to={`${basePath}/${UserProfilePath.Notifications}`}
+                        value={UserProfilePath.Notifications}
                         label={t('notifications')}
                         icon={<NotificationsIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths.notifications, profileTabPrefix)}
+                        {...getTabA11yProps(UserProfilePath.Notifications, profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
-                        to={`${basePath}/${tabPaths.dataSources}`}
-                        value={tabPaths.dataSources}
+                        to={`${basePath}/${UserProfilePath.DataSources}`}
+                        value={UserProfilePath.DataSources}
                         label={t('data_sources')}
                         icon={<StorageIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths.dataSources, profileTabPrefix)}
+                        {...getTabA11yProps(UserProfilePath.DataSources, profileTabPrefix)}
                     />
                     <Tab
                         component={RouterLink}
-                        to={`${basePath}/${tabPaths.apiKeys}`}
-                        value={tabPaths.apiKeys}
+                        to={`${basePath}/${UserProfilePath.ApiKeys}`}
+                        value={UserProfilePath.ApiKeys}
                         label={t('api_keys')}
                         icon={<VpnKeyIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths.apiKeys, profileTabPrefix)}
+                        {...getTabA11yProps(UserProfilePath.ApiKeys, profileTabPrefix)}
                     />
                     {session.user?.active && (
                         <Tab
                             component={RouterLink}
-                            to={`${basePath}/${tabPaths.changePassword}`}
-                            value={tabPaths.changePassword}
+                            to={`${basePath}/${UserProfilePath.ChangePassword}`}
+                            value={UserProfilePath.ChangePassword}
                             label={t('change_password')}
                             icon={<LockIcon fontSize="small" />}
-                            {...getTabA11yProps(tabPaths.changePassword, profileTabPrefix)}
+                            {...getTabA11yProps(UserProfilePath.ChangePassword, profileTabPrefix)}
                         />
                     )}
                     <Tab
                         component={RouterLink}
-                        to={`${basePath}/${tabPaths.deleteAccount}`}
-                        value={tabPaths.deleteAccount}
+                        to={`${basePath}/${UserProfilePath.DeleteAccount}`}
+                        value={UserProfilePath.DeleteAccount}
                         label={t('delete_account')}
                         icon={<DeleteForeverIcon fontSize="small" />}
-                        {...getTabA11yProps(tabPaths.deleteAccount, profileTabPrefix)}
+                        {...getTabA11yProps(UserProfilePath.DeleteAccount, profileTabPrefix)}
                     />
                 </Tabs>
             </Paper>
-            <TabPanel value={tabValue} index={tabPaths.details} prefix={profileTabPrefix}>
+            <TabPanel value={tabValue} index={UserProfilePath.Details} prefix={profileTabPrefix}>
                 <UserProfileDetailsForm />
             </TabPanel>
-            <TabPanel value={tabValue} index={tabPaths.settings} prefix={profileTabPrefix}>
+            <TabPanel value={tabValue} index={UserProfilePath.Settings} prefix={profileTabPrefix}>
                 <UserProfileSettingsForm />
             </TabPanel>
-            <TabPanel value={tabValue} index={tabPaths.notifications} prefix={profileTabPrefix}>
-                {/* <UserProfileSettingsForm /> */}
-                <div>Notifications</div>
+            <TabPanel
+                value={tabValue}
+                index={UserProfilePath.Notifications}
+                prefix={profileTabPrefix}
+            >
+                <UserProfileNotifications />
             </TabPanel>
-            <TabPanel value={tabValue} index={tabPaths.dataSources} prefix={profileTabPrefix}>
+            <TabPanel
+                value={tabValue}
+                index={UserProfilePath.DataSources}
+                prefix={profileTabPrefix}
+            >
                 <UserProfileDataSources />
             </TabPanel>
-            <TabPanel value={tabValue} index={tabPaths.apiKeys} prefix={profileTabPrefix}>
+            <TabPanel value={tabValue} index={UserProfilePath.ApiKeys} prefix={profileTabPrefix}>
                 <UserProfileApiKeys />
             </TabPanel>
             {session.user?.active && (
-                <TabPanel value={tabValue} index={tabPaths.changePassword} prefix={profileTabPrefix}>
+                <TabPanel
+                    value={tabValue}
+                    index={UserProfilePath.ChangePassword}
+                    prefix={profileTabPrefix}
+                >
                     <UserProfileChangePasswordForm />
                 </TabPanel>
             )}
-            <TabPanel value={tabValue} index={tabPaths.deleteAccount} prefix={profileTabPrefix}>
+            <TabPanel
+                value={tabValue}
+                index={UserProfilePath.DeleteAccount}
+                prefix={profileTabPrefix}
+            >
                 <UserProfileDeleteAccountForm />
             </TabPanel>
         </>

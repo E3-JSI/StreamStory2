@@ -131,7 +131,7 @@ function App(): JSX.Element {
                         <Switch>
                             {/* Private routes */}
                             <PageRoute
-                                path="/profile/:tab?"
+                                path="/profile/:tab?/:item?"
                                 type="private"
                                 variant="application"
                                 component={UserProfile}

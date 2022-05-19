@@ -16,6 +16,7 @@ import ModelVisualization from '../components/ModelVisualization';
 import StateDetails from '../components/StateDetails';
 import StateVisualization from '../components/StateVisualization';
 import PageTitle from '../components/PageTitle';
+import { DashboardView } from './Dashboard';
 
 import useStyles from './Model.styles';
 import { addColorsToScaleStates, createCommonStateData } from '../utils/markovChainUtils';
@@ -48,7 +49,6 @@ function Model(): JSX.Element {
                         commonStateData: createCommonStateData(modelNew.model.scales),
                     };
                     addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
-
                     setSession({
                         currentModel: [modelNew, ...currentModel],
                         commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
@@ -108,7 +108,9 @@ function Model(): JSX.Element {
         history.push(
             nextModels.length
                 ? `/model/${nextModels[0].id}`
-                : `/dashboard/${model?.online ? 'online-models' : 'offline-models'}`,
+                : `/dashboard/${
+                      model?.online ? DashboardView.OnlineModels : DashboardView.OfflineModels
+                  }`,
         );
         setSession({ currentModel: nextModels });
     }
