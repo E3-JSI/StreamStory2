@@ -120,6 +120,8 @@ export async function storeData(req: Request, res: Response, next: NextFunction)
                 return;
             }
 
+            cleanUpData(req);
+
             const dataPath = getDataFilePath(req, true);
             const query = Object.entries({
                 from: new Date(dataSource.timeWindowStart).toISOString(),
