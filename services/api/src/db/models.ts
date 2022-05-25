@@ -65,6 +65,17 @@ export async function findById(id: number): Promise<Model | null> {
     return getModel(rows[0]);
 }
 
+export async function findByDataSourceId(dataSourceId: number): Promise<Model[]> {
+    const { rows } = await db.query(
+        `
+        SELECT * FROM models
+        WHERE datasource_id = $1;`,
+        [dataSourceId]
+    );
+
+    return rows.map((row) => getModel(row, true));
+}
+
 export async function get(userId: number, includePublic = false): Promise<Model[]> {
     const publicConstraint = includePublic ? ' OR models.public = true' : '';
     const { rows } = await db.query(

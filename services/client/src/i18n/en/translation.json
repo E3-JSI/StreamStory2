@@ -327,6 +327,7 @@
         "data_source_deletion_failed": "Failed to delete data source.",
         "data_source_not_found": "Data source not found.",
         "data_source_update_failed": "Failed to update data source.",
+        "data_source_used_by_other_models": "Data source is used by other models.",
         "db_query_failed": "Database query failed.",
         "description_update_failed": "Failed to save new description.",
         "details_update_failed": "Failed to save your details.",
