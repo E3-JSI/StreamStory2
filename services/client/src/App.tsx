@@ -174,13 +174,13 @@ function App(): JSX.Element {
                                 exact
                             />
                             {/* Public routes */}
-                            <PageRoute path="/" type="public" variant="content" component={Home} />
                             <PageRoute
                                 path="/iframe/model/:id?"
                                 type="public"
                                 variant="iframe"
                                 component={ModelIframe}
                             />
+                            <PageRoute path="/" type="public" variant="content" component={Home} />
                         </Switch>
                     </Router>
                 </SnackbarProvider>
