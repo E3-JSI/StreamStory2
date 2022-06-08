@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 
 import * as dataSources from '../db/dataSources';
+import * as models from '../db/models';
 import { DataSource } from '../db/dataSources';
 import { User, UserGroup } from '../db/users';
 
@@ -188,6 +189,14 @@ export async function deleteDataSource(
         if (dataSource && dataSource.userId !== user.id && user.groupId !== UserGroup.Admin) {
             res.status(401).json({
                 error: ['unauthorized'],
+            });
+            return;
+        }
+
+        const relatedModels = await models.findByDataSourceId(id);
+        if (relatedModels.length) {
+            res.status(500).json({
+                error: ['data_source_used_by_other_models'],
             });
             return;
         }

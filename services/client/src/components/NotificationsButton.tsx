@@ -36,7 +36,7 @@ function NotificationsButton({ color, ...rest }: NotificationsButtonProps): JSX.
     function toggleMenu() {
         setIsMenuOpen((value) => !value);
     }
-    
+
     return (
         <>
             <Tooltip title={t('show_notifications')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
@@ -93,25 +93,24 @@ function NotificationsButton({ color, ...rest }: NotificationsButtonProps): JSX.
                             </ListItemText>
                         </MenuItem>
                     ))}
-                {notifications.length > maxNotifications && (
-                    <>
-                        <Divider light />
-                        <MenuItem
-                            component={RouterLink}
-                            to="/profile/notifications"
-                            alignItems="flex-start"
-                            onClick={toggleMenu}
+                {notifications.length > maxNotifications && [
+                    <Divider key={1} light />,
+                    <MenuItem
+                        key={2}
+                        component={RouterLink}
+                        to="/profile/notifications"
+                        alignItems="flex-start"
+                        onClick={toggleMenu}
+                    >
+                        <ListItemText
+                            classes={{
+                                primary: classes.listItemTextPrimary,
+                            }}
                         >
-                            <ListItemText
-                                classes={{
-                                    primary: classes.listItemTextPrimary,
-                                }}
-                            >
-                                {t("see_more")}
-                            </ListItemText>
-                        </MenuItem>
-                    </>
-                )}
+                            {t('see_more')}
+                        </ListItemText>
+                    </MenuItem>,
+                ]}
             </Menu>
         </>
     );

@@ -65,13 +65,31 @@ export async function findById(id: number): Promise<Model | null> {
     return getModel(rows[0]);
 }
 
-export async function get(userId: number, includePublic = false): Promise<Model[]> {
+export async function findByDataSourceId(dataSourceId: number): Promise<Model[]> {
+    const { rows } = await db.query(
+        `
+        SELECT * FROM models
+        WHERE datasource_id = $1;`,
+        [dataSourceId]
+    );
+
+    return rows.map((row) => getModel(row, true));
+}
+
+export async function get(
+    userId: number,
+    includePublic = false,
+    includeSharedModels = false
+): Promise<Model[]> {
     const publicConstraint = includePublic ? ' OR models.public = true' : '';
+    const sharedConstraint = includeSharedModels
+        ? ` OR models.id IN (SELECT model_id from user_model WHERE user_id = ${userId})`
+        : '';
     const { rows } = await db.query(
         `
         SELECT models.*, users.email AS username FROM models
         LEFT JOIN users ON models.user_id = users.id
-        WHERE models.user_id = $1${publicConstraint};`,
+        WHERE models.user_id = $1${publicConstraint}${sharedConstraint};`,
         [userId]
     );
 
@@ -200,4 +218,63 @@ export async function updateState(id: number, value: ModelState): Promise<boolea
     }
 
     return true;
+}
+
+export async function delUserModel(userId?: number, modelId?: number): Promise<number> {
+    if (userId !== undefined && modelId !== undefined) {
+        const { rowCount } = await db.query(
+            `
+            DELETE FROM user_model
+            WHERE user_id = $1 AND model_id = $2;`,
+            [userId, modelId]
+        );
+
+        return rowCount;
+    }
+
+    if (userId !== undefined) {
+        const { rowCount } = await db.query(
+            `
+            DELETE FROM user_model
+            WHERE user_id = $1;`,
+            [userId]
+        );
+
+        return rowCount;
+    }
+
+    if (modelId !== undefined) {
+        const { rowCount } = await db.query(
+            `
+            DELETE FROM user_model
+            WHERE model_id = $1;`,
+            [modelId]
+        );
+
+        return rowCount;
+    }
+
+    return 0;
+}
+
+export async function addModelUsers(modelId: number, userIds: number[]): Promise<number> {
+    const values = userIds.map((userId) => `(${userId},${modelId})`).join(',');
+    const { rowCount } = await db.query(
+        `
+        INSERT INTO user_model (user_id, model_id)
+        VALUES ${values};`
+    );
+
+    return rowCount;
+}
+
+export async function getModelUsers(modelId: number): Promise<number[]> {
+    const { rows } = await db.query(
+        `
+            SELECT user_id from user_model
+            WHERE model_id = $1`,
+        [modelId]
+    );
+
+    return rows.map((row) => row.user_id);
 }

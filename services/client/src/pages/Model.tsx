@@ -32,10 +32,10 @@ function Model(): JSX.Element {
     const { id } = useParams<ModelUrlParams>();
     const history = useHistory();
     const [{ currentModel, commonStateDataArr }, setSession] = useSession();
-    const [isLoading, setIsLoading] = useState(true);
+    const model = currentModel.find((m) => m.id === Number(id));
+    const { commonStateData } = commonStateDataArr.find((m) => m.id === Number(id)) || {};
+    const [isLoading, setIsLoading] = useState(!model);
     const [selectedState, setSelectedState] = useState<any>();
-    const [model, setModel] = useState<any>();
-    const [commonStateData, setCommonStateData] = useState<any>();
 
     useMountEffect(() => {
         async function loadModel() {
@@ -43,15 +43,15 @@ function Model(): JSX.Element {
                 const response = await getModel(Number(id));
 
                 if (response.data.model) {
-                    const modelNew = response.data.model as ModelType;
-                    const commStateDataNew = {
+                    const newModel = response.data.model as ModelType;
+                    const newCommStateData = {
                         id: Number(id),
-                        commonStateData: createCommonStateData(modelNew.model.scales),
+                        commonStateData: createCommonStateData(newModel.model.scales),
                     };
-                    addColorsToScaleStates(modelNew.model.scales, commStateDataNew.commonStateData);
+                    addColorsToScaleStates(newModel.model.scales, newCommStateData.commonStateData);
                     setSession({
-                        currentModel: [modelNew, ...currentModel],
-                        commonStateDataArr: [commStateDataNew, ...commonStateDataArr],
+                        currentModel: [newModel, ...currentModel],
+                        commonStateDataArr: [newCommStateData, ...commonStateDataArr],
                     });
                 }
 
@@ -65,19 +65,6 @@ function Model(): JSX.Element {
             loadModel();
         }
     });
-
-    useEffect(() => {
-        if (id && currentModel && commonStateDataArr && commonStateDataArr.length > 0) {
-            const modelFound = currentModel.find((m) => m.id === Number(id));
-            const commonDataFound = commonStateDataArr.find((m) => m.id === Number(id));
-
-            if (commonDataFound) {
-                // prevent running before commonStateDataArr is updated inside mountEffect hook
-                setModel(modelFound);
-                setCommonStateData(commonDataFound.commonStateData);
-            }
-        }
-    }, [id, currentModel, commonStateDataArr]);
 
     function handleModelChange(modelNew: any) {
         if (modelNew) {

@@ -37,6 +37,8 @@ router.get(`${modelsPath}`, requireAuth, models.getModels);
 router.get(`${modelsPath}/:id`, requireAuth, models.getModel);
 router.put(`${modelsPath}/:id`, requireAuth, models.updateModel);
 router.put(`${modelsPath}/:id/states`, requireAuth, models.updateModelState);
+router.put(`${modelsPath}/:id/share`, requireAuth, models.shareModel);
+router.get(`${modelsPath}/:id/users`, requireAuth, models.getModelUserIds);
 router.delete(`${modelsPath}/:id`, requireAuth, models.deleteModel);
 
 const dataSourcesPath = '/datasources';
