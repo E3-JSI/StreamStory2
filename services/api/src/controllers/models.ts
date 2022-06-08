@@ -279,7 +279,7 @@ export async function getModels(req: Request, res: Response, next: NextFunction)
     const user = req.user as User;
 
     try {
-        const modelList = await models.get(user.id, true);
+        const modelList = await models.get(user.id, true, true);
         res.status(200).json({
             models: modelList.map((model) => getModelResponse(model, true)),
         });
@@ -294,8 +294,9 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
 
     try {
         const model = await models.findById(modelId);
+        const userIds = await models.getModelUsers(modelId);
 
-        if (!model || (user.id !== model.userId && !model.public)) {
+        if (!model || (user.id !== model.userId && !userIds.includes(user.id) && !model.public)) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
@@ -483,6 +484,61 @@ export async function deleteModel(req: Request, res: Response, next: NextFunctio
 
         res.status(200).json({
             success,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function shareModel(req: Request, res: Response, next: NextFunction): Promise<void> {
+    const user = req.user as User;
+    const modelId = Number(req.params.id);
+    const userIds = req.body.userIds.map((userId: string) => Number(userId));
+
+    try {
+        const model = await models.findById(modelId);
+
+        if (!model || user.id !== model.userId) {
+            res.status(401).json({
+                error: ['unauthorized'],
+            });
+            return;
+        }
+
+        await models.delUserModel(undefined, modelId);
+        if (userIds.length) {
+            await models.addModelUsers(modelId, userIds);
+        }
+
+        res.status(200).json({
+            success: true,
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getModelUserIds(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    const user = req.user as User;
+    const modelId = Number(req.params.id);
+
+    try {
+        const model = await models.findById(modelId);
+        if (!model || user.id !== model.userId) {
+            res.status(401).json({
+                error: ['unauthorized'],
+            });
+            return;
+        }
+
+        const userIds = await models.getModelUsers(modelId);
+
+        res.status(200).json({
+            userIds,
         });
     } catch (error) {
         next(error);

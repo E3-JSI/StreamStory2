@@ -1,6 +1,6 @@
 {
     "url": "http://localhost:$CLIENT_PORT",
-    "email": "streamstoryai@gmail.com",
+    "email": "streamstory@ijs.si",
     "mailer": {
         "secure": false,
         "host": "email",

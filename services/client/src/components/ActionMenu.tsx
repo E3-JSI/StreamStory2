@@ -4,24 +4,26 @@ import { useTranslation } from 'react-i18next';
 import Menu, { MenuProps } from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
+import Typography from '@material-ui/core/Typography';
 import DeleteIcon from '@material-ui/icons/Delete';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import PauseIcon from '@material-ui/icons/Pause';
 import PublicIcon from '@material-ui/icons/Public';
-import Typography from '@material-ui/core/Typography';
+import ShareIcon from '@material-ui/icons/Share';
 
 import { deleteModel, updateModel, Model } from '../api/models';
 import { getResponseErrors } from '../utils/errors';
 import useSnackbar from '../hooks/useSnackbar';
 import useSession from '../hooks/useSession';
 import ConfirmationDialog from './ConfirmationDialog';
+import ShareModelDialog from './ShareModelDialog';
 import TransHtml from './TransHtml';
 import PublicOffIcon from './icons/PublicOff';
 
-enum DialogState {
+enum ConfirmationDialogState {
     None,
-    Share,
-    Unshare,
+    Publish,
+    Unpublish,
     Activate,
     Deactivate,
     Delete,
@@ -57,41 +59,45 @@ function ActionMenu(
     const { t } = useTranslation();
     const [{ currentModel }, setSession] = useSession();
     const [showSnackbar] = useSnackbar();
-    const [dialogState, setDialogState] = useState(DialogState.None);
-    const [dialogContent, setDialogContent] = useState<DialogContent | null>(null);
-    const dialogContents: Record<DialogState, DialogContent | null> = {
-        [DialogState.None]: null,
-        [DialogState.Share]: {
-            title: t('share_model'),
+    const [confirmationDialogState, setConfirmationDialogState] = useState(
+        ConfirmationDialogState.None,
+    );
+    const [confirmationDialogContent, setConfirmationDialogContent] =
+        useState<DialogContent | null>(null);
+    const confirmationDialogContents: Record<ConfirmationDialogState, DialogContent | null> = {
+        [ConfirmationDialogState.None]: null,
+        [ConfirmationDialogState.Publish]: {
+            title: t('publish_model'),
             content: (
-                <TransHtml i18nKey="share_model_confirmation" values={{ model: model.name }} />
+                <TransHtml i18nKey="publish_model_confirmation" values={{ model: model.name }} />
             ),
         },
-        [DialogState.Unshare]: {
-            title: t('unshare_model'),
+        [ConfirmationDialogState.Unpublish]: {
+            title: t('unpublish_model'),
             content: (
-                <TransHtml i18nKey="unshare_model_confirmation" values={{ model: model.name }} />
+                <TransHtml i18nKey="unpublish_model_confirmation" values={{ model: model.name }} />
             ),
         },
-        [DialogState.Activate]: {
+        [ConfirmationDialogState.Activate]: {
             title: t('activate_model'),
             content: (
                 <TransHtml i18nKey="activate_model_confirmation" values={{ model: model.name }} />
             ),
         },
-        [DialogState.Deactivate]: {
+        [ConfirmationDialogState.Deactivate]: {
             title: t('deactivate_model'),
             content: (
                 <TransHtml i18nKey="deactivate_model_confirmation" values={{ model: model.name }} />
             ),
         },
-        [DialogState.Delete]: {
+        [ConfirmationDialogState.Delete]: {
             title: t('delete_model'),
             content: (
                 <TransHtml i18nKey="delete_model_confirmation" values={{ model: model.name }} />
             ),
         },
     };
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
     async function toggleModelState(state: boolean) {
         try {
@@ -158,67 +164,90 @@ function ActionMenu(
 
     function handleShareItemClick() {
         onToggle();
-        setDialogState(DialogState.Share);
-        setDialogContent(dialogContents[DialogState.Share]);
+        setIsShareDialogOpen(true);
     }
 
-    function handleUnshareItemClick() {
+    function handlePublishItemClick() {
         onToggle();
-        setDialogState(DialogState.Unshare);
-        setDialogContent(dialogContents[DialogState.Unshare]);
+        setConfirmationDialogState(ConfirmationDialogState.Publish);
+        setConfirmationDialogContent(confirmationDialogContents[ConfirmationDialogState.Publish]);
+    }
+
+    function handleUnpublishItemClick() {
+        onToggle();
+        setConfirmationDialogState(ConfirmationDialogState.Unpublish);
+        setConfirmationDialogContent(confirmationDialogContents[ConfirmationDialogState.Unpublish]);
     }
 
     function handleActivateItemClick() {
         onToggle();
-        setDialogState(DialogState.Activate);
-        setDialogContent(dialogContents[DialogState.Activate]);
+        setConfirmationDialogState(ConfirmationDialogState.Activate);
+        setConfirmationDialogContent(confirmationDialogContents[ConfirmationDialogState.Activate]);
     }
 
     function handleDeactivateItemClick() {
         onToggle();
-        setDialogState(DialogState.Deactivate);
-        setDialogContent(dialogContents[DialogState.Deactivate]);
+        setConfirmationDialogState(ConfirmationDialogState.Deactivate);
+        setConfirmationDialogContent(
+            confirmationDialogContents[ConfirmationDialogState.Deactivate],
+        );
     }
 
     function handleDeleteItemClick() {
         onToggle();
-        setDialogState(DialogState.Delete);
-        setDialogContent(dialogContents[DialogState.Delete]);
+        setConfirmationDialogState(ConfirmationDialogState.Delete);
+        setConfirmationDialogContent(confirmationDialogContents[ConfirmationDialogState.Delete]);
     }
 
-    function handleDialogAccept() {
-        if (dialogState === DialogState.Share || dialogState === DialogState.Activate) {
+    function handleConfirmationDialogAccept() {
+        if (
+            confirmationDialogState === ConfirmationDialogState.Publish ||
+            confirmationDialogState === ConfirmationDialogState.Activate
+        ) {
             toggleModelState(true);
-        } else if (dialogState === DialogState.Unshare || dialogState === DialogState.Deactivate) {
+        } else if (
+            confirmationDialogState === ConfirmationDialogState.Unpublish ||
+            confirmationDialogState === ConfirmationDialogState.Deactivate
+        ) {
             toggleModelState(false);
-        } else if (dialogState === DialogState.Delete) {
+        } else if (confirmationDialogState === ConfirmationDialogState.Delete) {
             delModel();
         }
 
-        setDialogState(DialogState.None);
+        setConfirmationDialogState(ConfirmationDialogState.None);
     }
 
-    function handleDialogClose() {
-        setDialogState(DialogState.None);
+    function handleConfirmationDialogClose() {
+        setConfirmationDialogState(ConfirmationDialogState.None);
+    }
+
+    function handleShareDialogClose() {
+        setIsShareDialogOpen(false);
     }
 
     return (
         <>
             <Menu ref={ref} open={open} {...rest}>
+                <MenuItem onClick={handleShareItemClick}>
+                    <ListItemIcon className="narrow">
+                        <ShareIcon fontSize="small" />
+                    </ListItemIcon>
+                    <Typography>{t('share')}</Typography>
+                </MenuItem>
                 {!isOnline && isPublic && (
-                    <MenuItem onClick={handleUnshareItemClick}>
+                    <MenuItem onClick={handleUnpublishItemClick}>
                         <ListItemIcon className="narrow">
                             <PublicOffIcon fontSize="small" />
                         </ListItemIcon>
-                        <Typography>{t('unshare')}</Typography>
+                        <Typography>{t('unpublish')}</Typography>
                     </MenuItem>
                 )}
                 {!isOnline && !isPublic && (
-                    <MenuItem onClick={handleShareItemClick}>
+                    <MenuItem onClick={handlePublishItemClick}>
                         <ListItemIcon className="narrow">
                             <PublicIcon fontSize="small" />
                         </ListItemIcon>
-                        <Typography>{t('share')}</Typography>
+                        <Typography>{t('publish')}</Typography>
                     </MenuItem>
                 )}
                 {isOnline && isActive && (
@@ -246,12 +275,21 @@ function ActionMenu(
             </Menu>
             <ConfirmationDialog
                 id="update-model-dialog"
-                title={dialogContent?.title || ''}
-                content={dialogContent?.content || ''}
-                open={dialogState !== DialogState.None}
-                onClose={handleDialogClose}
-                onAccept={handleDialogAccept}
-                onDecline={handleDialogClose}
+                title={confirmationDialogContent?.title || ''}
+                content={confirmationDialogContent?.content || ''}
+                open={confirmationDialogState !== ConfirmationDialogState.None}
+                onClose={handleConfirmationDialogClose}
+                onAccept={handleConfirmationDialogAccept}
+                onDecline={handleConfirmationDialogClose}
+            />
+            <ShareModelDialog
+                modelId={model.id}
+                open={isShareDialogOpen}
+                maxWidth="sm"
+                onClose={handleShareDialogClose}
+                onAccept={handleShareDialogClose}
+                onDecline={handleShareDialogClose}
+                fullWidth
             />
         </>
     );

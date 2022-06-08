@@ -350,7 +350,7 @@ function UserProfileNotifications(): JSX.Element {
                             </IconButton>
                         </Tooltip>
                     )}
-                    {selectedNotification &&  (
+                    {selectedNotification && (
                         <Tooltip
                             title={t('back_to_notifications')}
                             enterDelay={muiTheme.timing.tooltipEnterDelay}
@@ -594,12 +594,20 @@ function UserProfileNotifications(): JSX.Element {
                                 ))}
                             {!isLoading && emptyRows > 0 && (
                                 <TableRow component="div" style={{ height: 43 * emptyRows }}>
-                                    <TableCell
-                                        component="div"
-                                        colSpan={
-                                            2 + Number(!!showTypeColumn) + Number(!!showTimeColumn)
-                                        }
-                                    />
+                                    {[
+                                        ...new Array(
+                                            2 + Number(!!showTypeColumn) + Number(!!showTimeColumn),
+                                        ),
+                                    ].map(() => (
+                                        <TableCell
+                                            component="div"
+                                            colSpan={
+                                                2 +
+                                                Number(!!showTypeColumn) +
+                                                Number(!!showTimeColumn)
+                                            }
+                                        />
+                                    ))}
                                 </TableRow>
                             )}
                         </TableBody>

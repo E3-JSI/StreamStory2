@@ -131,6 +131,31 @@ export async function deleteModel(id: number): Promise<AxiosResponse<DeleteModel
     return axios.delete<DeleteModelResponse>(`/api/models/${id}`);
 }
 
+// Share model
+// -----------
+
+export interface ShareModelResponse extends ModelResponse {
+    success?: boolean;
+}
+
+export async function shareModel(
+    id: number,
+    userIds: number[],
+): Promise<AxiosResponse<ShareModelResponse>> {
+    return axios.put<ShareModelResponse>(`/api/models/${id}/share`, { userIds });
+}
+
+// Get model users
+// ---------------
+
+export interface GetUserModelsResponse extends ModelResponse {
+    userIds?: number[];
+}
+
+export async function getModelUsers(id: number): Promise<AxiosResponse<GetUserModelsResponse>> {
+    return axios.get<GetUserModelsResponse>(`/api/models/${id}/users`);
+}
+
 // Upload data
 // -----------
 

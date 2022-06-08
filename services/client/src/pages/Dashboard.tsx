@@ -89,7 +89,7 @@ function Dashboard(): JSX.Element {
                     searchPlaceholder={t('search_active_models')}
                     models={models.filter((model) => model.online && model.active)}
                     online
-                    showUserColumn={false}
+                    showUserColumn={isScreenWidthGteMd}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
                     onModelUpdate={handleModelUpdate}
@@ -102,7 +102,7 @@ function Dashboard(): JSX.Element {
                     searchPlaceholder={t('search_inactive_models')}
                     models={models.filter((model) => model.online && !model.active)}
                     online
-                    showUserColumn={false}
+                    showUserColumn={isScreenWidthGteMd}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
                     onModelUpdate={handleModelUpdate}
@@ -120,12 +120,12 @@ function Dashboard(): JSX.Element {
                 <ModelList
                     key="my-models-list"
                     id="my-models-list"
-                    title={t('my_models')}
-                    description={<TransHtml i18nKey="my_models_description" />}
+                    title={t('private_models')}
+                    description={<TransHtml i18nKey="private_models_description" />}
                     addModelDialogTitle={t('add_new_offline_model')}
-                    searchPlaceholder={t('search_my_models')}
+                    searchPlaceholder={t('search_private_models')}
                     models={models.filter((model) => !model.online && !model.public)}
-                    showUserColumn={false}
+                    showUserColumn={isScreenWidthGteMd}
                     showDateColumn={isScreenWidthGteSm}
                     loading={isLoading}
                     onModelUpdate={handleModelUpdate}
