@@ -36,15 +36,15 @@ export function getUserResponse(user: User): UserResponse {
 }
 
 export async function getUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const user = req.user as User;
+    // const user = req.user as User;
 
     try {
-        if (user.groupId !== UserGroup.Admin) {
-            res.status(401).json({
-                error: ['unauthorized'],
-            });
-            return;
-        }
+        // if (user.groupId !== UserGroup.Admin) {
+        //     res.status(401).json({
+        //         error: ['unauthorized'],
+        //     });
+        //     return;
+        // }
 
         const userList = await users.get();
         res.status(200).json({
