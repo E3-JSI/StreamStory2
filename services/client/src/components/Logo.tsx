@@ -7,12 +7,15 @@ import useStyles from './Logo.styles';
 function Logo(): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
+    const title = t('stream_story');
 
     return (
-        <>
-            <b className={classes.stream}>{t('stream')}</b>
-            <i className={classes.story}>{t('story')}</i>
-        </>
+        title === 'StreamStory' ? (
+            <>
+                <b className={classes.bold}>Stream</b>
+                <i className={classes.italic}>Story</i>
+            </>
+        ) : <strong className={classes.bold}>{title}</strong>
     );
 }
 

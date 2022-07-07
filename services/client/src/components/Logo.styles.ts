@@ -2,10 +2,10 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
-        stream: {
+        bold: {
             fontWeight: theme.typography.fontWeightMedium,
         },
-        story: {
+        italic: {
             fontWeight: theme.typography.fontWeightLight,
         },
     }),

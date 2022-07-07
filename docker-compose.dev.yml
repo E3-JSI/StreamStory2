@@ -15,6 +15,7 @@ services:
             - ./services/api:/app
             - /app/node_modules
             - /app/configs
+            - /app/scripts
             - data:/app/data
         ports:
             - ${API_PORT:-3001}:8080
@@ -41,6 +42,8 @@ services:
             - ./services/client:/app
             - /app/node_modules
             - /app/configs
+            - /app/scripts
+            - /app/src/config/i18n
         ports:
             - ${CLIENT_PORT:-3000}:3000
         links:

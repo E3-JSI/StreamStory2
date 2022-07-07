@@ -59,7 +59,7 @@ function Home(): JSX.Element {
                                 <Logo />
                             </PageTitle>
                             <SectionDescription className={classes.pageSubtitle}>
-                                Making a story of streaming data
+                                {t('site_subtitle')}
                             </SectionDescription>
                             <Grid
                                 spacing={2}

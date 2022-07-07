@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { rememberMeCookie } from '../config/const';
 import * as users from '../db/users';
-import { User, UserGroup, UserSettings } from '../db/users';
+import { User, UserSettings } from '../db/users';
 import { minPasswordLength } from './auth';
 
 export interface UserResponse {

@@ -7,7 +7,7 @@
 /build
 
 # configs
-/configs/*.local.json
+/configs/*.local
 
 # misc
 .DS_Store

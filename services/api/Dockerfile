@@ -21,14 +21,13 @@ COPY $ROOT .
 
 # Setup config
 COPY ./scripts ./scripts
-COPY ./configs/$CONFIG_NAME.json ./config.json
+COPY ./configs ./configs
 COPY .en[v] .
 
 RUN source scripts/loadenv.sh .env && \
     format=$(perl -e 'print "\$$_" for grep /^[_a-zA-Z]\w*$/, keys %ENV') && \
-    envsubst "$format" < config.json | tee _config.json && \
-    node scripts/setupConfig.js api ./_config.json > config.json && \
-    rm _config.json
+    envsubst "$format" < ./configs/$CONFIG_NAME/config.json | tee $CONFIG_NAME.json && \
+    node scripts/setupConfig.js api ./$CONFIG_NAME.json > config.json
 
 # Build service
 RUN npm run build
