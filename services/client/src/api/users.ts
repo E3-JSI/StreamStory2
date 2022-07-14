@@ -56,6 +56,7 @@ export async function updateCurrentUserDetails(
 
 export interface UpdateCurrentUserSettingsRequest {
     theme?: AppTheme;
+    language?: string;
 }
 
 export interface UpdateCurrentUserSettingsResponse extends UsersResponse {
@@ -65,7 +66,9 @@ export interface UpdateCurrentUserSettingsResponse extends UsersResponse {
 export async function updateCurrentUserSettings(
     request: UpdateCurrentUserSettingsRequest,
 ): Promise<AxiosResponse<UpdateCurrentUserSettingsResponse>> {
-    return axios.put<UpdateCurrentUserSettingsResponse>('/api/users/current', request);
+    return axios.put<UpdateCurrentUserSettingsResponse>('/api/users/current', {
+        settings: request,
+    });
 }
 
 // Change current user password

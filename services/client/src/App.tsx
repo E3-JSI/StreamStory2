@@ -59,10 +59,9 @@ function App(): JSX.Element {
                         notifications,
                     });
                 }
-
-                setSyncing(false);
-                setSession({ isPageLoading: false });
             } catch {
+                // Error loading status
+            } finally {
                 setSyncing(false);
                 setSession({ isPageLoading: false });
             }

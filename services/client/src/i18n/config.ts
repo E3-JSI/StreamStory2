@@ -4,6 +4,8 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+import { defaultProps } from '../contexts/SessionContext';
+import { loadFromStorage } from '../components/SessionProvider';
 import config from '../config';
 import translation from './en/translation.json';
 
@@ -45,14 +47,11 @@ languages.forEach((language) => {
     resources = { ...resources, ...res } as typeof resources;
 });
 
-let lng = localStorage.getItem('lng');
-if (!lng || !languages.includes(lng)) {
-    [lng] = languages;
-}
-
+const { language } = loadFromStorage({ ...defaultProps, update: null });
 i18n.use(initReactI18next).init({
     // interpolation: { escapeValue: false },
-    lng,
+    lng: language && languages.includes(language) ? language : languages[0],
+    // fallbackLng: languages,
     simplifyPluralSuffix: false,
     resources,
 });

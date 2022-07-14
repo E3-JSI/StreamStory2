@@ -22,6 +22,7 @@ import { User } from '../api/users';
 import useSession from '../hooks/useSession';
 import { PageVariant } from './Page';
 import Logo from './Logo';
+import LanguagesButton from './LanguagesButton';
 import NotificationsButton from './NotificationsButton';
 import ThemeMenu from './ThemeMenu';
 import UserAccountMenu from './UserAccountMenu';
@@ -143,6 +144,7 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
                         <Logo />
                     </Link>
                 </Box>
+                <LanguagesButton color={iconColor} />
                 {notifications.length > 0 && <NotificationsButton color={iconColor} />}
                 <Tooltip title={t('change_theme')} enterDelay={muiTheme.timing.tooltipEnterDelay}>
                     <IconButton

@@ -65,8 +65,8 @@ export async function updateCurrentUser(
 
     try {
         // TODO: form validation/sanitation (use: express-validation!?).
-        if (req.body.theme !== undefined) {
-            const success = await users.updateSettings(user.id, req.body);
+        if (req.body.settings !== undefined) {
+            const success = await users.updateSettings(user.id, req.body.settings);
 
             if (!success) {
                 res.status(500).json({

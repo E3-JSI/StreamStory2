@@ -13,6 +13,7 @@ export type UpdateSession = (props: SessionProps) => void;
 export interface Session {
     user: User | null;
     theme: AppTheme;
+    language: string;
     isSideNavOpen: boolean;
     isSideNavExpanded: boolean;
     isPageLoading: boolean;
@@ -28,6 +29,7 @@ export type SessionProps = Partial<Omit<Session, 'update'>>;
 export const defaultProps: Required<SessionProps> = {
     user: null,
     theme: 'system',
+    language: 'en',
     isSideNavOpen: false,
     isSideNavExpanded: false,
     isPageLoading: true,
