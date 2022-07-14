@@ -19,6 +19,7 @@
     "back_to_login": "Back to login",
     "back_to_notifications": "Back to notifications",
     "back": "Back",
+    "browser_does_not_support_embeded_videos": "Your browser does not support embedded videos",
     "building": "building",
     "cancel_loading": "Cancel loading",
     "cancel_uploading": "Cancel uploading",
@@ -375,5 +376,23 @@
         "unknown_oauth_provider": "Unknown OAuth provider.",
         "value_must_be_between": "Value must be a number between {{min}} and {{max}}.",
         "value_must_be_gte": "Value must be greater or equal to {{min}}."
+    },
+    "content": {
+        "home": {
+            "features_name": "Features",
+            "features_title": "A qulitative multi-scale data analysis tool",
+            "features_description": "StreamStory is a multi-scale data analysis tool for multivariate continuously time-varying data streams. It represents the data streams in a qualitative manner using states and transitions. Users can upload their own dataset or use one of the pre-loaded datasets. StreamStory can also be used as a monitoring tool, showing in real-time the state of the monitored process, activity and anomaly detection.",
+            "exploratory_data_mining": "Exploratory data mining",
+            "exploratory_data_mining_description": "A system for the analysis of multivariate time series. It computes and visualizes a hierarchical Markov chain model which captures the qualitative behavior of the systems’ dynamics.",
+            "multi_scale_representation": "Multi-scale representation",
+            "multi_scale_representation_description": "The hierarchical model allows users to interactively find suitable scales for interpreting the data.",
+            "real_time_monitoring": "Real-time monitoring",
+            "real_time_monitoring_description": "Visualizes streaming data by mapping it to the hierarchical model. It can provide predictions and alarms for different behavior.",
+            "free": "Free",
+            "free_description": "<a1>Log in</a1> and get started. Check out our <a2>video presentation<a2/> to see how its done and experiment with our <a3>example dataset</a3>.",
+            "contact_name": "Contact",
+            "contact_title": "Get in touch",
+            "contact_description": "We love feedback. Contact us and we'll get back to you as soon as possible"
+        }
     }
 }
