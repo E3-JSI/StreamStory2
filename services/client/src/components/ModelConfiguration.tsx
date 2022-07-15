@@ -513,7 +513,7 @@ function ModelConfiguration({
                                             },
                                         }}
                                         moveToSelectedButtonLabel={t('move_to_ignored_attributes')}
-                                        moveToAvailableButtonLabel={t('move_to_setate_attributes')}
+                                        moveToAvailableButtonLabel={t('move_to_state_attributes')}
                                         defaultValue={defaultValues.ignoredAttributes}
                                         status="single"
                                         selectionI18nKey="m_of_n_attributes_ignored"

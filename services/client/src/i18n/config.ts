@@ -8,6 +8,7 @@ import { defaultProps } from '../contexts/SessionContext';
 import { loadFromStorage } from '../components/SessionProvider';
 import config from '../config';
 import translation from './en/translation.json';
+import { mergeDeep } from '../utils/misc';
 
 const languages = config.languages || ['en'];
 let resources = {
@@ -20,9 +21,12 @@ languages.forEach((language) => {
     let languageTranslation = { ...translation };
     try {
         // eslint-disable-next-line global-require
-        const defaultTranslation = require(`./${language}/translation.json`);
-        if (defaultTranslation) {
-            languageTranslation = { ...languageTranslation, ...defaultTranslation };
+        const mainTranslation = require(`./${language}/translation.json`);
+        if (mainTranslation) {
+            languageTranslation = mergeDeep(
+                languageTranslation,
+                mainTranslation,
+            ) as typeof translation;
         }
     } catch (error) {
         // require failed
@@ -32,7 +36,10 @@ languages.forEach((language) => {
         // eslint-disable-next-line global-require
         const configTranslation = require(`../config/i18n/${language}/translation.json`);
         if (configTranslation) {
-            languageTranslation = { ...languageTranslation, ...configTranslation };
+            languageTranslation = mergeDeep(
+                languageTranslation,
+                configTranslation,
+            ) as typeof translation;
         }
     } catch (error) {
         // require failed

@@ -145,7 +145,7 @@ function Home(): JSX.Element {
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
                                 <Avatar
-                                    alt="Exploratory data mining"
+                                    alt={t('content.home.exploratory_data_mining')}
                                     className={classes.featureAvatar}
                                 >
                                     <DetectiveIcon />
@@ -170,7 +170,7 @@ function Home(): JSX.Element {
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
                                 <Avatar
-                                    alt="Multi-scale representation"
+                                    alt={t('content.home.multi_scale_representation')}
                                     className={classes.featureAvatar}
                                 >
                                     <PyramidIcon />
@@ -195,7 +195,7 @@ function Home(): JSX.Element {
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
                                 <Avatar
-                                    alt="Real-time monitoring"
+                                    alt={t('content.home.real_time_monitoring')}
                                     className={classes.featureAvatar}
                                 >
                                     <MonitorIcon />
@@ -219,7 +219,7 @@ function Home(): JSX.Element {
                             item
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
-                                <Avatar alt="Free" className={classes.featureAvatar}>
+                                <Avatar alt={t('content.home.free')} className={classes.featureAvatar}>
                                     <FreeButterflyIcon />
                                 </Avatar>
                             </ListItemAvatar>

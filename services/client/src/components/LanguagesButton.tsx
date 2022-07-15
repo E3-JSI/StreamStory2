@@ -1,19 +1,23 @@
 import React, { useRef, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { ListItemText, PropTypes } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
+import { PropTypes } from '@material-ui/core';
 import Badge from '@material-ui/core/Badge';
 import IconButton from '@material-ui/core/IconButton';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
 import TranslateIcon from '@material-ui/icons/Translate';
+import CheckIcon from '@material-ui/icons/Check';
 
 import { updateCurrentUserSettings, User } from '../api/users';
 import config from '../config';
 import useSession from '../hooks/useSession';
 
+import useStyles from './LanguagesButton.styles';
 import languages from '../i18n/languages.json';
 
 export interface LanguageButtonProps {
@@ -21,6 +25,7 @@ export interface LanguageButtonProps {
 }
 
 function LanguagesButton({ color, ...rest }: LanguageButtonProps): JSX.Element {
+    const classes = useStyles();
     const muiTheme = useTheme();
     const { t, i18n } = useTranslation();
     const [{ user }, setSession] = useSession();
@@ -91,17 +96,27 @@ function LanguagesButton({ color, ...rest }: LanguageButtonProps): JSX.Element {
                         const nativeName =
                             languages[languageCode as keyof typeof languages]?.nativeName ||
                             languageCode;
+                        const selected = languageCode === i18n.language;
                         return (
                             <MenuItem
                                 key={languageCode}
                                 data-language={languageCode}
-                                selected={languageCode === i18n.language}
+                                selected={selected}
                                 alignItems="flex-start"
                                 onClick={() => {
                                     switchLanguage(languageCode);
                                 }}
                             >
-                                <ListItemText>{nativeName}</ListItemText>
+                                <Typography className={classes.listItemText}>
+                                    {nativeName}
+                                </Typography>
+                                {selected ? (
+                                    <ListItemIcon className={classes.listItemIconSelected}>
+                                        <CheckIcon fontSize="small" />
+                                    </ListItemIcon>
+                                ) : (
+                                    <ListItemIcon className={classes.listItemIconEmpty} />
+                                )}
                             </MenuItem>
                         );
                     })}

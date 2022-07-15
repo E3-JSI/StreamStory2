@@ -10,12 +10,19 @@ function Logo(): JSX.Element {
     const title = t('stream_story');
 
     return (
-        title === 'StreamStory' ? (
-            <>
-                <b className={classes.bold}>Stream</b>
-                <i className={classes.italic}>Story</i>
-            </>
-        ) : <strong className={classes.bold}>{title}</strong>
+        <>
+            {title.split(/\s+/).map((s, i) =>
+                i % 2 === 0 ? (
+                    <b key={`key-${i * 2}`} className={classes.bold}>
+                        {s}
+                    </b>
+                ) : (
+                    <i key={`key-${i * 2}`} className={classes.italic}>
+                        {s}
+                    </i>
+                ),
+            )}
+        </>
     );
 }
 

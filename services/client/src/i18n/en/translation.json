@@ -163,7 +163,7 @@
     "move_to_ignored_attributes": "Move to ignored attributes",
     "move_to_selected_attributes": "Move to selected attributes",
     "move_to_selected_items": "Move to selected items",
-    "move_to_setate_attributes": "Move to state attributes",
+    "move_to_state_attributes": "Move to state attributes",
     "private_models_description": "<p>This table contains <strong>private offline models</strong>. Offline models can be used to visualize any dataset and only require users to upload a <strong>CSV file</strong>.</p><p>To create a new model, click the <strong>Add button</strong>.</p>",
     "my_profile": "My profile",
     "n_api_keys_0": "{{count}} api key",
@@ -275,7 +275,7 @@
     "state_name": "State name",
     "state_radius": "State radius",
     "state_successfully_saved": "State saved.",
-    "stream_story": "StreamStory",
+    "stream_story": "Stream Story",
     "submit": "Submit",
     "switch_language": "Switch language",
     "system": "System",
@@ -379,20 +379,20 @@
     },
     "content": {
         "home": {
-            "features_name": "Features",
-            "features_title": "A qulitative multi-scale data analysis tool",
-            "features_description": "StreamStory is a multi-scale data analysis tool for multivariate continuously time-varying data streams. It represents the data streams in a qualitative manner using states and transitions. Users can upload their own dataset or use one of the pre-loaded datasets. StreamStory can also be used as a monitoring tool, showing in real-time the state of the monitored process, activity and anomaly detection.",
-            "exploratory_data_mining": "Exploratory data mining",
-            "exploratory_data_mining_description": "A system for the analysis of multivariate time series. It computes and visualizes a hierarchical Markov chain model which captures the qualitative behavior of the systems’ dynamics.",
-            "multi_scale_representation": "Multi-scale representation",
-            "multi_scale_representation_description": "The hierarchical model allows users to interactively find suitable scales for interpreting the data.",
-            "real_time_monitoring": "Real-time monitoring",
-            "real_time_monitoring_description": "Visualizes streaming data by mapping it to the hierarchical model. It can provide predictions and alarms for different behavior.",
-            "free": "Free",
-            "free_description": "<a1>Log in</a1> and get started. Check out our <a2>video presentation<a2/> to see how its done and experiment with our <a3>example dataset</a3>.",
+            "contact_description": "We love feedback. Contact us and we'll get back to you as soon as possible",
             "contact_name": "Contact",
             "contact_title": "Get in touch",
-            "contact_description": "We love feedback. Contact us and we'll get back to you as soon as possible"
+            "exploratory_data_mining_description": "A system for the analysis of multivariate time series. It computes and visualizes a hierarchical Markov chain model which captures the qualitative behavior of the systems’ dynamics.",
+            "exploratory_data_mining": "Exploratory data mining",
+            "features_description": "StreamStory is a multi-scale data analysis tool for multivariate continuously time-varying data streams. It represents the data streams in a qualitative manner using states and transitions. Users can upload their own dataset or use one of the pre-loaded datasets. StreamStory can also be used as a monitoring tool, showing in real-time the state of the monitored process, activity and anomaly detection.",
+            "features_name": "Features",
+            "features_title": "A qulitative multi-scale data analysis tool",
+            "free_description": "<a1>Log in</a1> and get started. Check out our <a2>video presentation</a2> to see how its done and experiment with our <a3>example dataset</a3>.",
+            "free": "Free",
+            "multi_scale_representation_description": "The hierarchical model allows users to interactively find suitable scales for interpreting the data.",
+            "multi_scale_representation": "Multi-scale representation",
+            "real_time_monitoring_description": "Visualizes streaming data by mapping it to the hierarchical model. It can provide predictions and alarms for different behavior.",
+            "real_time_monitoring": "Real-time monitoring"
         }
     }
 }
