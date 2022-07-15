@@ -34,6 +34,7 @@ import { ReactComponent as DetectiveIcon } from '../assets/images/icons/detectiv
 import { ReactComponent as FreeButterflyIcon } from '../assets/images/icons/free-butterfly.svg';
 import { ReactComponent as MonitorIcon } from '../assets/images/icons/monitor.svg';
 import { ReactComponent as PyramidIcon } from '../assets/images/icons/pyramid.svg';
+import TransHtml from '../components/TransHtml';
 
 function Home(): JSX.Element {
     const classes = useStyles();
@@ -59,7 +60,7 @@ function Home(): JSX.Element {
                                 <Logo />
                             </PageTitle>
                             <SectionDescription className={classes.pageSubtitle}>
-                                Making a story of streaming data
+                                {t('site_subtitle')}
                             </SectionDescription>
                             <Grid
                                 spacing={2}
@@ -98,7 +99,7 @@ function Home(): JSX.Element {
                             >
                                 <video width="1920" className={classes.video} controls>
                                     <source src="/video/streamstory.mp4" type="video/mp4" />
-                                    Your browser does not support embedded videos.
+                                    {t('browser_does_not_support_embeded_videos')}
                                 </video>
                             </Dialog>
                         </Grid>
@@ -126,17 +127,10 @@ function Home(): JSX.Element {
             </Section>
             <Section bgColor="secondary" className={classes.featuresSection}>
                 <Container maxWidth="lg">
-                    <SectionName gutterBottom>Features</SectionName>
-                    <SectionTitle gutterBottom>
-                        A qulitative multi-scale data analysis tool
-                    </SectionTitle>
+                    <SectionName gutterBottom>{t('content.home.features_name')}</SectionName>
+                    <SectionTitle gutterBottom>{t('content.home.features_title')}</SectionTitle>
                     <SectionDescription>
-                        StreamStory is a multi-scale data analysis tool for multivariate
-                        continuously time-varying data streams. It represents the data streams in a
-                        qualitative manner using states and transitions. Users can upload their own
-                        dataset or use one of the pre-loaded datasets. StreamStory can also be used
-                        as a monitoring tool, showing in real-time the state of the monitored
-                        process, activity and anomaly detection.
+                        {t('content.home.features_description')}
                     </SectionDescription>
                 </Container>
                 <Container maxWidth="lg">
@@ -151,7 +145,7 @@ function Home(): JSX.Element {
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
                                 <Avatar
-                                    alt="Exploratory data mining"
+                                    alt={t('content.home.exploratory_data_mining')}
                                     className={classes.featureAvatar}
                                 >
                                     <DetectiveIcon />
@@ -159,12 +153,10 @@ function Home(): JSX.Element {
                             </ListItemAvatar>
                             <ListItemText>
                                 <Typography component="h3" variant="h6" gutterBottom>
-                                    Exploratory data mining
+                                    {t('content.home.exploratory_data_mining')}
                                 </Typography>
                                 <Typography variant="body1">
-                                    A system for the analysis of multivariate time series. It
-                                    computes and visualizes a hierarchical Markov chain model which
-                                    captures the qualitative behavior of the systems’ dynamics.
+                                    {t('content.home.exploratory_data_mining_description')}
                                 </Typography>
                             </ListItemText>
                         </ListItem>
@@ -178,7 +170,7 @@ function Home(): JSX.Element {
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
                                 <Avatar
-                                    alt="Multi-scale representation"
+                                    alt={t('content.home.multi_scale_representation')}
                                     className={classes.featureAvatar}
                                 >
                                     <PyramidIcon />
@@ -186,11 +178,10 @@ function Home(): JSX.Element {
                             </ListItemAvatar>
                             <ListItemText>
                                 <Typography component="h3" variant="h6" gutterBottom>
-                                    Multi-scale representation
+                                    {t('content.home.multi_scale_representation')}
                                 </Typography>
                                 <Typography variant="body1">
-                                    The hierarchical model allows users to interactively find
-                                    suitable scales for interpreting the data.
+                                    {t('content.home.multi_scale_representation_description')}
                                 </Typography>
                             </ListItemText>
                         </ListItem>
@@ -204,7 +195,7 @@ function Home(): JSX.Element {
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
                                 <Avatar
-                                    alt="Real-time monitoring"
+                                    alt={t('content.home.real_time_monitoring')}
                                     className={classes.featureAvatar}
                                 >
                                     <MonitorIcon />
@@ -212,12 +203,10 @@ function Home(): JSX.Element {
                             </ListItemAvatar>
                             <ListItemText>
                                 <Typography component="h3" variant="h6" gutterBottom>
-                                    Real-time monitoring
+                                    {t('content.home.real_time_monitoring')}
                                 </Typography>
                                 <Typography variant="body1">
-                                    Visualizes streaming data by mapping it to the hierarchical
-                                    model. It can provide predictions and alarms for different
-                                    behavior.
+                                    {t('content.home.real_time_monitoring_description')}
                                 </Typography>
                             </ListItemText>
                         </ListItem>
@@ -230,27 +219,28 @@ function Home(): JSX.Element {
                             item
                         >
                             <ListItemAvatar className={classes.featureAvatarItem}>
-                                <Avatar alt="Free" className={classes.featureAvatar}>
+                                <Avatar alt={t('content.home.free')} className={classes.featureAvatar}>
                                     <FreeButterflyIcon />
                                 </Avatar>
                             </ListItemAvatar>
                             <ListItemText>
                                 <Typography component="h3" variant="h6" gutterBottom>
-                                    Free
+                                    {t('content.home.free')}
                                 </Typography>
                                 <Typography variant="body1">
-                                    <Link component={RouterLink} to="/login">
-                                        Log in
-                                    </Link>{' '}
-                                    and get started. Check out our{' '}
-                                    <Link
-                                        href="/video/streamstory.mp4"
-                                        onClick={handleWatchVideoButtonClick}
-                                    >
-                                        video presentation
-                                    </Link>{' '}
-                                    to see how its done and experiment with our{' '}
-                                    <Link href="/data/weather.csv">example dataset</Link>.
+                                    <TransHtml
+                                        i18nKey="content.home.free_description"
+                                        components={{
+                                            a1: <Link component={RouterLink} to="/login" />,
+                                            a2: (
+                                                <Link
+                                                    href="/video/streamstory.mp4"
+                                                    onClick={handleWatchVideoButtonClick}
+                                                />
+                                            ),
+                                            a3: <Link href="/data/weather.csv" />,
+                                        }}
+                                    />
                                 </Typography>
                             </ListItemText>
                         </ListItem>
@@ -345,12 +335,9 @@ function Home(): JSX.Element {
             </Section> */}
             <Section className={classes.contactSection}>
                 <Container maxWidth="lg">
-                    <SectionName gutterBottom>Contact</SectionName>
-                    <SectionTitle gutterBottom>Get in touch</SectionTitle>
-                    <SectionDescription>
-                        We love feedback. Contact us and we&apos;ll get back to you as soon as
-                        possible.
-                    </SectionDescription>
+                    <SectionName gutterBottom>{t('content.home.contact_name')}</SectionName>
+                    <SectionTitle gutterBottom>{t('content.home.contact_title')}</SectionTitle>
+                    <SectionDescription>{t('content.home.contact_description')}</SectionDescription>
                     <Grid spacing={2} justify="center" className={classes.buttons} container>
                         <Grid xs={12} sm="auto" item>
                             <Button

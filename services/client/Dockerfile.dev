@@ -19,16 +19,15 @@ COPY $ROOT .
 
 # Setup config
 COPY ./scripts ./scripts
-COPY ./configs/$CONFIG_NAME.json ./config.json
+COPY ./configs ./configs
 COPY .en[v] .
 
 RUN source scripts/loadenv.sh .env && \
     format=$(perl -e 'print "\$$_" for grep /^[_a-zA-Z]\w*$/, keys %ENV') && \
-    envsubst "$format" < config.json | tee _config.json && \
-    node scripts/setupConfig.js client ./_config.json > config.json && \
-    mkdir -p configs && \
+    envsubst "$format" < ./configs/$CONFIG_NAME/config.json | tee $CONFIG_NAME.json && \
+    node scripts/setupConfig.js client ./$CONFIG_NAME.json > config.json && \
     mv config.json configs && \
-    rm _config.json
+    rm $CONFIG_NAME.json
 
 # Run service
 EXPOSE 3000

@@ -1,6 +1,7 @@
 {
     "url": "http://localhost:$CLIENT_PORT",
     "email": "streamstory@ijs.si",
+    "languages": ["en", "sl"],
     "mailer": {
         "secure": false,
         "host": "email",

@@ -1,0 +1,8 @@
+{
+    "stream_story": "State Analysis Tool",
+    "content": {
+        "home": {
+            "features_description": "State Analysis Tool is a multi-scale data analysis tool for multivariate continuously time-varying data streams. It represents the data streams in a qualitative manner using states and transitions. Users can upload their own dataset or use one of the pre-loaded datasets. State Analysis Tool can also be used as a monitoring tool, showing in real-time the state of the monitored process, activity and anomaly detection."
+        }
+    }
+}

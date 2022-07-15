@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import SessionContext, { AppTheme, Session, SessionProps } from '../contexts/SessionContext';
 
@@ -7,10 +8,10 @@ export interface SessionProviderProps {
 }
 
 const storageSessionKey = 'streamstory.session';
-const storageSessionProps = ['theme', 'isSideNavExpanded', 'modelsPerPage'];
+const storageSessionProps = ['language', 'theme', 'isSideNavExpanded', 'modelsPerPage'];
 let loaderState = -1;
 
-function loadFromStorage(sessionState: Session): Session {
+export function loadFromStorage(sessionState: Session): Session {
     if (localStorage) {
         const storedSessionJson = localStorage.getItem(storageSessionKey);
 
@@ -29,7 +30,7 @@ function loadFromStorage(sessionState: Session): Session {
     return sessionState;
 }
 
-function saveToStorage(sessionState: Session) {
+export function saveToStorage(sessionState: Session): void {
     if (localStorage) {
         const storedSession: Record<string, unknown> = {};
 
@@ -42,6 +43,7 @@ function saveToStorage(sessionState: Session) {
 }
 
 function SessionProvider({ children }: SessionProviderProps): JSX.Element {
+    const { i18n } = useTranslation();
     const [session, setSession] = useState(loadFromStorage(useContext(SessionContext)));
 
     if (loaderState < 0) {
@@ -65,6 +67,12 @@ function SessionProvider({ children }: SessionProviderProps): JSX.Element {
             if (props.user?.settings.theme) {
                 // Sync theme.
                 newSession.theme = props.user.settings.theme as AppTheme;
+            }
+
+            if (props.user?.settings.language) {
+                // Sync language.
+                newSession.language = props.user.settings.language as string;
+                i18n.changeLanguage(newSession.language);
             }
 
             newSession.isPageLoading = !!loaderState;

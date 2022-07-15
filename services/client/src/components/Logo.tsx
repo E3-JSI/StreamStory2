@@ -7,11 +7,21 @@ import useStyles from './Logo.styles';
 function Logo(): JSX.Element {
     const classes = useStyles();
     const { t } = useTranslation();
+    const title = t('stream_story');
 
     return (
         <>
-            <b className={classes.stream}>{t('stream')}</b>
-            <i className={classes.story}>{t('story')}</i>
+            {title.split(/\s+/).map((s, i) =>
+                i % 2 === 0 ? (
+                    <b key={`key-${i * 2}`} className={classes.bold}>
+                        {s}
+                    </b>
+                ) : (
+                    <i key={`key-${i * 2}`} className={classes.italic}>
+                        {s}
+                    </i>
+                ),
+            )}
         </>
     );
 }

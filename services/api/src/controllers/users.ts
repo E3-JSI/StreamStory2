@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { rememberMeCookie } from '../config/const';
 import * as users from '../db/users';
-import { User, UserGroup, UserSettings } from '../db/users';
+import { User, UserSettings } from '../db/users';
 import { minPasswordLength } from './auth';
 
 export interface UserResponse {
@@ -65,8 +65,8 @@ export async function updateCurrentUser(
 
     try {
         // TODO: form validation/sanitation (use: express-validation!?).
-        if (req.body.theme !== undefined) {
-            const success = await users.updateSettings(user.id, req.body);
+        if (req.body.settings !== undefined) {
+            const success = await users.updateSettings(user.id, req.body.settings);
 
             if (!success) {
                 res.status(500).json({
