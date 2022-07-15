@@ -102,7 +102,6 @@ function LanguagesButton({ color, ...rest }: LanguageButtonProps): JSX.Element {
                                 key={languageCode}
                                 data-language={languageCode}
                                 selected={selected}
-                                alignItems="flex-start"
                                 onClick={() => {
                                     switchLanguage(languageCode);
                                 }}
