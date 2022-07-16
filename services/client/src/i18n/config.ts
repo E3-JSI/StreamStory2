@@ -18,7 +18,7 @@ let resources = {
 };
 
 languages.forEach((language) => {
-    let languageTranslation = { ...translation };
+    let languageTranslation = JSON.parse(JSON.stringify(translation));
     try {
         // eslint-disable-next-line global-require
         const mainTranslation = require(`./${language}/translation.json`);
