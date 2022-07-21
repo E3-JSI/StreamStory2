@@ -5,7 +5,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import { defaultProps } from '../contexts/SessionContext';
-import { loadFromStorage } from '../components/SessionProvider';
+import { loadFromStorage, saveToStorage } from '../components/SessionProvider';
 import config from '../config';
 import translation from './en/translation.json';
 import { mergeDeep } from '../utils/misc';
@@ -54,10 +54,27 @@ languages.forEach((language) => {
     resources = { ...resources, ...res } as typeof resources;
 });
 
-const { language } = loadFromStorage({ ...defaultProps, update: null });
+const sessionState = loadFromStorage({ ...defaultProps, update: null });
+
+let { language } = sessionState;
+if (!language || !languages.includes(language)) {
+    [language] = languages;
+}
+
+const query = new URLSearchParams(window.location.search);
+const lang = query.get('lang');
+if (lang && languages.includes(lang) && lang !== language) {
+    language = lang;
+    saveToStorage({
+        ...sessionState,
+        language,
+    });
+}
+
+
 i18n.use(initReactI18next).init({
     // interpolation: { escapeValue: false },
-    lng: language && languages.includes(language) ? language : languages[0],
+    lng: language,
     // fallbackLng: languages,
     simplifyPluralSuffix: false,
     resources,
