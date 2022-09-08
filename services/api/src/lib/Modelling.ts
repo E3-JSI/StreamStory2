@@ -115,14 +115,62 @@ export function isDataValid(data: DataPoint, model: TrainedModel): boolean {
     const datasetCols = model.dataset.cols.map((col: any) => col.name);
     const dataCols = Object.keys(data);
 
-    for (let i = 0; i < dataCols.length; i++) {
-        const dataCol = dataCols[i];
-        if (!datasetCols.includes(dataCol)) {
+    for (let i = 0; i < datasetCols.length; i++) {
+        const datasetCol = datasetCols[i];
+        if (!dataCols.includes(datasetCol)) {
             return false;
         }
     }
 
     return true;
+}
+
+export function getEnterTriggerStates(newState: number, previousState: number, model: TrainedModel): any[] {
+    const states: any[] = [];
+    for (let i = 0; i < model?.scales?.length; i++) {
+        const scale = model.scales[i];
+        for (let j = 0; j < scale?.states?.length; j++) {
+            const state = scale.states[j];
+            const eventId = state?.ui?.eventId;
+            if (eventId &&
+                state?.initialStates.includes(newState) &&
+                !state?.initialStates.includes(previousState)
+            ) {
+                states.push({
+                    initialState: newState,
+                    scale: state.scaleIx,
+                    label: state?.suggestedLabel?.label || state?.ui?.label,
+                    eventId
+                });
+            }
+        }
+    }
+
+    return states;
+}
+
+export function getExitTriggerStates(newState: number, previousState: number, model: TrainedModel): any[] {
+    const states: any[] = [];
+    for (let i = 0; i < model?.scales?.length; i++) {
+        const scale = model.scales[i];
+        for (let j = 0; j < scale?.states?.length; j++) {
+            const state = scale.states[j];
+            const eventId = state?.ui?.eventId;
+            if (eventId &&
+                !state?.initialStates.includes(newState) &&
+                state?.initialStates.includes(previousState)
+            ) {
+                states.push({
+                    initialState: newState,
+                    scale: state.scaleIx,
+                    label: state?.suggestedLabel?.label || state?.ui?.label,
+                    eventId
+                });
+            }
+        }
+    }
+
+    return states;
 }
 
 export async function getDatasetAttributes(filePath: string): Promise<DatasetAttribute[]> {
