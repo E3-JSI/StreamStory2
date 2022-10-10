@@ -139,7 +139,8 @@ export function getEnterTriggerStates(newState: number, previousState: number, m
                 states.push({
                     initialState: newState,
                     scale: state.scaleIx,
-                    label: state?.suggestedLabel?.label || state?.ui?.label,
+                    label: state?.ui?.label || state?.suggestedLabel?.label,
+                    description: state?.ui?.description,
                     eventId
                 });
             }
@@ -163,7 +164,8 @@ export function getExitTriggerStates(newState: number, previousState: number, mo
                 states.push({
                     initialState: newState,
                     scale: state.scaleIx,
-                    label: state?.suggestedLabel?.label || state?.ui?.label,
+                    label: state?.ui?.label || state?.suggestedLabel?.label,
+                    description: state?.ui?.description,
                     eventId
                 });
             }
