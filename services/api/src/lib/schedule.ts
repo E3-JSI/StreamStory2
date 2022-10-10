@@ -5,7 +5,11 @@ import modelling from '../config/modelling';
 import * as models from '../db/models';
 import * as dataSources from '../db/dataSources';
 import * as notifications from '../db/notifications';
-import { DataPoint, getEnterTriggerStates, getExitTriggerStates, isDataValid } from './Modelling';
+import {
+    DataPoint,
+    getEnterTriggerStates,
+    getExitTriggerStates /* , isDataValid */,
+} from './Modelling';
 
 async function classify(): Promise<void> {
     const activeModels = await models.getActive();
@@ -23,7 +27,9 @@ async function classify(): Promise<void> {
         try {
             const dataSource = await dataSources.findById(model.dataSourceId);
             if (!dataSource) {
-                console.log(`Online model ${model.id} is missing datasource (${model.dataSourceId})`);
+                console.log(
+                    `Online model ${model.id} is missing datasource (${model.dataSourceId})`
+                );
                 return;
             }
 
@@ -59,23 +65,31 @@ async function classify(): Promise<void> {
                 const res = await modelling.classifyDataPoint(lastData, m);
                 if (res.status === 'ok' && res.classifications) {
                     if (model.state && res.classifications[0] !== model.state.state) {
-                        const enterTriggerStates = getEnterTriggerStates(res.classifications[0], model.state.state, m);
-                        const exitTriggerStates = getExitTriggerStates(res.classifications[0], model.state.state, m);
-                        enterTriggerStates.forEach(state => {
+                        const enterTriggerStates = getEnterTriggerStates(
+                            res.classifications[0],
+                            model.state.state,
+                            m
+                        );
+                        const exitTriggerStates = getExitTriggerStates(
+                            res.classifications[0],
+                            model.state.state,
+                            m
+                        );
+                        enterTriggerStates.forEach((state) => {
                             notifications.add(
                                 model.userId,
                                 model.id,
                                 'state_change',
-                                `Model ${model.id} "${model.name}" entered trigger state`,
+                                `Model "${model.name}" (id: ${model.id}) entered state "${state.label}" (event: ${state.eventId})`,
                                 `<pre>${JSON.stringify(state, null, 2)}</pre>`
                             );
                         });
-                        exitTriggerStates.forEach(state => {
+                        exitTriggerStates.forEach((state) => {
                             notifications.add(
                                 model.userId,
                                 model.id,
                                 'state_change',
-                                `Model ${model.id} "${model.name}" exited trigger state`,
+                                `Model "${model.name}" (id: ${model.id}) exited state "${state.label}" (event: ${state.eventId})`,
                                 `<pre>${JSON.stringify(state, null, 2)}</pre>`
                             );
                         });
