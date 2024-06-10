@@ -127,7 +127,7 @@ CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions (expire);
 -- DROP TABLE IF EXISTS models;
 CREATE TABLE IF NOT EXISTS public.models (
     id serial PRIMARY KEY,
-    -- uuid UUID DEFAULT gen_random_uuid(),
+    uuid UUID DEFAULT gen_random_uuid(),
     user_id integer NOT NULL,
     datasource_id integer,
     name varchar(255) NOT NULL,

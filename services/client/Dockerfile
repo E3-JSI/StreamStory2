@@ -14,7 +14,8 @@ RUN apk add --no-cache gettext
 RUN apk add --no-cache perl
 
 COPY $ROOT/package*.json ./
-RUN npm install
+# RUN npm install
+RUN npm ci
 
 # Copy project files from host
 COPY $ROOT .
