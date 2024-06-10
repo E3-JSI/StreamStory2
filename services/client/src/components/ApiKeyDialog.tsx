@@ -37,6 +37,16 @@ export interface DataSourceDialogProps extends DialogProps {
     onDecline: React.ReactEventHandler<HTMLElement>;
 }
 
+function generateApiKey(): string {
+    let d = new Date().getTime();
+    const key: string = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: string) => {
+        const r = (d + Math.random() * 16) % 16 | 0; // eslint-disable-line
+        d = Math.floor(d / 16);
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16); // eslint-disable-line
+    });
+    return key;
+}
+
 function ApiKeyDialog({
     apiKey,
     userId,
@@ -101,14 +111,9 @@ function ApiKeyDialog({
         }
     };
 
-    function generateApiKey() {
-        let d = new Date().getTime();
-        const key: string = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c: string) => {
-            const r = (d + Math.random() * 16) % 16 | 0; // eslint-disable-line
-            d = Math.floor(d / 16);
-            return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16); // eslint-disable-line
-        });
-        setValue('value', key as string);
+    function handleGenerateClick() {
+        const key = generateApiKey();
+        setValue('value', key);
     }
 
     return (
@@ -119,14 +124,7 @@ function ApiKeyDialog({
             <DialogContent dividers>
                 <form id="data-source-form" onSubmit={onSubmit(handleSubmit)} noValidate>
                     {!apiKey && (
-                        <>
-                            <div>userId={userId || user?.id}</div>
-                            <input
-                                type="hidden"
-                                value={userId || user?.id}
-                                {...register('userId')}
-                            />
-                        </>
+                        <input type="hidden" value={userId || user?.id} {...register('userId')} />
                     )}
 
                     <Controller
@@ -157,7 +155,7 @@ function ApiKeyDialog({
                             <Controller
                                 control={control}
                                 name="value"
-                                defaultValue={apiKey?.value}
+                                defaultValue={apiKey?.value || generateApiKey()}
                                 rules={{
                                     required: t('error.required_named_field', {
                                         name: t('api_key'),
@@ -183,7 +181,7 @@ function ApiKeyDialog({
                             <Button
                                 disabled={(apiKey != null)!} // eslint-disable-line
                                 color="primary"
-                                onClick={generateApiKey}
+                                onClick={handleGenerateClick}
                             >
                                 {t('generate')}
                             </Button>

@@ -1,7 +1,0 @@
-# API
-
-## Session
-
-## Users
-
-## Models

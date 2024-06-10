@@ -353,6 +353,7 @@
         "model_addition_failed": "Failed to add new model.",
         "model_deactivation_failed": "Failed to deactivate your model.",
         "model_deletion_failed": "Failed to delete your model.",
+        "model_not_found": "Model not found",
         "model_sharing_failed": "Failed to share your model.",
         "model_unsharing_failed": "Failed to unshare your model.",
         "no_data": "No data",
