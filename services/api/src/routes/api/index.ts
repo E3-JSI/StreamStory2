@@ -1,14 +1,14 @@
 import { Router } from 'express';
 
-import requireAuth from '../middleware/requireAuth';
-import requireApiKey from '../middleware/requireApiKey';
-import * as auth from '../controllers/auth';
-import * as users from '../controllers/users';
-import * as models from '../controllers/models';
-import * as dataSources from '../controllers/dataSources';
-import * as notifications from '../controllers/notifications';
-import * as apiKeys from '../controllers/apiKeys';
-import * as iframe from '../controllers/iframe';
+import requireAuth from '../../middleware/requireAuth';
+import requireApiKey from '../../middleware/requireApiKey';
+import * as auth from '../../controllers/auth';
+import * as users from '../../controllers/users';
+import * as models from '../../controllers/models';
+import * as dataSources from '../../controllers/dataSources';
+import * as notifications from '../../controllers/notifications';
+import * as apiKeys from '../../controllers/apiKeys';
+import * as iframe from '../../controllers/iframe';
 
 const router = Router();
 

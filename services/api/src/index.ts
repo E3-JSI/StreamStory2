@@ -5,19 +5,21 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 import pgSession from 'connect-pg-simple';
+import swaggerUi from 'swagger-ui-express';
 
 import handleErrors from './middleware/handleErrors';
 import handleUnknown from './middleware/handleUnknown';
 import authenticateFromMemory from './middleware/authenticateFromMemory';
-import routes from './routes';
+import apiRoutes from './routes/api';
+import apiV1Routes from './routes/api/v1';
 import db, { waitForDB } from './config/db';
 import schedule from './lib/schedule';
+import swaggerDocV1 from './openapi/v1/swagger';
 
 async function main() {
     // Load environment variables (from .env file).
     dotenv.config();
     console.log(`Environment: ${process.env.NODE_ENV}`);
-    // console.log(`Environment vars: ${JSON.stringify(process.env)}`);
 
     console.log('Waiting for database...');
     await waitForDB();
@@ -57,8 +59,12 @@ async function main() {
     // Initialize session/cookie authentication.
     app.use(authenticateFromMemory);
 
-    // Set up routing.
-    app.use('/api', routes);
+    // Set up private API routing.
+    app.use('/api', apiRoutes);
+    
+    // Set up public open API (v1) routes.
+    app.use('/api/v1', apiV1Routes);
+    app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocV1));
 
     // Handles unknown requests.
     app.all('/*', handleUnknown);

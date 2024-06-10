@@ -57,7 +57,7 @@ export async function save(value: string, userId: number): Promise<boolean> {
         [userId, value]
     );
 
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }
 
 export async function issue(userId: number): Promise<string> {

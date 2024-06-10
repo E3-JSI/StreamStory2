@@ -5,6 +5,7 @@ import { TrainedModel, ModelState } from '../lib/Modelling';
 
 export interface Model {
     id: number;
+    uuid: string;
     userId: number;
     dataSourceId: number;
     username: string;
@@ -28,6 +29,7 @@ export interface Model {
 function getModel(row: QueryResultRow, metadata = false): Model {
     const model = {
         id: row.id,
+        uuid: row.uuid,
         userId: row.user_id,
         dataSourceId: row.datasource_id,
         username: row.username,
@@ -56,6 +58,22 @@ export async function findById(id: number): Promise<Model | null> {
         LEFT JOIN users ON models.user_id = users.id
         WHERE models.id = $1;`,
         [id]
+    );
+
+    if (!rows.length) {
+        return null;
+    }
+
+    return getModel(rows[0]);
+}
+
+export async function findByUuid(uuid: string): Promise<Model | null> {
+    const { rows } = await db.query(
+        `
+        SELECT models.*, users.email AS username FROM models
+        LEFT JOIN users ON models.user_id = users.id
+        WHERE models.uuid = $1;`,
+        [uuid]
     );
 
     if (!rows.length) {
@@ -122,7 +140,7 @@ export async function add(
         RETURNING id;`,
         [userId, dataSourceId || null, name, description, dataset, online, online, false, model]
     );
-    return rowCount && rows[0].id;
+    return Number(rowCount) > 0 && rows[0].id;
 }
 
 export async function del(id: number): Promise<boolean> {
@@ -229,7 +247,7 @@ export async function delUserModel(userId?: number, modelId?: number): Promise<n
             [userId, modelId]
         );
 
-        return rowCount;
+        return Number(rowCount);
     }
 
     if (userId !== undefined) {
@@ -240,7 +258,7 @@ export async function delUserModel(userId?: number, modelId?: number): Promise<n
             [userId]
         );
 
-        return rowCount;
+        return Number(rowCount);
     }
 
     if (modelId !== undefined) {
@@ -251,7 +269,7 @@ export async function delUserModel(userId?: number, modelId?: number): Promise<n
             [modelId]
         );
 
-        return rowCount;
+        return Number(rowCount);
     }
 
     return 0;
@@ -265,7 +283,7 @@ export async function addModelUsers(modelId: number, userIds: number[]): Promise
         VALUES ${values};`
     );
 
-    return rowCount;
+    return Number(rowCount);
 }
 
 export async function getModelUsers(modelId: number): Promise<number[]> {

@@ -4,6 +4,7 @@ import {
     getRandomInt,
     getRandomString,
     isNumeric,
+    isValidUuid
 } from '../misc';
 
 describe('convertToCamelCase', () => {
@@ -167,5 +168,19 @@ describe('isNumeric', () => {
         { value: '-1e-5', expected: true },
     ])('should return `$expected` for "$value"', ({ value, expected }) => {
         expect(isNumeric(value)).toEqual(expected);
+    });
+});
+
+describe('isValidUuid', () => {
+    test.each([
+        { uuid: '', expected: false },
+        { uuid: 'a', expected: false },
+        { uuid: '12345678-123', expected: false },
+        { uuid: '12345678-1234-1234-1234-12345678', expected: false },
+        { uuid: '12345678-1234-1234-1234-1234567890ab', expected: false },
+        { uuid: '12345678-1234-1234-8234-1234567890ab', expected: true },
+        { uuid: '10304b80-453d-4bf4-99a4-af2057ce1257', expected: true },
+    ])('should return `$expected` for "$uuid"', ({ uuid, expected }) => {
+        expect(isValidUuid(uuid)).toEqual(expected);
     });
 });
