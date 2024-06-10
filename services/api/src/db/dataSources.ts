@@ -82,7 +82,7 @@ export async function add(
             interval,
         ]
     );
-    return rowCount && rows[0].id;
+    return Number(rowCount) > 0 && rows[0].id;
 }
 
 export async function update(
@@ -106,7 +106,7 @@ export async function update(
         WHERE id = $7;`,
         [name, description, url, new Date(timeWindowStart), new Date(timeWindowEnd), interval, id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }
 
 export async function del(id: number): Promise<boolean> {
@@ -116,5 +116,5 @@ export async function del(id: number): Promise<boolean> {
         WHERE id = $1;`,
         [id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }

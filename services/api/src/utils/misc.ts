@@ -86,3 +86,13 @@ export function getValue<T extends unknown>(obj: unknown, path: string): T | und
 
     return current as T;
 }
+
+/**
+ * Check if given string is valid UUID.
+ * @param uuid String to be checked.
+ * @returns `true` if `uuid` is valid UUID, `false` otherwise.
+ */
+export function isValidUuid(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+}

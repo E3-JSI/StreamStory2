@@ -54,10 +54,10 @@ export async function findById(id: number): Promise<User | null> {
     return getUser(rows[0]);
 }
 
-export async function findByApiKey(apiKey:string): Promise<User | null> {
-    const { rows } = await db.query( // without 'api_keys.id as api_keys_id' id (api_keys) overwrittes id (users)
+export async function findByApiKey(apiKey: string): Promise<User | null> {
+    const { rows } = await db.query(
         `
-        SELECT users.*, api_keys.id as api_keys_id
+        SELECT users.*
         FROM users
         LEFT JOIN api_keys ON api_keys.user_id = users.id
         WHERE api_keys.value = $1;`,
@@ -94,7 +94,7 @@ export async function updateLastLogin(id: number): Promise<boolean> {
         WHERE id = $2;`,
         [new Date(), id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }
 
 export async function get(): Promise<User[]> {
@@ -125,7 +125,7 @@ export async function add(
         RETURNING id;`,
         [groupId, name, email, hashedPassword, settings]
     );
-    return rowCount && rows[0].id;
+    return Number(rowCount) > 0 && rows[0].id;
 }
 
 export async function del(id: number): Promise<boolean> {
@@ -289,7 +289,7 @@ export async function setPassword(id: number, password: string): Promise<boolean
         WHERE id = $2`,
         [hashedPassword, id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }
 
 export async function updateDetails(id: number, name: string): Promise<boolean> {
@@ -300,7 +300,7 @@ export async function updateDetails(id: number, name: string): Promise<boolean> 
         WHERE id = $2`,
         [name, id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }
 
 export async function updateSettings(id: number, newSettings: UserSettings): Promise<boolean> {

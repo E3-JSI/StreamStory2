@@ -73,7 +73,7 @@ export async function add(userId: number, value: string, domain: string): Promis
         RETURNING id;`,
         [userId, value, domain]
     );
-    return rowCount && rows[0].id;
+    return Number(rowCount) > 0 && rows[0].id;
 }
 
 export async function update(id: number, domain: string): Promise<boolean> {
@@ -84,7 +84,7 @@ export async function update(id: number, domain: string): Promise<boolean> {
         WHERE id = $2;`,
         [domain, id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }
 
 export async function del(id: number): Promise<boolean> {
@@ -94,5 +94,5 @@ export async function del(id: number): Promise<boolean> {
         WHERE id = $1;`,
         [id]
     );
-    return rowCount > 0;
+    return Number(rowCount) > 0;
 }

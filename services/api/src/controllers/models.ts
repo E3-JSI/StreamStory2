@@ -294,9 +294,15 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
 
     try {
         const model = await models.findById(modelId);
-        const userIds = await models.getModelUsers(modelId);
+        if (!model) {
+            res.status(404).json({
+                error: ['model_not_found'],
+            });
+            return;
+        }
 
-        if (!model || (user.id !== model.userId && !userIds.includes(user.id) && !model.public)) {
+        const userIds = await models.getModelUsers(modelId);
+        if (user.id !== model.userId && !userIds.includes(user.id) && !model.public) {
             res.status(401).json({
                 error: ['unauthorized'],
             });
