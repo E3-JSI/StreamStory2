@@ -91,9 +91,7 @@ export async function getModel(req: Request, res: Response, next: NextFunction):
             return;
         }
 
-        res.status(200).json({
-            model: getModelResponse(model, false),
-        });
+        res.status(200).json(getModelResponse(model, false));
     } catch (error) {
         next(error);
     }
