@@ -17,6 +17,10 @@ COPY $ROOT/package*.json ./
 # RUN npm install
 RUN npm ci
 
+# FIXME: This is workaround for compile issues with updated package.json
+RUN npm install swagger-ui-express
+RUN npm install @types/swagger-ui-express
+
 # Copy project files from host
 COPY $ROOT .
 
