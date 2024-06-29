@@ -37,6 +37,7 @@ async function main() {
     // );
 
     app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
+    app.use(express.text({ type: 'text/csv' }));
     app.use(express.json());
     app.use(cookieParser());
     // app.use(express.urlencoded({ extended: false }));
@@ -61,7 +62,7 @@ async function main() {
 
     // Set up private API routing.
     app.use('/api', apiRoutes);
-    
+
     // Set up public open API (v1) routes.
     app.use('/api/v1', apiV1Routes);
     app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocV1));

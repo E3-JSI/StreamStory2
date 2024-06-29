@@ -125,14 +125,19 @@ export function isDataValid(data: DataPoint, model: TrainedModel): boolean {
     return true;
 }
 
-export function getEnterTriggerStates(newState: number, previousState: number, model: TrainedModel): any[] {
+export function getEnterTriggerStates(
+    newState: number,
+    previousState: number,
+    model: TrainedModel
+): any[] {
     const states: any[] = [];
     for (let i = 0; i < model?.scales?.length; i++) {
         const scale = model.scales[i];
         for (let j = 0; j < scale?.states?.length; j++) {
             const state = scale.states[j];
             const eventId = state?.ui?.eventId;
-            if (eventId &&
+            if (
+                eventId &&
                 state?.initialStates.includes(newState) &&
                 !state?.initialStates.includes(previousState)
             ) {
@@ -141,7 +146,7 @@ export function getEnterTriggerStates(newState: number, previousState: number, m
                     scale: state.scaleIx,
                     label: state?.ui?.label || state?.suggestedLabel?.label,
                     description: state?.ui?.description,
-                    eventId
+                    eventId,
                 });
             }
         }
@@ -150,14 +155,19 @@ export function getEnterTriggerStates(newState: number, previousState: number, m
     return states;
 }
 
-export function getExitTriggerStates(newState: number, previousState: number, model: TrainedModel): any[] {
+export function getExitTriggerStates(
+    newState: number,
+    previousState: number,
+    model: TrainedModel
+): any[] {
     const states: any[] = [];
     for (let i = 0; i < model?.scales?.length; i++) {
         const scale = model.scales[i];
         for (let j = 0; j < scale?.states?.length; j++) {
             const state = scale.states[j];
             const eventId = state?.ui?.eventId;
-            if (eventId &&
+            if (
+                eventId &&
                 !state?.initialStates.includes(newState) &&
                 state?.initialStates.includes(previousState)
             ) {
@@ -166,7 +176,7 @@ export function getExitTriggerStates(newState: number, previousState: number, mo
                     scale: state.scaleIx,
                     label: state?.ui?.label || state?.suggestedLabel?.label,
                     description: state?.ui?.description,
-                    eventId
+                    eventId,
                 });
             }
         }
@@ -296,15 +306,26 @@ export async function getModellingRequest(config: ModelConfig): Promise<Modellin
 }
 
 export function getClassificationRequest(
-    data: DataPoint,
+    data: DataPoint[] | string,
     model: TrainedModel
 ): ClassificationRequest {
+    let csvData = '';
+    if (typeof data === 'string') {
+        csvData = data;
+    } else {
+        const keys = Object.keys(data[0]);
+        csvData += `${keys.join(',')}\n`;
+        data.forEach((d) => {
+            csvData += `${keys.map((key) => d[key]).join(',')}\n`;
+        });
+    }
+
     const req: ClassificationRequest = {
         dataSource: {
             type: 'internal',
             format: 'csv',
             fieldSep: ',',
-            data: `${Object.keys(data).join(',')}\n${Object.values(data).join(',')}`,
+            data: csvData,
         },
         model,
     };
@@ -319,7 +340,7 @@ class Modelling {
         this.options = options;
     }
 
-    async build(req: ModellingRequest): Promise<ModellingResponse> {
+    private async build(req: ModellingRequest): Promise<ModellingResponse> {
         // const data = JSON.stringify(req);
         const options: AxiosRequestConfig<ModellingRequest> = {
             ...this.options,
@@ -340,12 +361,7 @@ class Modelling {
         return res.data;
     }
 
-    async buildFromModelConfig(config: ModelConfig): Promise<ModellingResponse> {
-        const req = await getModellingRequest(config);
-        return this.build(req);
-    }
-
-    async classify(req: ClassificationRequest): Promise<ClassificationResponse> {
+    private async classify(req: ClassificationRequest): Promise<ClassificationResponse> {
         const options: AxiosRequestConfig<ClassificationRequest> = {
             ...this.options,
             url: '/classifySamples',
@@ -365,7 +381,15 @@ class Modelling {
         return res.data;
     }
 
-    async classifyDataPoint(data: DataPoint, model: TrainedModel): Promise<ClassificationResponse> {
+    public async buildFromModelConfig(config: ModelConfig): Promise<ModellingResponse> {
+        const req = await getModellingRequest(config);
+        return this.build(req);
+    }
+
+    public async classifyData(
+        data: DataPoint[] | string,
+        model: TrainedModel
+    ): Promise<ClassificationResponse> {
         const req = getClassificationRequest(data, model);
         return this.classify(req);
     }

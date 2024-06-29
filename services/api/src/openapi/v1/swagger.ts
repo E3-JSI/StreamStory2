@@ -104,7 +104,7 @@ export default {
                 properties: {
                     uuid: {
                         type: 'string',
-                        description: 'The universally unique identifier of the model.',
+                        description: 'The UUID of the model.',
                         example: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
                     },
                     name: {
@@ -167,7 +167,7 @@ export default {
                 properties: {
                     uuid: {
                         type: 'string',
-                        description: 'The universally unique identifier of the model.',
+                        description: 'The UUID of the model.',
                         example: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
                     },
                     name: {
@@ -233,6 +233,64 @@ export default {
                         //         },
                         //     },
                         // },
+                    },
+                },
+            },
+            ClassificationRequest: {
+                type: 'object',
+                required: ['data'],
+                properties: {
+                    data: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                        },
+                        description: 'The data in JSON format.',
+                        example: [
+                            {
+                                Time: 1575244800000,
+                                Rainfall: 40.8,
+                                'Rainfall (previous month)': 40.6,
+                                Temperature: 6,
+                                'Temperature (previous month)': 5.2,
+                            },
+                            {
+                                Time: 959990400000,
+                                Rainfall: 61.8,
+                                'Rainfall (previous month)': 60.7,
+                                Temperature: 16.4,
+                                'Temperature (previous month)': 15.5,
+                            },
+                        ],
+                    },
+                },
+            },
+            ClassificationResponse: {
+                type: 'object',
+                required: ['status', 'errors'],
+                properties: {
+                    classifications: {
+                        type: 'array',
+                        items: {
+                            type: 'number',
+                        },
+                        description:
+                            'An array containing as many integers are there are datapoints in the input dataset. For each `i`, `classifications[i]` is the number of the initial state whose centroid was closest to the `i`th datapoint of the input dataset. This attribute is present only if `status == "ok"`.',
+                        example: [2, 7],
+                    },
+                    status: {
+                        type: 'string',
+                        enum: ['ok', 'error'],
+                        description: 'The status of the classification.',
+                        example: 'ok',
+                    },
+                    errors: {
+                        type: 'array',
+                        items: {
+                            type: 'string',
+                        },
+                        description: 'An array of error messages, if any.',
+                        example: ['Invalid data format.'],
                     },
                 },
             },
@@ -318,12 +376,12 @@ export default {
             get: {
                 tags: ['Models'],
                 summary: 'Get model by UUID',
-                description: 'Get a specific model by its universally unique identifier.',
+                description: 'Get a specific model by its UUID.',
                 parameters: [
                     {
                         name: 'uuid',
                         in: 'path',
-                        description: 'The universally unique identifier of the model.',
+                        description: 'The UUID of the model.',
                         required: true,
                         schema: {
                             type: 'string',
@@ -354,12 +412,12 @@ export default {
             },
             // put: {
             //     tags: ['Models'],
-            //     description: 'Update a specific model by its universally unique identifier.',
+            //     description: 'Update a specific model by its UUID.',
             //     parameters: [
             //         {
             //             name: 'uuid',
             //             in: 'path',
-            //             description: 'The universally unique identifier of the model.',
+            //             description: 'The UUID of the model.',
             //             required: true,
             //             schema: {
             //                 type: 'string',
@@ -391,12 +449,12 @@ export default {
             delete: {
                 tags: ['Models'],
                 summary: 'Delete model by UUID',
-                description: 'Delete a specific model by its universally unique identifier.',
+                description: 'Delete a specific model by its UUID.',
                 parameters: [
                     {
                         name: 'uuid',
                         in: 'path',
-                        description: 'The universally unique identifier of the model.',
+                        description: 'The UUID of the model.',
                         required: true,
                         schema: {
                             type: 'string',
@@ -406,6 +464,65 @@ export default {
                 responses: {
                     '204': {
                         description: 'The model was successfully deleted.',
+                    },
+                    '400': {
+                        $ref: '#/components/responses/400',
+                    },
+                    '401': {
+                        $ref: '#/components/responses/401',
+                    },
+                    '404': {
+                        $ref: '#/components/responses/404',
+                    },
+                },
+            },
+        },
+        '/models/{uuid}/classification': {
+            post: {
+                tags: ['Models'],
+                summary: 'Get data classification',
+                description:
+                    'Get classification of the given data for a model with given UUID.',
+                parameters: [
+                    {
+                        name: 'uuid',
+                        in: 'path',
+                        description: 'The UUID of the model.',
+                        required: true,
+                        schema: {
+                            type: 'string',
+                        },
+                    },
+                ],
+                requestBody: {
+                    description: 'The data to classify.',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/ClassificationRequest',
+                            },
+                        },
+                        'text/csv': {
+                            schema: {
+                                type: 'string',
+                                description: 'The data in CSV format.',
+                                example: `Time,Rainfall,Rainfall (previous month),Temperature,Temperature (previous month)
+1575244800000,40.8,40.6,6,5.2
+959990400000,61.8,60.7,16.4,15.5`,
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': {
+                        description: 'The classification result of the data by the model.',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    $ref: '#/components/schemas/ClassificationResponse',
+                                },
+                            },
+                        },
                     },
                     '400': {
                         $ref: '#/components/responses/400',

@@ -62,7 +62,7 @@ async function classify(): Promise<void> {
                 );
 
                 // Classify and update model's state.
-                const res = await modelling.classifyDataPoint(lastData, m);
+                const res = await modelling.classifyData([lastData], m);
                 if (res.status === 'ok' && res.classifications) {
                     if (model.state && res.classifications[0] !== model.state.state) {
                         const enterTriggerStates = getEnterTriggerStates(

@@ -42,7 +42,7 @@ export async function downloadFile(url: string, filePath: string): Promise<boole
  * @param url Request URL.
  * @returns Response or error.
  */
-export async function get(url: string): Promise<any | Error> {
+export async function get(url: string): Promise<unknown | Error> {
     return new Promise((resolve, reject) => {
         let result = '';
         http.get(url, (res) => {
