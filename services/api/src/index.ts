@@ -16,6 +16,8 @@ import db, { waitForDB } from './config/db';
 import schedule from './lib/schedule';
 import swaggerDocV1 from './openapi/v1/swagger';
 
+const bodyLimit = '1000mb';
+
 async function main() {
     // Load environment variables (from .env file).
     dotenv.config();
@@ -37,7 +39,8 @@ async function main() {
     // );
 
     app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
-    app.use(express.json());
+    app.use(express.text({ type: 'text/csv', limit: bodyLimit}));
+    app.use(express.json({ limit: bodyLimit }));
     app.use(cookieParser());
     // app.use(express.urlencoded({ extended: false }));
     // app.use(flash());
@@ -61,7 +64,7 @@ async function main() {
 
     // Set up private API routing.
     app.use('/api', apiRoutes);
-    
+
     // Set up public open API (v1) routes.
     app.use('/api/v1', apiV1Routes);
     app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocV1));
