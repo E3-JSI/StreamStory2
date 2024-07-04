@@ -44,7 +44,7 @@ export interface ModellingOperation {
     inAttr: string;
     outAttr: string;
     windowUnit: 'samples' | 'numeric' | 'sec' | 'min' | 'hour' | 'day';
-    timeAttr: string;
+    timeAttr?: string;
     windowSize: number;
 }
 
@@ -298,7 +298,7 @@ export async function getModellingRequest(config: ModelConfig): Promise<Modellin
         outAttr: `${datasetAttributes[Number(key)].name} derivative`,
         // windowUnit: config.timeUnit as ModellingOperation['windowUnit'],
         windowUnit: 'samples',
-        timeAttr: attributes[timeIndex].name,
+        // timeAttr: attributes[timeIndex].name,
         windowSize: 1,
     }));
 
@@ -340,7 +340,7 @@ class Modelling {
         this.options = options;
     }
 
-    private async build(req: ModellingRequest): Promise<ModellingResponse> {
+    public async build(req: ModellingRequest): Promise<ModellingResponse> {
         // const data = JSON.stringify(req);
         const options: AxiosRequestConfig<ModellingRequest> = {
             ...this.options,
@@ -350,6 +350,8 @@ class Modelling {
                 'Content-Type': 'application/json',
                 // 'Content-Length': `${data.length}`,
             },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
             data: req,
         };
         const res = await axios.request<
@@ -370,6 +372,8 @@ class Modelling {
                 'Content-Type': 'application/json',
                 // 'Content-Length': `${data.length}`,
             },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
             data: req,
         };
         const res = await axios.request<
