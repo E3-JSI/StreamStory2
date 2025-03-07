@@ -11,6 +11,7 @@ import { isValidUuid } from '../../utils/misc';
 import modelling from '../../config/modelling';
 
 export interface ModelResponse {
+    id: number;
     uuid: string;
     name: string;
     description: string;
@@ -33,6 +34,7 @@ export type FileFormat = 'csv' | 'json';
  */
 function getModelResponse(model: models.Model, metadata = false): ModelResponse {
     const modelResponse: ModelResponse = {
+        id: model.id,
         uuid: model.uuid,
         username: model.username,
         name: model.name,
