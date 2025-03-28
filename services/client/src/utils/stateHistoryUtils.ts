@@ -1,6 +1,7 @@
 import React from 'react';
 import * as d3 from 'd3';
 import { scaleOrdinal, easeQuadIn } from 'd3';
+import moment from 'moment';
 
 export function drawChart(
     gBars: any,
@@ -278,5 +279,5 @@ export function createDataCurr(model: any) {
 }
 
 export function createDate(unixTimestamp: number) {
-    return new Date(unixTimestamp * 1000);
+    return moment(unixTimestamp).toDate();
 }
