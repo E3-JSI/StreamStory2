@@ -27,6 +27,7 @@ import SectionDescription from '../components/SectionDescription';
 import SectionName from '../components/SectionName';
 import SectionTitle from '../components/SectionTitle';
 import Footer from '../components/Footer';
+import ModelTeaser from '../components/ModelTeaser';
 
 import config from '../config';
 import useStyles from './Home.styles';
@@ -110,10 +111,7 @@ function Home(): JSX.Element {
                                 elevation={16}
                             >
                                 <CardContent>
-                                    <img
-                                        src="https://via.placeholder.com/1024x768.png"
-                                        alt="Streamstory screenshot"
-                                    />
+                                    <ModelTeaser />
                                 </CardContent>
                             </Card>
                         </Grid>

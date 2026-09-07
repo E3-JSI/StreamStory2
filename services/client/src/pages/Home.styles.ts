@@ -74,7 +74,7 @@ const useStyles = makeStyles((theme: Theme) =>
                 position: 'relative',
                 width: '100%',
                 height: 0,
-                paddingTop: `${(768 / 1024) * 100}%`,
+                paddingTop: `${(700 / 1000) * 100}%`,
                 paddingRight: 0,
                 paddingBottom: 0,
                 paddingLeft: 0,
@@ -82,7 +82,7 @@ const useStyles = makeStyles((theme: Theme) =>
                     paddingBottom: 0,
                 },
             },
-            '& img': {
+            '& img, & svg': {
                 position: 'absolute',
                 top: 0,
                 left: 0,
