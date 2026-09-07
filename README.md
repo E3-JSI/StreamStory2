@@ -2,6 +2,10 @@
 
 Interactive exploration of multivariate time series on multiple scales.
 
+<p align="center">
+  <img src="docs/img/streamstory-model.svg" alt="A StreamStory model of 20 years of monthly weather: six states forming a yearly cycle, drawn as circles sized by time spent and linked by arrows weighted by transition probability; the selected state has a blue border and blue outgoing arrows" width="100%">
+</p>
+
 StreamStory turns high-dimensional time series into an interpretable, hierarchical
 model of qualitative states and the transitions between them. You can zoom from
 coarse, long-term behaviour down to fine detail, see what characterises each state,

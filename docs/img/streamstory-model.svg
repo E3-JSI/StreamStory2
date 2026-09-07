@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="1200" height="620" role="img" aria-labelledby="t d">
+<title id="t">StreamStory: a yearly weather cycle as states and transitions</title>
+<desc id="d">Twenty years of monthly temperature and rainfall summarised by StreamStory as six states forming a yearly cycle. Circle area shows the share of time in each state, arrow width the probability of moving to the next state; the selected state has a blue border and blue outgoing arrows.</desc>
+<style>text{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}.flow{stroke-dasharray:5 17;animation:flow 1.1s linear infinite}@keyframes flow{to{stroke-dashoffset:-44}}</style>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#121c33"/></linearGradient>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+<radialGradient id="g-low" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="hsl(200, 85%, 64%)"/><stop offset="1" stop-color="hsl(200, 85%, 42%)"/></radialGradient>
+<radialGradient id="g-aprmay" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="hsl(22, 38%, 64%)"/><stop offset="1" stop-color="hsl(22, 38%, 42%)"/></radialGradient>
+<radialGradient id="g-highest" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="hsl(140, 60%, 64%)"/><stop offset="1" stop-color="hsl(140, 60%, 42%)"/></radialGradient>
+<radialGradient id="g-oct" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="hsl(335, 80%, 64%)"/><stop offset="1" stop-color="hsl(335, 80%, 42%)"/></radialGradient>
+<radialGradient id="g-nov" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="hsl(318, 70%, 64%)"/><stop offset="1" stop-color="hsl(318, 70%, 42%)"/></radialGradient>
+<radialGradient id="g-lowest" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="hsl(258, 55%, 64%)"/><stop offset="1" stop-color="hsl(258, 55%, 42%)"/></radialGradient>
+<marker id="arrow" viewBox="0 0 12 12" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 L3,6 z" fill="#cbd5e1" fill-opacity="0.7"/></marker>
+<marker id="arrow-dim" viewBox="0 0 12 12" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 L3,6 z" fill="#cbd5e1" fill-opacity="0.35"/></marker>
+<marker id="arrow-blue" viewBox="0 0 12 12" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="0" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 L3,6 z" fill="hsl(212, 90%, 62%)"/></marker>
+</defs>
+<rect x="0" y="0" width="1200" height="620" rx="24" fill="url(#bg)"/>
+<g filter="url(#glow)" opacity="0.24"><circle cx="985" cy="315" r="150" fill="hsl(140, 70%, 45%)"/><circle cx="470" cy="270" r="160" fill="hsl(225, 70%, 55%)"/><circle cx="710" cy="500" r="110" fill="hsl(325, 60%, 50%)"/></g>
+<text x="48" y="58" font-size="30" font-weight="700" fill="#f1f5f9" letter-spacing="-0.5">StreamStory</text>
+<text x="48" y="84" font-size="15" fill="#94a3b8">20 years of monthly temperature and rainfall, summarised as a yearly cycle of six states</text>
+<g>
+<path d="M575.1,204.4 Q653.8,225.0 717.1,184.2" fill="none" stroke="#cbd5e1" stroke-opacity="0.62" stroke-width="6.2" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M794.5,194.7 Q841.2,279.8 903.4,295.0" fill="none" stroke="#cbd5e1" stroke-opacity="0.62" stroke-width="7.1" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M794.8,503.5 Q709.5,475.6 633.1,490.6" fill="none" stroke="#cbd5e1" stroke-opacity="0.62" stroke-width="6.0" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M568.1,467.1 Q525.5,384.3 458.8,366.1" fill="none" stroke="#cbd5e1" stroke-opacity="0.42" stroke-width="4.0" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M586.8,463.0 Q592.8,336.6 550.7,251.8" fill="none" stroke="#cbd5e1" stroke-opacity="0.62" stroke-width="4.8" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M442.7,326.0 Q495.2,296.4 504.3,257.2" fill="none" stroke="#cbd5e1" stroke-opacity="0.62" stroke-width="7.2" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M470.3,218.0 Q424.8,243.6 413.8,290.6" fill="none" stroke="#cbd5e1" stroke-opacity="0.42" stroke-width="3.0" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M720.7,137.1 Q636.2,115.0 578.0,152.6" fill="none" stroke="#cbd5e1" stroke-opacity="0.35" stroke-width="1.4" stroke-dasharray="3 6" stroke-linecap="round" marker-end="url(#arrow-dim)"/>
+<path d="M862.5,497.4 Q951.5,449.1 964.6,396.5" fill="none" stroke="#cbd5e1" stroke-opacity="0.35" stroke-width="1.4" stroke-dasharray="3 6" stroke-linecap="round" marker-end="url(#arrow-dim)"/>
+<path d="M422.4,393.6 Q459.5,465.7 537.7,487.1" fill="none" stroke="#cbd5e1" stroke-opacity="0.35" stroke-width="1.4" stroke-dasharray="3 6" stroke-linecap="round" marker-end="url(#arrow-dim)"/>
+<path d="M921.7,349.3 Q863.5,380.9 841.9,467.5" fill="none" stroke="hsl(212, 90%, 62%)" stroke-opacity="0.95" stroke-width="7.3" stroke-linecap="round" marker-end="url(#arrow-blue)"/>
+<path d="M921.7,349.3 Q863.5,380.9 841.9,467.5" fill="none" stroke="hsl(212, 100%, 90%)" stroke-opacity="0.9" stroke-width="3.3" stroke-linecap="round" class="flow"/>
+<path d="M950.4,251.9 Q913.8,185.2 831.2,165.0" fill="none" stroke="hsl(212, 90%, 62%)" stroke-opacity="0.95" stroke-width="1.9" stroke-linecap="round" marker-end="url(#arrow-blue)" stroke-dasharray="3 6"/>
+</g>
+<g>
+<circle cx="520" cy="190" r="62.1" fill="hsl(200, 85%, 55%)" opacity="0.32" filter="url(#glow)"/>
+<circle cx="520" cy="190" r="54" fill="url(#g-low)" stroke="hsl(200, 85%, 88%)" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="520" y="181.2" font-size="15" font-weight="500" fill="#ffffff" fill-opacity="0.9" text-anchor="middle" dominant-baseline="middle">Rainfall</text>
+<text x="520" y="200.4" font-size="16" font-weight="800" fill="#ffffff" letter-spacing="0.5" text-anchor="middle" dominant-baseline="middle">LOW</text>
+<circle cx="770" cy="150" r="55.2" fill="hsl(22, 45%, 55%)" opacity="0.32" filter="url(#glow)"/>
+<circle cx="770" cy="150" r="48" fill="url(#g-aprmay)" stroke="hsl(22, 38%, 88%)" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="770" y="151.0" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">Apr – May</text>
+<circle cx="985" cy="315" r="79.3" fill="hsl(140, 60%, 55%)" opacity="0.32" filter="url(#glow)"/>
+<circle cx="985" cy="315" r="78" fill="none" stroke="hsl(212, 90%, 62%)" stroke-width="2" opacity="0.7"><animate attributeName="r" values="76;93;76" dur="2.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.6s" repeatCount="indefinite"/></circle>
+<circle cx="985" cy="315" r="72" fill="none" stroke="hsl(212, 90%, 62%)" stroke-width="5" opacity="0.95"/>
+<circle cx="985" cy="315" r="69" fill="url(#g-highest)" stroke="hsl(140, 60%, 88%)" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="985" y="303.4" font-size="19" font-weight="500" fill="#ffffff" fill-opacity="0.9" text-anchor="middle" dominant-baseline="middle">Rainfall</text>
+<text x="985" y="328.6" font-size="21" font-weight="800" fill="#ffffff" letter-spacing="0.5" text-anchor="middle" dominant-baseline="middle">HIGHEST</text>
+<circle cx="830" cy="515" r="39.1" fill="hsl(335, 80%, 55%)" opacity="0.32" filter="url(#glow)"/>
+<circle cx="830" cy="515" r="34" fill="url(#g-oct)" stroke="hsl(335, 80%, 88%)" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="830" y="516.0" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">Oct</text>
+<circle cx="585" cy="500" r="39.1" fill="hsl(318, 70%, 55%)" opacity="0.32" filter="url(#glow)"/>
+<circle cx="585" cy="500" r="34" fill="url(#g-nov)" stroke="hsl(318, 70%, 88%)" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="585" y="501.0" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">Nov</text>
+<circle cx="400" cy="350" r="52.9" fill="hsl(258, 55%, 55%)" opacity="0.32" filter="url(#glow)"/>
+<circle cx="400" cy="350" r="46" fill="url(#g-lowest)" stroke="hsl(258, 55%, 88%)" stroke-opacity="0.5" stroke-width="1.5"/>
+<text x="400" y="342.3" font-size="13" font-weight="500" fill="#ffffff" fill-opacity="0.9" text-anchor="middle" dominant-baseline="middle">Rainfall</text>
+<text x="400" y="359.1" font-size="14" font-weight="800" fill="#ffffff" letter-spacing="0.5" text-anchor="middle" dominant-baseline="middle">LOWEST</text>
+</g>
+<g font-size="13" font-weight="600" text-anchor="middle" dominant-baseline="middle">
+<rect x="628.0" y="199.6" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="650.0" y="210.1" fill="#e2e8f0">0.76</text>
+<rect x="823.1" y="252.3" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="845.1" y="262.8" fill="#e2e8f0">0.91</text>
+<rect x="689.7" y="476.4" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="711.7" y="486.9" fill="#e2e8f0">0.74</text>
+<rect x="497.5" y="390.4" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="519.5" y="400.9" fill="#e2e8f0">0.40</text>
+<rect x="558.8" y="337.0" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="580.8" y="347.5" fill="#e2e8f0">0.53</text>
+<rect x="462.4" y="284.0" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="484.4" y="294.5" fill="#e2e8f0">0.94</text>
+<rect x="411.4" y="238.9" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="#ffffff" stroke-opacity="0.14"/>
+<text x="433.4" y="249.4" fill="#e2e8f0">0.24</text>
+<rect x="850.6" y="384.6" width="44" height="20" rx="10" fill="#0b1220" fill-opacity="0.88" stroke="hsl(212, 90%, 62%)" stroke-opacity="0.7"/>
+<text x="872.6" y="395.1" fill="hsl(212, 90%, 62%)">0.95</text>
+</g>
+<g>
+<text x="48" y="458" font-size="11.5" font-weight="600" fill="#94a3b8" letter-spacing="1.6">SCALES</text>
+<rect x="48.0" y="468" width="96.9" height="14" rx="2" fill="hsl(240, 28%, 52%)"/>
+<rect x="146.9" y="468" width="53.2" height="14" rx="2" fill="hsl(350, 28%, 52%)"/>
+<rect x="202.1" y="468" width="73.9" height="14" rx="2" fill="hsl(140, 28%, 52%)"/>
+<rect x="48.0" y="486" width="44.0" height="14" rx="2" fill="hsl(200, 85%, 52%)"/>
+<rect x="94.0" y="486" width="32.5" height="14" rx="2" fill="hsl(258, 55%, 52%)"/>
+<rect x="128.5" y="486" width="16.4" height="14" rx="2" fill="hsl(318, 70%, 52%)"/>
+<rect x="146.9" y="486" width="34.8" height="14" rx="2" fill="hsl(22, 38%, 52%)"/>
+<rect x="183.7" y="486" width="16.4" height="14" rx="2" fill="hsl(335, 80%, 52%)"/>
+<rect x="202.1" y="486" width="73.9" height="14" rx="2" fill="hsl(140, 60%, 52%)"/>
+<path d="M286,493.0 l10,-5 l0,10 z" fill="#e2e8f0"/>
+<text x="302" y="494.0" font-size="11" fill="#94a3b8" dominant-baseline="middle">current</text>
+<rect x="48.0" y="504" width="21.0" height="14" rx="2" fill="hsl(191, 100%, 52%)"/>
+<rect x="71.0" y="504" width="21.0" height="14" rx="2" fill="hsl(209, 100%, 52%)"/>
+<rect x="94.0" y="504" width="15.2" height="14" rx="2" fill="hsl(249, 70%, 52%)"/>
+<rect x="111.2" y="504" width="15.2" height="14" rx="2" fill="hsl(267, 70%, 52%)"/>
+<rect x="128.5" y="504" width="7.2" height="14" rx="2" fill="hsl(309, 85%, 52%)"/>
+<rect x="137.7" y="504" width="7.2" height="14" rx="2" fill="hsl(327, 85%, 52%)"/>
+<rect x="146.9" y="504" width="16.4" height="14" rx="2" fill="hsl(13, 53%, 52%)"/>
+<rect x="165.3" y="504" width="16.4" height="14" rx="2" fill="hsl(31, 53%, 52%)"/>
+<rect x="183.7" y="504" width="7.2" height="14" rx="2" fill="hsl(326, 95%, 52%)"/>
+<rect x="192.9" y="504" width="7.2" height="14" rx="2" fill="hsl(344, 95%, 52%)"/>
+<rect x="202.1" y="504" width="36.0" height="14" rx="2" fill="hsl(131, 75%, 52%)"/>
+<rect x="240.0" y="504" width="36.0" height="14" rx="2" fill="hsl(149, 75%, 52%)"/>
+</g>
+<g font-size="13" fill="#94a3b8"><text x="48" y="592">circle area = share of time in a state   ·   arrow width = chance of moving to the next state   ·   dotted = rare   ·   blue = selected state and where it goes next</text></g>
+</svg>
