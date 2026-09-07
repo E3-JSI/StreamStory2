@@ -139,6 +139,14 @@ const useStyles = makeStyles((theme: Theme) =>
             },
         },
 
+        /* Get Started Section */
+        getStartedSection: {
+            textAlign: 'center',
+        },
+        terminal: {
+            marginTop: theme.spacing(4),
+        },
+
         /* Examples Section */
         examplesSection: {
             textAlign: 'center',

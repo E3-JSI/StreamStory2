@@ -16,6 +16,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Brightness2Icon from '@material-ui/icons/Brightness2';
 import BrightnessHighIcon from '@material-ui/icons/BrightnessHigh';
 import BrightnessMediumIcon from '@material-ui/icons/BrightnessMedium';
+import GitHubIcon from '@material-ui/icons/GitHub';
 import MenuIcon from '@material-ui/icons/Menu';
 
 import { User } from '../api/users';
@@ -23,6 +24,7 @@ import useSession from '../hooks/useSession';
 import { PageVariant } from './Page';
 import Logo from './Logo';
 import LanguagesButton from './LanguagesButton';
+import { githubUrl } from '../config/links';
 import NotificationsButton from './NotificationsButton';
 import ThemeMenu from './ThemeMenu';
 import UserAccountMenu from './UserAccountMenu';
@@ -144,6 +146,20 @@ function Header({ variant = 'application' }: HeaderProps): JSX.Element {
                         <Logo />
                     </Link>
                 </Box>
+                {isPublicHeader && (
+                    <Tooltip title="GitHub" enterDelay={muiTheme.timing.tooltipEnterDelay}>
+                        <IconButton
+                            component="a"
+                            href={githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            color={iconColor}
+                            aria-label="GitHub"
+                        >
+                            <GitHubIcon />
+                        </IconButton>
+                    </Tooltip>
+                )}
                 <LanguagesButton color={iconColor} />
                 {notifications.length > 0 && <NotificationsButton color={iconColor} />}
                 <Tooltip title={t('change_theme')} enterDelay={muiTheme.timing.tooltipEnterDelay}>

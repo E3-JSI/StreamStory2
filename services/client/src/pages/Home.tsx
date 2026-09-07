@@ -19,6 +19,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import ListItemText from '@material-ui/core/ListItemText';
 import Typography from '@material-ui/core/Typography';
+import GitHubIcon from '@material-ui/icons/GitHub';
 
 import Logo from '../components/Logo';
 import PageTitle from '../components/PageTitle';
@@ -28,8 +29,10 @@ import SectionName from '../components/SectionName';
 import SectionTitle from '../components/SectionTitle';
 import Footer from '../components/Footer';
 import ModelTeaser from '../components/ModelTeaser';
+import Terminal from '../components/Terminal';
 
 import config from '../config';
+import { githubUrl, paperUrl } from '../config/links';
 import useStyles from './Home.styles';
 import { ReactComponent as DetectiveIcon } from '../assets/images/icons/detective.svg';
 import { ReactComponent as FreeButterflyIcon } from '../assets/images/icons/free-butterfly.svg';
@@ -245,6 +248,56 @@ function Home(): JSX.Element {
                     </Grid>
                 </Container>
             </Section>
+            <Section className={classes.getStartedSection}>
+                <Container maxWidth="lg">
+                    <SectionName gutterBottom>{t('content.home.run_locally_name')}</SectionName>
+                    <SectionTitle gutterBottom>{t('content.home.run_locally_title')}</SectionTitle>
+                    <SectionDescription>
+                        {t('content.home.run_locally_description')}
+                    </SectionDescription>
+                    <Box className={classes.terminal}>
+                        <Terminal
+                            title="Terminal"
+                            lines={[
+                                `git clone ${githubUrl}.git`,
+                                'cd StreamStory2',
+                                'npm run build',
+                                'npm run start',
+                            ]}
+                            hint={t('content.home.terminal_open_hint')}
+                        />
+                    </Box>
+                    <Grid spacing={2} justify="center" className={classes.buttons} container>
+                        <Grid xs={12} sm="auto" item>
+                            <Button
+                                component="a"
+                                href={githubUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="outlined"
+                                size="large"
+                                color="primary"
+                                startIcon={<GitHubIcon />}
+                            >
+                                {t('view_on_github')}
+                            </Button>
+                        </Grid>
+                        <Grid xs={12} sm="auto" item>
+                            <Button
+                                component="a"
+                                href={paperUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="outlined"
+                                size="large"
+                                color="primary"
+                            >
+                                {t('read_the_paper')}
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Container>
+            </Section>
             {/* <Section className={classes.examplesSection}>
                 <Container maxWidth="lg">
                     <SectionName gutterBottom>Examples</SectionName>
@@ -331,7 +384,7 @@ function Home(): JSX.Element {
                     </Grid>
                 </Container>
             </Section> */}
-            <Section className={classes.contactSection}>
+            <Section border="top" className={classes.contactSection}>
                 <Container maxWidth="lg">
                     <SectionName gutterBottom>{t('content.home.contact_name')}</SectionName>
                     <SectionTitle gutterBottom>{t('content.home.contact_title')}</SectionTitle>
