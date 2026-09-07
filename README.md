@@ -26,6 +26,7 @@ development with hot reloading, use `npm run build:dev` and `npm run start:dev`.
 
 ## Documentation
 
+- [Architecture](docs/architecture.md) — services, ports, and how they fit together.
 - [Development](docs/development.md) — running the stack locally and project layout.
 - [Deployment](docs/deployment.md) — configuration and production deployment.
 - [Public API](docs/public-api.md) — the versioned HTTP API.
