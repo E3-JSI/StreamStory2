@@ -13,10 +13,12 @@ services:
             - modelling
         volumes:
             - data:/app/data
+            - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
         links:
             - db
             - modelling
         environment:
+            NODE_EXTRA_CA_CERTS: /etc/ssl/certs/ca-certificates.crt
             SESSION_SECRET: ${SESSION_SECRET:-secret}
             DB_NAME: streamstory
             DB_USER: root
